@@ -1,0 +1,23 @@
+{% extends "editor/base.html" %}
+
+{% block title %}
+Startseite | SQL Spell Quest Editor
+{% endblock %}
+
+{% block content %}
+<main class="start-page d-flex align-items-center">
+  <div class="container text-center">
+    <section class="start-hero mx-auto">
+      <h1 class="display-5 fw-bold mb-3">
+        Eine Möglichkeit, um Lehre zu vereinfachen
+      </h1>
+
+      <p class="fs-5 fw-medium text-black-50 mb-5">
+        Wähle eine Game-Level-JSON-Datei aus, um ein Game zu editieren.
+      </p>
+
+      {% include "editor/components/button/button.html" with title="Upload a JSON" %}
+    </section>
+  </div>
+</main>
+{% endblock %}

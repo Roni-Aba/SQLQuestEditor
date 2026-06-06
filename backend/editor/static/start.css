@@ -1,0 +1,13 @@
+body {
+  min-height: 100vh;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: #ffffff;
+}
+
+.start-page {
+  min-height: calc(100vh - 56px);
+}
+
+.start-hero {
+  max-width: 900px;
+}
