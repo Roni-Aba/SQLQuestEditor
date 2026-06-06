@@ -1,0 +1,12 @@
+.editor-button {
+    background-color: #f8f9fa;
+    color: #6f42c1;
+    font-weight:600;
+    border: none;
+    border-radius: 5px;
+}
+
+.editor-button:hover {
+    background-color: #e0d4ff;
+    color: #5a32a3;
+}
