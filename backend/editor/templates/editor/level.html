@@ -21,10 +21,9 @@
         {% include "editor/components/navbar/navbar.html" %}
 
         <section class="levelList">
-            {% include "editor/components/tableItem/tableItem.html" with title="Tutorial" %}
-            {% include "editor/components/tableItem/tableItem.html" with title="Level 1" %}
-            {% include "editor/components/tableItem/tableItem.html" with title="Level 2" %}
-            {% include "editor/components/tableItem/tableItem.html" with title="Level 3" %}
+            {% for levelName in nameOfLevels %}
+                {% include "editor/components/tableItem/tableitem.html" with title=levelName %}
+            {% endfor %}
         </section>
 
         <section class="createLevelSection">
