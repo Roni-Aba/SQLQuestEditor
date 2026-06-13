@@ -1,0 +1,963 @@
+{
+  "id": "SQLSpellQuest",
+  "messages": {
+    "wrong_password": "Das war nicht richtig...",
+    "wrong_password_new_hint": "Das war nicht richtig... In deiner Zauberkugel ist ein neuer Hinweis erschienen.",
+    "not_a_table": "Bei allen schielenden Chimären! Auf %s kannst du keinen Zauberspruch wirken... Hast du dich da vielleicht verzielt?",
+    "unknown_table": "Was für ein Mumpitz, der Zauber ging ja wohl ins Leere! Was soll denn %s bedeuten?",
+    "locked_table": "Bei dem Verkehrssystem der Irrlichter! Ich habe gerade auf meinen Mondkalender geschaut: Der Zeitpunkt, um einen Zauberspruch auf %s zu wirken, ist noch nicht gekommen.",
+    "sql_error": "Bei Nasreddins Esel! Seine Ideen hab ich ja schon nicht immer verstanden, aber dein Zauberspruch führt wirklich nirgendwo hin! Vielleicht solltest du es noch einmal versuchen, und achte auf deine Schreibweise.",
+    "no_result": "Beim blinden Auge des Polyphem! Dieser Zauberspruch hat rein gar nichts als Ergebnis geliefert!",
+    "row_restriction": "Bei den keltischen Druiden, diese Liste ist ja länger als mein Einkaufszettel vor der Sommersonnenwende! Vielleicht sollten wir uns nur die Zeilen ansehen, die uns auch wirklich interessieren, dann ist es übersichtlicher. Die Magie von SQL liegt im Detail, je präziser die Zaubersprüche, desto schöner die Lösung.",
+    "col_restriction": "Bei Merlins Bart, hier gibt es ja mehr Informationen als Löcher in den Socken meiner Zauberlehrerin! Vielleicht sollten wir uns nur die Spalten ansehen, die uns auch wirklich interessieren, dann ist es übersichtlicher. Die Magie von SQL liegt im Detail, je präziser die Zaubersprüche, desto schöner die Lösung.",
+    "row_and_col_restriction": "Holla die Waldfee, wenn Baba Jagas Hexenhäuschen das hier sehen würde, würde es aber schleunigst Reißaus nehmen! Das ist ja viel zu viel! Vielleicht sollten wir uns nur die Zeilen und nur die Spalten ansehen, die uns auch wirklich interessieren, dann ist es übersichtlicher. Die Magie von SQL liegt im Detail, je präziser die Zaubersprüche, desto schöner die Lösung."
+  },
+  "level": [
+    {
+      "id": "level0",
+      "levelPicture": "level0_background.jpg",
+      "databaseName": "level0.db",
+      "startDialog": "Hallo?! Hier unten! Wen hattest du denn erwartet? Etwa einen Menschen? Ich werde mich ab jetzt um deine Zauberausbildung kümmern, Lehrling. Du darfst mich Meister nennen. Oder Meisterin? Diese Menschensprache... Zum Glück wirst du ab jetzt nur noch die Sprache der Zauberei brauchen. Du weißt schon: SQL, die Spell Quest Language, mit der wir geheimes Wissen erlangen. Naja, du vielleicht noch nicht, das musst du erst noch unter Beweis stellen.\nSchau dich doch erstmal hier um und klicke in das Bild. Wenn du einen Tipp brauchst, mit welchen Dingen du interagieren kannst, dann sei doch so nett und streichel mich mit der Maus.",
+      "queryRestriction": {
+        "rowRestriction": {
+          "maxNumber": 4,
+          "violationMessages": [
+            "Gut soweit, die Spalten hast du jetzt auf das Wesentliche beschränkt. Es sind aber noch zu viele Zeilen. Ich verrate dir mal was: Die Blume, die wir suchen, ist goldgelb. Versuch es also mit\nSELECT Blütenform FROM Blumen\nWHERE Farbe = \"goldgelb\";\nAch ja, wenn du dir deine bisher ausprobierten Zaubersprüche ansehen möchtest und sie wiederverwenden möchtest, dann schau doch mal in dein Notizbuch unten rechts."
+          ]
+        },
+        "columnRestriction": {
+          "maxNumber": 4,
+          "violationMessages": [
+            "Gut soweit, die Zeilen hast du jetzt auf das Wesentliche beschränkt. Es sind aber noch zu viele Spalten. Du möchtest doch nur die Farben und Blütenformen der Blumen wissen. Dann schreib doch mal:\nSELECT Farbe, Blütenform FROM Blumen;\nAch ja, wenn du dir deine bisher ausprobierten Zaubersprüche ansehen möchtest und sie wiederverwenden möchtest, dann schau doch mal in dein Notizbuch unten rechts."
+          ]
+        },
+        "colAndRowViolationMessages": [
+          "Das Ergebnis deines Zauberspruchs erscheint nun in der rechten Tafel. Siehst du die seltsamen Runenzeichen? Das bedeutet, dass nicht alle Ergebnisse angezeigt werden konnten. Da du noch in der Ausbildung bist, sind deine Zaubersprüche entsprechend beschränkt: Du kannst höchstens vier Zeilen und vier Spalten zur Zeit aufdecken. Versuche deine Zaubersprüche also so präzise wie möglich zu formulieren. Schauen wir uns mal nur die Farben und Blütenformen der Blumen an. Schreib dazu\nSELECT Farbe, Blütenform FROM Blumen;"
+        ]
+      },
+      "items": [
+        {
+          "id": "Eingangstür",
+          "password": {
+            "unlockPasswords": [
+              "Sternchen"
+            ],
+            "passwordHint": "Damit du eintreten darfst, musst du mir erst zeigen, dass du keine komplett ahnungslose Kaulquappe bist. Zuerst musst du meinen Spitznamen herausbekommen. Irgendwo hier ist ein Gegenstand, der einen Hinweis darauf verbirgt."
+          },
+          "neededItems": ["Laterne", "Blumen"],
+          "type": "exit",
+          "unlocked": false,
+          "boundingBoxImage": {
+            "x": 683,
+            "y": 305,
+            "width": 262,
+            "height": 442
+          },
+          "boundingBoxIcon": {
+            "x": 705,
+            "y": 482,
+            "width": 80,
+            "height": 80
+          },
+          "unlockHints": [
+            {
+              "numWrongAttempts": 1,
+              "hint": "Hallo! Ich bin zwar nur eine sprechende Kristallkugel, aber ich kann dir helfen, wenn du nicht mehr weiter weißt. Wenn ich leuchte siehst du, dass ich einen neuen Hinweis für dich habe.\nJetzt erstmal nur ein guter Rat: Glaube der Katze nicht alles! SQL heißt natürlich nicht wirklich Spell Quest Language, sondern ist eine Datenbanksprache, deren Name sich von \"SEQUEL\" ableitet, was \"Structured English Query Language\" bedeutet. Ähem! So ähnlich war doch auch ihr Spitzname... vielleicht Sequelchen?"
+            },
+            {
+              "numWrongAttempts": 2,
+              "hint": "Hallo nochmal, wie du siehst, habe ich einen neuen Tipp für dich. Das passiert immer dann, wenn du ein falsches Lösungswort für ein Rätsel eingibst, obwohl du schon alle Gegenstände nutzen kannst, die du brauchst.\nIch erinnere mich zwar nicht mehr genau an den Spitznamen der Katze, aber er endet auf jeden Fall auf \"chen\", weil sie so... naja, weil sie so klein ist."
+            },
+            {
+              "numWrongAttempts": 3,
+              "hint": "Suche nach der Blütenform einer bestimmten Blume. Dazu wird dir eine Laterne helfen."
+            },
+            {
+              "numWrongAttempts": 4,
+              "hint": "Der Spitzname der Katze ist die Blütenform einer Blume mit einer ganz bestimmten Farbe. Ach ja, und du musst die Verkleinerungsform der Blütenform als Lösungswort benutzen."
+            },
+            {
+              "numWrongAttempts": 5,
+              "hint": "Psst... ein letzter Hinweis, dann reicht's aber: Probier mal den Zauberspruch SELECT Blütenform FROM Blumen WHERE Farbe = \"goldgelb\"; und hänge für das Lösungswort an das Ergebnis noch \"chen\" an."
+            }
+          ],
+          "nextDialog": {
+            "afterUnlock": "Richtig! Mein offizieller Name ist Asteriskat, aber meine Freunde dürfen mich Sternchen nennen. Wie in SELECT *... Aber ob du es soweit bringst, wird sich zeigen.\nWenn du willst, können wir jetzt mit deiner Ausbildung starten. Aber sei gewarnt: Wenn du durch diese Tür trittst, gibt es kein Zurück: Entweder du meisterst alle Prüfungen auf dem Weg zum Turmzimmer, oder du darfst auf ewig in einem der anderen Stockwerke für mich schuften.",
+            "afterQuery": ""
+          }
+        },
+        {
+          "id": "Blumen",
+          "password": {
+            "unlockPasswords": [
+              "Laterne"
+            ],
+            "passwordHint": "Einige Gegenstände wie dieses Blumenbeet sind Tabellen, die du mit SQL durchsuchen kannst. Nicht alle Tabellen sind von vornherein verfügbar, einige müssen erst mit einem Lösungswort freigeschaltet werden. Diese Blumen sehen zum Beispiel alle gleich aus. Du brauchst erst einen bestimmten Gegenstand, um sie besser erkennen zu können. Das Lösungswort ist der Name dieses Gegenstands."
+          },
+          "neededItems": [],
+          "type": "table",
+          "unlocked": false,
+          "boundingBoxImage": {
+            "x": 984,
+            "y": 795,
+            "width": 542,
+            "height": 228
+          },
+          "boundingBoxIcon": {
+            "x": 1084,
+            "y": 926,
+            "width": 90,
+            "height": 90
+          },
+          "unlockHints": [],
+          "nextDialog": {
+            "afterUnlock": "Diese Tabelle ist jetzt freigeschaltet und du kannst SQL-Anfragen auf sie nutzen. Jetzt musst du nur noch die richtige Blume finden. Schau erstmal, was hier alles wächst, indem du den folgenden Zauberspruch auf die Tafel links unten schreibst:\nSELECT * FROM Blumen;\nUnd wenn du wissen möchtest, welche Attribute du in dieser Tabelle findest, dann klicke rechts auf den Tabellennamen.",
+            "afterQuery": ""
+          },
+          "tableName": "Blumen",
+          "description": [
+            "ID (int)",
+            "Farbe (varchar)",
+            "Duft (varchar)",
+            "Blattform (varchar)",
+            "Blütenform (varchar)"
+          ]
+        },
+        {
+          "id": "Laterne",
+          "password": {
+            "unlockPasswords": [],
+            "passwordHint": ""
+          },
+          "neededItems": [],
+          "type": "hint",
+          "unlocked": true,
+          "boundingBoxImage": {
+            "x": 585,
+            "y": 345,
+            "width": 65,
+            "height": 150
+          },
+          "boundingBoxIcon": {
+            "x": 584,
+            "y": 392,
+            "width": 65,
+            "height": 65
+          },
+          "unlockHints": [],
+          "nextDialog": {
+            "afterUnlock": "",
+            "afterQuery": ""
+          },
+          "imageLink": "",
+          "text": "Ah ja, richtig: Mein Spitzname erinnert an die Form einer bestimmten Blüte, die hier vor dem Turm wächst. Mit dieser magischen Laterne kannst du die vielen verschiedenen Blumen erst richtig erkennen. Suche das Blumenbeet und gib als Lösungswort \"Laterne\" ein, damit du es mit deiner SQL-Magie durchforsten kannst."
+        }
+      ]
+    },
+    {
+      "id": "level1",
+      "levelPicture": "level1_background.png",
+      "databaseName": "level1.db",
+      "startDialog": "Um so viel wie ich über Zauberei zu wissen, musst du viel lernen. Für den Anfang brauchst du erst einmal eine Grundausstattung. Ich habe sie dir auf einen Zettel geschrieben, der müsste hier irgendwo herumliegen. Du kennst ja schon die Grundlagen der Magiesprache SQL. Nutze sie, um den Inhalt der Ausrüstungsliste anzusehen. Dann suche nach den einzelnen Gegenständen.",
+      "queryRestriction": {
+        "rowRestriction": {
+          "maxNumber": 4,
+          "violationMessages": [
+            "Bei den keltischen Druiden, diese Liste ist ja länger als mein Einkaufszettel vor der Sommersonnenwende! Vielleicht sollten wir uns nur die Zeilen ansehen, die uns auch wirklich interessieren, dann ist es übersichtlicher. Die Magie von SQL liegt im Detail, je präziser die Zaubersprüche, desto schöner die Lösung."
+          ]
+        },
+        "columnRestriction": {
+          "maxNumber": 4,
+          "violationMessages": [
+            "Bei Merlins Bart, hier gibt es ja mehr Informationen als Löcher in den Socken meiner Zauberlehrerin! Vielleicht sollten wir uns nur die Spalten ansehen, die uns auch wirklich interessieren, dann ist es übersichtlicher. Die Magie von SQL liegt im Detail, je präziser die Zaubersprüche, desto schöner die Lösung."
+          ]
+        },
+        "colAndRowViolationMessages": [
+          "Holla die Waldfee, wenn Baba Jagas Hexenhäuschen das hier sehen würde, würde es aber schleunigst Reißaus nehmen! Das ist ja viel zu viel! Vielleicht sollten wir uns nur die Zeilen und nur die Spalten ansehen, die uns auch wirklich interessieren, dann ist es übersichtlicher. Die Magie von SQL liegt im Detail, je präziser die Zaubersprüche, desto schöner die Lösung."
+        ]
+      },
+      "items": [
+        {
+          "id": "Ausgang",
+          "password": {
+            "unlockPasswords": [
+              "BakerStreet"
+            ],
+            "passwordHint": "Sag mir die Marke deines Hutes, wenn du sie herausgefunden hast. Erst dann weiß ich, dass du alle Ausrüstungsgegenstände zusammen hast und bereit bist, den nächsten Raum zu betreten."
+          },
+          "neededItems": ["Hutständer", "Kessellager", "Zauberstab", "Kleiderschrank"],
+          "type": "exit",
+          "unlocked": false,
+          "boundingBoxImage": {
+            "x": 510,
+            "y": 240,
+            "width": 280,
+            "height": 540
+          },
+          "boundingBoxIcon": {
+            "x": 10,
+            "y": 10,
+            "width": 20,
+            "height": 20
+          },
+          "unlockHints": [
+            {
+              "numWrongAttempts": 1,
+              "hint": "Finde heraus, wie dein Hut aussieht, und durchsuche dann den Hutständer."
+            },
+            {
+              "numWrongAttempts": 2,
+              "hint": "Du musst mindestens vier Eigenschaften des Hutes beschreiben, damit die Suchanfrage genau genug ist."
+            },
+            {
+              "numWrongAttempts": 5,
+              "hint": "Der richtige Zauberspruch enthält mindestens die Wörter AND, FROM, Hutständer, Marke und SELECT."
+            }
+          ],
+          "nextDialog": {
+            "afterUnlock": "Bei den tanzenden Funken in der Walpurgisnacht, du hast es geschafft! Jetzt kann dein Lernen erst richtig losgehen. Deine Ausrüstung hast du schon einmal, jetzt erwartet dich deine nächste Lektion hinter der Tür.",
+            "afterQuery": ""
+          }
+        },
+        {
+          "id": "Ausrüstungsliste",
+          "password": {
+            "unlockPasswords": [],
+            "passwordHint": ""
+          },
+          "neededItems": [],
+          "type": "table",
+          "unlocked": true,
+          "boundingBoxImage": {
+            "x": 550,
+            "y": 830,
+            "width": 170,
+            "height": 70
+          },
+          "boundingBoxIcon": {
+            "x": 110,
+            "y": 110,
+            "width": 10,
+            "height": 10
+          },
+          "unlockHints": [],
+          "nextDialog": {
+            "afterUnlock": "",
+            "afterQuery": ""
+          },
+          "tableName": "Ausrüstungsliste",
+          "description": [
+            "ID (int)",
+            "Gegenstand (varchar)",
+            "Seltenheit (varchar)"
+          ]
+        },
+        {
+          "id": "Hutständer",
+          "password": {
+            "unlockPasswords": [],
+            "passwordHint": "In deinem Umhang befindet sich etwas, das dir weiterhelfen wird, um den richtigen Hut zu finden."
+          },
+          "neededItems": ["Kästchen"],
+          "type": "table",
+          "unlocked": true,
+          "boundingBoxImage": {
+            "x": 830,
+            "y": 340,
+            "width": 120,
+            "height": 500
+          },
+          "boundingBoxIcon": {
+            "x": 110,
+            "y": 110,
+            "width": 10,
+            "height": 10
+          },
+          "unlockHints": [],
+          "nextDialog": {
+            "afterUnlock": "",
+            "afterQuery": ""
+          },
+          "tableName": "Hutständer",
+          "description": [
+            "ID (int)",
+            "Höhe (int)",
+            "Durchmesser (int)",
+            "Muster (varchar)",
+            "Farbe (varchar)",
+            "Anhänger (varchar)",
+            "Marke (varchar)"
+          ]
+        },
+        {
+          "id": "Kessellager",
+          "password": {
+            "unlockPasswords": [
+              "BESCHÄDIGEN"
+            ],
+            "passwordHint": "Bevor ich dich an die Kessel lasse, muss ich sichergehen, dass du sie nicht in die Luft jagst. Sag mir erst: Was solltest du niemals mit deinem Zauberstab tun?"
+          },
+          "neededItems": ["Zauberstab"],
+          "type": "table",
+          "unlocked": false,
+          "boundingBoxImage": {
+            "x": 980,
+            "y": 50,
+            "width": 180,
+            "height": 600
+          },
+          "boundingBoxIcon": {
+            "x": 110,
+            "y": 110,
+            "width": 10,
+            "height": 10
+          },
+          "unlockHints": [
+            {
+              "numWrongAttempts": 1,
+              "hint": "Schau dir den Zauberstab an."
+            },
+            {
+              "numWrongAttempts": 2,
+              "hint": "Sag einfach nur das Verb, also zum Beispiel VERLIEREN oder ESSEN."
+            }
+          ],
+          "nextDialog": {
+            "afterUnlock": "Nur einer dieser Kessel ist für dich geeignet.",
+            "afterQuery": ""
+          },
+          "tableName": "Kessellager",
+          "description": [
+            "ID (int)",
+            "Größe (int)",
+            "Name (varchar)",
+            "Material (varchar)",
+            "Kesselart (varchar)",
+            "AnzahlFüße (int)",
+            "Lehrjahr (int)",
+            "Randdicke (int)",
+            "Hersteller (varchar)",
+            "MaxTemperatur (int)",
+            "Baujahr (int)"
+          ]
+        },
+        {
+          "id": "Kleiderschrank",
+          "password": {
+            "unlockPasswords": [
+              "Kochi"
+            ],
+            "passwordHint": "Der Kleiderschrank kann nur mit einem Zauberwort geöffnet werden. Das Zauberwort ist der Name deines Kessels."
+          },
+          "neededItems": ["Kessellager"],
+          "type": "table",
+          "unlocked": false,
+          "boundingBoxImage": {
+            "x": 1180,
+            "y": 640,
+            "width": 245,
+            "height": 300
+          },
+          "boundingBoxIcon": {
+            "x": 110,
+            "y": 110,
+            "width": 10,
+            "height": 10
+          },
+          "unlockHints": [
+            {
+              "numWrongAttempts": 1,
+              "hint": "Schaue dir an, welche Tabellen du schon nutzen kannst und überlege dir, von welcher Tabelle du zur Nächsten kommst."
+            },
+            {
+              "numWrongAttempts": 2,
+              "hint": "Nutze die Kessellager-Tabelle."
+            },
+            {
+              "numWrongAttempts": 5,
+              "hint": "Der richtige Zauberspruch enthält die Wörter FROM, Kessellager, Lehrjahr, Name und SELECT."
+            }
+          ],
+          "nextDialog": {
+            "afterUnlock": "Die Hälfte hast du schon einmal beisammen. Mal sehen, wie oft dir etwas in diesem Kessel überkochen wird, aber glaube mir, seinen ersten Kessel vergisst man nie. Oh wie ich damals gerne Gemüsesu... Aber das ist eine Geschichte für ein andermal. Als nächstes solltest du deinen Umhang finden. Der müsste mit den anderen alten Klamotten in diesem Kleiderschrank liegen. In der Tasche von deinem Umhang findest du übrigens etwas, was du gut gebrauchen könntest.",
+            "afterQuery": ""
+          },
+          "tableName": "Kleiderschrank",
+          "description": [
+            "ID (int)",
+            "Art (varchar)",
+            "Tascheninhalt (varchar)",
+            "Alter (int)"
+          ]
+        },
+        {
+          "id": "Kästchen",
+          "password": {
+            "unlockPasswords": [
+              "Bartschlüssel"
+            ],
+            "passwordHint": "Finde den richtigen Schlüssel, um das Kästchen zu öffnen. Wie heißt er?"
+          },
+          "neededItems": ["Kleiderschrank"],
+          "type": "hint",
+          "unlocked": false,
+          "boundingBoxImage": {
+            "x": 95,
+            "y": 100,
+            "width": 140,
+            "height": 124
+          },
+          "boundingBoxIcon": {
+            "x": 210,
+            "y": 210,
+            "width": 5,
+            "height": 5
+          },
+          "unlockHints": [
+            {
+              "numWrongAttempts": 1,
+              "hint": "Finde heraus, welches Kleidungsstück für dich bestimmt ist."
+            },
+            {
+              "numWrongAttempts": 2,
+              "hint": "Du benötigst dazu eine WHERE-Klausel, denn dein Abfrageergebnis ist sonst zu groß."
+            },
+            {
+              "numWrongAttempts": 5,
+              "hint": "Der richtige Zauberspruch enthält die Wörter *, Art, FROM, Kleiderschrank, SELECT und Umhang."
+            }
+          ],
+          "nextDialog": {
+            "afterUnlock": "",
+            "afterQuery": ""
+          },
+          "imageLink": "zauberhut_foto.png",
+          "text": ""
+        },
+        {
+          "id": "Zauberstab",
+          "password": {
+            "unlockPasswords": [
+              "4",
+              "vier"
+            ],
+            "passwordHint": "Den bekommst du erst, wenn du mir sagst, wie viele Dinge zu deiner Ausrüstung gehören."
+          },
+          "neededItems": ["Ausrüstungsliste"],
+          "type": "hint",
+          "unlocked": false,
+          "boundingBoxImage": {
+            "x": 370,
+            "y": 880,
+            "width": 180,
+            "height": 80
+          },
+          "boundingBoxIcon": {
+            "x": 210,
+            "y": 210,
+            "width": 5,
+            "height": 5
+          },
+          "unlockHints": [
+            {
+              "numWrongAttempts": 1,
+              "hint": "Suche die Ausrüstungsliste im Raum."
+            },
+            {
+              "numWrongAttempts": 2,
+              "hint": "Frage alle Einträge der Tabelle \"Ausrüstungsliste\" ab."
+            },
+            {
+              "numWrongAttempts": 5,
+              "hint": "Der richtige Zauberspruch besteht aus den Wörtern *, Ausrüstungsliste, FROM und SELECT."
+            }
+          ],
+          "nextDialog": {
+            "afterUnlock": "Hier, das ist dein Zauberstab. Er ist das wichtigste Utensil für dich als Zauberlehrling, deshalb musst du unbedingt gut auf ihn aufpassen. Und achte ja darauf, ihn nie zu BESCHÄDIGEN!",
+            "afterQuery": ""
+          },
+          "imageLink": "",
+          "text": "Dein Zauberstab ist das wichtigste Utensil für dich als Zauberlehrling, deshalb musst du unbedingt gut auf ihn aufpassen. Und achte ja darauf, ihn nie zu BESCHÄDIGEN!"
+        }
+      ]
+    },
+    {
+      "id": "level2",
+      "levelPicture": "level2_background.jpg",
+      "databaseName": "level2.db",
+      "startDialog": "Wer kennt es nicht, ich habe mir damals ein kleines Anfänger-Pflänzchen auf dem Markt mitgenommen. Der Start war etwas holprig, aber irgendwann hatte ich den Bogen raus und zack, sie wurde immer größer. Durch meine nun erwachten Pflanzen-Fähigkeiten habe ich mir natürlich eine zweite gekauft, damit die andere nicht alleine ist. Nun ja, jetzt sind wir hier gelandet und ich habe inzwischen gar keinen Überblick mehr, wie viele es sind oder wie es all meinen Pflanzen geht. Kannst du vielleicht einmal für mich herausfinden, wie viele freie Plätze ich noch habe? Ich habe extra ein Buch über die Pflanzen geführt, da musst du einfach nur die Einträge zählen. Außerdem habe ich mal einen Lageplan angelegt, da habe ich die Plätze den jeweiligen Orten zugeteilt. Du musst also nur noch die Anzahl der Plätze aller Orte summieren.",
+      "queryRestriction": {
+        "rowRestriction": {
+          "maxNumber": 4,
+          "violationMessages": [
+            "Bei den keltischen Druiden, diese Liste ist ja länger als mein Einkaufszettel vor der Sommersonnenwende! Vielleicht sollten wir uns nur die Zeilen ansehen, die uns auch wirklich interessieren, dann ist es übersichtlicher. Die Magie von SQL liegt im Detail, je präziser die Zaubersprüche, desto schöner die Lösung."
+          ]
+        },
+        "columnRestriction": {
+          "maxNumber": 4,
+          "violationMessages": [
+            "Bei Merlins Bart, hier gibt es ja mehr Informationen als Löcher in den Socken meiner Zauberlehrerin! Vielleicht sollten wir uns nur die Spalten ansehen, die uns auch wirklich interessieren, dann ist es übersichtlicher. Die Magie von SQL liegt im Detail, je präziser die Zaubersprüche, desto schöner die Lösung."
+          ]
+        },
+        "colAndRowViolationMessages": [
+          "Holla die Waldfee, wenn Baba Jagas Hexenhäuschen das hier sehen würde, würde es aber schleunigst Reißaus nehmen! Das ist ja viel zu viel! Vielleicht sollten wir uns nur die Zeilen und nur die Spalten ansehen, die uns auch wirklich interessieren, dann ist es übersichtlicher. Die Magie von SQL liegt im Detail, je präziser die Zaubersprüche, desto schöner die Lösung."
+        ]
+      },
+      "items": [
+        {
+          "id": "Pflanzenbuch",
+          "password": {
+            "unlockPasswords": [
+            ],
+            "passwordHint": ""
+          },
+          "neededItems": [],
+          "type": "table",
+          "unlocked": true,
+          "boundingBoxImage": {
+            "x": 980,
+            "y": 50,
+            "width": 180,
+            "height": 600
+          },
+          "boundingBoxIcon": {
+            "x": 110,
+            "y": 110,
+            "width": 10,
+            "height": 10
+          },
+          "unlockHints": [
+          ],
+          "nextDialog": {
+            "afterUnlock": "",
+            "afterQuery": ""
+          },
+          "tableName": "Pflanzenbuch",
+          "description": [
+            "ID (int)",
+            "Name (varchar)",
+            "Pflanzenart (varchar)"
+          ]
+        },
+        {
+          "id": "Lageplan",
+          "password": {
+            "unlockPasswords": [
+            ],
+            "passwordHint": ""
+          },
+          "neededItems": [],
+          "type": "table",
+          "unlocked": true,
+          "boundingBoxImage": {
+            "x": 980,
+            "y": 50,
+            "width": 180,
+            "height": 600
+          },
+          "boundingBoxIcon": {
+            "x": 110,
+            "y": 110,
+            "width": 10,
+            "height": 10
+          },
+          "unlockHints": [
+          ],
+          "nextDialog": {
+            "afterUnlock": "",
+            "afterQuery": ""
+          },
+          "tableName": "Lageplan",
+          "description": [
+            "ID (int)",
+            "Ort (varchar)",
+            "AnzahlPlätze (int)"
+          ]
+        },
+        {
+          "id": "Hocker",
+          "password": {
+            "unlockPasswords": [
+              "22", "zweiundzwanzig"
+            ],
+            "passwordHint": "Wie viele Pflanzen passen noch in diesen Raum?"
+          },
+          "neededItems": [],
+          "type": "table",
+          "unlocked": false,
+          "boundingBoxImage": {
+            "x": 1180,
+            "y": 640,
+            "width": 245,
+            "height": 300
+          },
+          "boundingBoxIcon": {
+            "x": 110,
+            "y": 110,
+            "width": 10,
+            "height": 10
+          },
+          "unlockHints": [
+            {
+              "numWrongAttempts": 1,
+              "hint": "Du brauchst zwei Anfragen für die Lösung. Denk dran, dass du im Notizbuch die Ausgaben vorheriger SQL-Anfragen einsehen kannst."
+            },
+            {
+              "numWrongAttempts": 2,
+              "hint": "Achte darauf, wann du SUM und wann du COUNT benutzen musst."
+            },
+            {
+              "numWrongAttempts": 5,
+              "hint": "Der erste Zauberspruch besteht aus den Wörtern *, COUNT( ), FROM, Pflanzenbuch und SELECT.\nDer zweite Zauberspruch enthält AnzahlPlätze, FROM, Lageplan und SUM( )."
+            }
+          ],
+          "nextDialog": {
+            "afterUnlock": "Hups, das erklärt natürlich auch, warum keiner mehr auf dem Hocker sitzen kann und der Boden immer voller wird... Ich dachte nicht, dass es schon so viele geworden sind. Ich muss echt welche aussortieren. Kannst du mir bitte helfen? Ich kann mich so schlecht entscheiden. Am Besten fangen wir an, diejenigen in den Müll zu tun, die nicht mehr leben. Dafür musst du das Pflanzenbuch mit der Liste kombinieren, in ich über die Gesundheit der Pflanzen Buch führe. Wenn dort eine 1 bei “Tot” eingetragen ist, heißt das, dass die Pflanze nicht mehr lebt.",
+            "afterQuery": ""
+          },
+          "tableName": "Gesundheit",
+          "description": [
+            "ID (int)",
+            "Pflanze (int)",
+            "Tot (bool)"
+          ]
+        },
+        {
+          "id": "Mülleimer",
+          "password": {
+            "unlockPasswords": [
+              "2",
+              "zwei"
+            ],
+            "passwordHint": "Wie viele Pflanzen müssen weggeschmissen werden?"
+          },
+          "neededItems": [],
+          "type": "hint",
+          "unlocked": false,
+          "boundingBoxImage": {
+            "x": 250,
+            "y": 710,
+            "width": 120,
+            "height": 65
+          },
+          "boundingBoxIcon": {
+            "x": 210,
+            "y": 210,
+            "width": 5,
+            "height": 5
+          },
+          "unlockHints": [
+            {
+              "numWrongAttempts": 1,
+              "hint": "Überlege dir, welche beiden Datenbanken du kombinieren musst und achte darauf, wann du SUM und wann du COUNT benutzen musst. Überlege dir auch, welche Voraussetzung erfüllt sein muss."
+            },
+            {
+              "numWrongAttempts": 2,
+              "hint": "Vergiss nicht, die Einträge der beiden Datenbanken durch einen gemeinsamen Wert zu verbinden."
+            },
+            {
+              "numWrongAttempts": 5,
+              "hint": "Der richtige Zauberspruch besteht aus den Wörtern 1, =, COUNT( ), FROM, Gesundheit, ID, Pflanze, Pflanzenbuch, SELECT und Tot."
+            }
+          ],
+          "nextDialog": {
+            "afterUnlock": "Genau, kurz und schmerzlos, ab in den Müll mit denen! Ich sehe jetzt auch ein, dass ich keine neuen Pflanzen mehr kaufen sollte. Außer vielleicht meine Lieblingsblumen. Mmh... vielleicht ist es auch mal interessant zu wissen, wie viele Geranien und Nelken ich eigentlich habe? Dann kann ich die Blüten auch gleich in den leeren grauen Topf auf der Fensterbank tun.",
+            "afterQuery": ""
+          },
+          "imageLink": "",
+          "text": ""
+        },
+        {
+          "id": "GrauerLeererBlumentopf",
+          "password": {
+            "unlockPasswords": [
+              "4",
+              "vier"
+            ],
+            "passwordHint": "Wie viele einzelne Pflanzen gibt es von den beiden Lieblingssorten?"
+          },
+          "neededItems": [],
+          "type": "table",
+          "unlocked": false,
+          "boundingBoxImage": {
+            "x": 250,
+            "y": 710,
+            "width": 120,
+            "height": 65
+          },
+          "boundingBoxIcon": {
+            "x": 210,
+            "y": 210,
+            "width": 5,
+            "height": 5
+          },
+          "unlockHints": [
+            {
+              "numWrongAttempts": 1,
+              "hint": "Zähle alle passenden Einträge mit COUNT."
+            },
+            {
+              "numWrongAttempts": 2,
+              "hint": "Manchmal nutzt man umgangssprachlich ein “und”, aber in SQL müssen die Bedingungen durch ein OR verbunden werden, da jedes Attribut nur einen Wert annehmen kann, also entweder das eine oder das andere sein kann."
+            },
+            {
+              "numWrongAttempts": 5,
+              "hint": "Der richtige Zauberspruch beinhaltet die Wörter COUNT( ), FROM, OR, SELECT und WHERE."
+            }
+          ],
+          "nextDialog": {
+            "afterUnlock": "Ach, das geht ja noch. Also falls du mir mal eine Freude machen willst, bring mir einfach eine von den beiden mit. Oder eine magische Blume, davon habe ich so einige. Die dort drüben kann zum Beispiel sprechen, und die zweite von links auf dem Fensterbrett kann die Gedanken aller Pflanzen zeichnen und einem so Nachrichten übermitteln. Du musst sie nur zuerst mit ihrem richtigen Namen ansprechen. Leider weiß ich nur noch, dass der irgendwas mit “bert” drin ist. Und auf jeden Fall ist sie entweder ein “ArbolomVonWisdom” oder eine “FloraAllwissendaria”.",
+            "afterQuery": ""
+          },
+          "tableName": "PflanzenPlatz",
+          "description": [
+            "ID (int)",
+            "Pflanze (int)",
+            "Stellplatz (varchar)",
+            "HatUntertopf (bool)",
+            "HatÜbertopf (bool)",
+            "HatDirekteSonne (bool)"
+          ]
+        },
+        {
+          "id": "FensterbankPflanze",
+          "password": {
+            "unlockPasswords": [
+              "AlbertaChristiano"
+            ],
+            "passwordHint": "Wie lautet der Name der Pflanze?"
+          },
+          "neededItems": [],
+          "type": "table",
+          "unlocked": false,
+          "boundingBoxImage": {
+            "x": 250,
+            "y": 710,
+            "width": 120,
+            "height": 65
+          },
+          "boundingBoxIcon": {
+            "x": 210,
+            "y": 210,
+            "width": 5,
+            "height": 5
+          },
+          "unlockHints": [
+            {
+              "numWrongAttempts": 1,
+              "hint": "Kombiniere die Tabellen PflanzenPlatz und Pflanzenbuch und schaue dir an, welche Attribute du festlegen kannst."
+            },
+            {
+              "numWrongAttempts": 2,
+              "hint": "Setze die ID aus dem Pflanzenbuch mit der Pflanze aus dem PflanzenPlatz gleich. Der Ort, den du suchst ist die Fensterbank."
+            },
+            {
+              "numWrongAttempts": 3,
+              "hint": "Nutze LIKE, um nach dem Teil des Namens zu suchen."
+            },
+            {
+              "numWrongAttempts": 4,
+              "hint": "Kombiniere AND und OR in deiner Bedingung und klammere den OR-Teil, damit alles in der richtigen Reihenfolge ausgewertet wird."
+            },
+            {
+              "numWrongAttempts": 5,
+              "hint": "Der richtige Zauberspruch beinhaltet die Wörter AND (4-mal), FROM, LIKE, OR, Pflanzenbuch, PflanzenPlatz, SELECT und WHERE."
+            }
+          ],
+          "nextDialog": {
+            "afterUnlock": "",
+            "afterQuery": ""
+          },
+          "tableName": "PflanzenUmgebung",
+          "description": [
+            "ID (int)",
+            "Pflanze (int)",
+            "Wunschtemperatur (int)",
+            "Lichtverhältnisse (varchar)",
+            "Windresistenz (bool)"
+          ]
+        },
+        {
+          "id": "Thermometer",
+          "password": {
+            "unlockPasswords": [
+              "23", "23.0", "23,0", "dreiundzwanzig"
+            ],
+            "passwordHint": "Auf wie viel Grad als Temperatur können sich alle Pflanzen einigen?"
+          },
+          "neededItems": [],
+          "type": "hint",
+          "unlocked": false,
+          "boundingBoxImage": {
+            "x": 250,
+            "y": 710,
+            "width": 120,
+            "height": 65
+          },
+          "boundingBoxIcon": {
+            "x": 210,
+            "y": 210,
+            "width": 5,
+            "height": 5
+          },
+          "unlockHints": [
+            {
+              "numWrongAttempts": 1,
+              "hint": "Schaue in allen Tabellen, ob du ein Attribut findest, dass dir helfen kann."
+            },
+            {
+              "numWrongAttempts": 2,
+              "hint": "Nutze die Funktion AVG (Mittelwert berechnen) und die Tabelle PflanzenUmgebung."
+            },
+            {
+              "numWrongAttempts": 5,
+              "hint": "Der richtige Zauberspruch besteht aus den Wörtern AVG( ), FROM, PflanzenUmgebung, SELECT und Wunschtemperatur;"
+            }
+          ],
+          "nextDialog": {
+            "afterUnlock": "Oh, wie schön angenehm warm es jetzt hier ist, auch wenn ich ein ruhiges Plätzchen am Kamin bevorzuge. Komisch, einige Pflanzen scheinen noch nicht ganz zufrieden zu sein. Hast du wirklich alle in die Rechnung miteinbezogen? Oh, jetzt fällt es mir wieder ein, ich abe nicht bei allen Pflanzen eine Wunschtemperatur eingetragen, weil ich sie bei einigen gar nicht weiß. In dem Fall steht dort NULL statt einem Wert. Es wäre interessant zu wissen, bei wie vielen Pflanzen die Wunschtemperatur fehlt. Am besten schreibe ich das vorne mit in das Buch für den Pflanzenboden, dass ich bei diesen besonders auf die anderen Faktoren achten muss, damit es ihnen gut geht.",
+            "afterQuery": ""
+          },
+          "imageLink": "",
+          "text": ""
+        },
+        {
+          "id": "PflanzenBoden",
+          "password": {
+            "unlockPasswords": [
+              "7",
+              "sieben"
+            ],
+            "passwordHint": "Bei wie vielen Pflanzen ist keine Wunschtemperatur eingetragen?"
+          },
+          "neededItems": [],
+          "type": "table",
+          "unlocked": false,
+          "boundingBoxImage": {
+            "x": 980,
+            "y": 50,
+            "width": 180,
+            "height": 600
+          },
+          "boundingBoxIcon": {
+            "x": 110,
+            "y": 110,
+            "width": 10,
+            "height": 10
+          },
+          "unlockHints": [
+            {
+              "numWrongAttempts": 1,
+              "hint": "Ein Eintrag einer Tabelle ist NULL, wenn der Wert nicht bekannt ist oder nicht existiert."
+            },
+            {
+              "numWrongAttempts": 2,
+              "hint": "Nutze “IS NULL”, um zu prüfen, ob ein Eintrag NULL ist und zähle diese Einträge. Achte darauf, dass “= NULL” nicht funktioniert, da “NULL” kein eigenständiger Wert ist, sondern nur eine Art Platzhalter für einen leeren Eintrag."
+            },
+            {
+              "numWrongAttempts": 5,
+              "hint": "Der richtige Zauberspruch besteht aus den Wörtern *, COUNT( ), FROM, IS, NULL, PflanzenUmgebung, SELECT, WHERE und Wunschtemperatur."
+            }
+          ],
+          "nextDialog": {
+            "afterUnlock": "Jetzt da die Temperatur fast für alle passt, sollten wir vielleicht auch einmal schauen, welche Pflanzen gegossen werden müssen. Dann geht es allen wieder gut, auch denen, die nicht zufrieden mit der Temperatur sind. Am besten summieren wir erstmal die Menge an Wasser, die die Pflanzen brauchen, die auch wirklich gegossen werden müssen, damit wir genug in die Gießkanne füllen. Oh, es sind auch schon 2 Liter in der Gießkanne, dann müssen wir ja nur schauen, wie viel noch fehlt.",
+            "afterQuery": ""
+          },
+          "tableName": "PflanzenBoden",
+          "description": [
+            "ID (int)",
+            "Pflanze (int)",
+            "MussGegossenWerden (bool)",
+            "Milliliter (int)"
+          ]
+        },
+        {
+          "id": "Gießkanne",
+          "password": {
+            "unlockPasswords": [
+              "2.046", "2,046"
+            ],
+            "passwordHint": "Wie viel Wasser soll aufgefüllt werden, in Litern angegeben?"
+          },
+          "neededItems": [],
+          "type": "hint",
+          "unlocked": false,
+          "boundingBoxImage": {
+            "x": 250,
+            "y": 710,
+            "width": 120,
+            "height": 65
+          },
+          "boundingBoxIcon": {
+            "x": 210,
+            "y": 210,
+            "width": 5,
+            "height": 5
+          },
+          "unlockHints": [
+            {
+              "numWrongAttempts": 1,
+              "hint": "Schaue dir, an welche Tabellen du kombinieren musst."
+            },
+            {
+              "numWrongAttempts": 2,
+              "hint": " Überlege dir, ob du SUM oder COUNT benötigst und welche Einschränkung du zum Verbinden der Tabellen benötigst, um die richtigen Einträge zu finden."
+            },
+            {
+              "numWrongAttempts": 5,
+              "hint": "Der richtige Zauberspruch beinhaltet die Wörter AND, FROM, SELECT, SUM( ) und WHERE."
+            }
+          ],
+          "nextDialog": {
+            "afterUnlock": "Du hast ja einen richtig grünen Daumen. Jetzt sehen wirklich alle Blumen glücklich aus. Ich weiß das du bei dieser Lektion nur Garten-Zaubersprüche gelernt hast, aber vertraue mir, wenn ich dir sage, dass du mit den Pflanzen umgehe können musst, bevor du weißt welche Wirkungen sie haben und welche du für Zaubertränke benutzen kannst. Such mir aber bitte schon einmal die Pflanzenart mit den längsten Blättern heraus, die brauche ich für ... private Zwecke. Da gibt es mehrere, bitte die, die nicht giftig für mich ist. Achso und pass auf, einige von denen fressen Fleisch, die würden mir nichts tun, aber denen solltest du\nlieber nicht zu nahe kommen. Außerdem sollte sie kleiner als 50 sein und sie sollte nicht eine Blütengröße von 7 haben, das ist immer nervig. Bitte bring die mit in den nächsten Raum, dann zeige ich dir in Zukunft wie man die verarbeitet.",
+            "afterQuery": ""
+          },
+          "imageLink": "",
+          "text": ""
+        },
+        {
+          "id": "Ausgang",
+          "password": {
+            "unlockPasswords": [
+              "Katzenminze"
+            ],
+            "passwordHint": "Welche Pflanzenart kommt mit in den nächsten Raum?"
+          },
+          "neededItems": [],
+          "type": "exit",
+          "unlocked": false,
+          "boundingBoxImage": {
+            "x": 510,
+            "y": 240,
+            "width": 280,
+            "height": 540
+          },
+          "boundingBoxIcon": {
+            "x": 10,
+            "y": 10,
+            "width": 20,
+            "height": 20
+          },
+          "unlockHints": [
+            {
+              "numWrongAttempts": 1,
+              "hint": "Überlege dir, welche Datenbanken du kombinieren musst."
+            },
+            {
+              "numWrongAttempts": 2,
+              "hint": "Überlege dir, welche Attribute du benötigst, um die richtigen Einträge zu finden. Nutze außerdem MAX."
+            },
+            {
+              "numWrongAttempts": 5,
+              "hint": "SELECT , MAX( ) FROM , WHERE\nAND\nAND ;"
+            }
+          ],
+          "nextDialog": {
+            "afterUnlock": "Super du hast es geschafft!",
+            "afterQuery": ""
+          }
+        }
+      ]
+    }
+  ]
+}
