@@ -1,0 +1,11 @@
+.tableItem {
+    background-color: #e7e0fa;
+    min-height: 55px;
+    width: 100%;
+}
+
+.tableItemIcon {
+    line-height: 1;
+    text-decoration: none;
+    font-size: 22px;
+}
