@@ -7,15 +7,27 @@ def start_page(request):
     return render(request, "editor/start.html")
 
 def level_view(request):
-    gameFile = Path(settings.BASE_DIR / "SQLSpellQuest.json")
 
-    with open(gameFile, "r", encoding="utf-8") as file:
-        game = json.load(file)
-
-    nameOfLevels = []
-    levelList = game["level"]
-    for x in levelList:
-        nameOfLevels.append(x["id"])
     return render(request, "editor/level.html", {
-        "nameOfLevels": nameOfLevels,
+        "nameOfLevels": []
     })
+
+
+def upload_json_view(request):
+    if request.method == "POST":
+        uploaded_file = request.FILES.get("json_file")
+
+        if not uploaded_file:
+            return render(request, "editor/start.html", {"error": "No file uploaded."})
+
+        fileContent = uploaded_file.read().decode("utf-8")
+        game= json.loads(fileContent)
+
+        nameOfLevels = []
+        for level in game["level"]:
+            nameOfLevels.append(level["id"])
+        return render(request, "editor/level.html", {
+
+            "nameOfLevels": nameOfLevels
+        })
+    return render(request, "editor/start.html")

@@ -16,7 +16,15 @@ Startseite | SQL Spell Quest Editor
         Wähle eine Game-Level-JSON-Datei aus, um ein Game zu editieren.
       </p>
 
-      {% include "editor/components/button/button.html" with title="Upload a JSON" %}
+      <form method="post" enctype="multipart/form-data" action="{% url 'upload_json' %}">
+        {% csrf_token %}
+
+        <input type="file" name="json_file" accept=".json,application/json">
+
+        <button type="submit">
+          Upload a JSON
+        </button>
+      </form>
     </section>
   </div>
 </main>
