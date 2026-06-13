@@ -1,0 +1,22 @@
+body {
+    margin: 0;
+    background-color: #ffffff;
+}
+
+.levelPage {
+    min-height: 100vh;
+    padding: 70px 85px;
+}
+
+.levelList {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+    margin-top: 90px;
+}
+
+.createLevelSection {
+    display: flex;
+    justify-content: center;
+    margin-top: 85px;
+}
