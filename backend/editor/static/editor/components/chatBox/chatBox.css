@@ -1,0 +1,59 @@
+.game-wizard-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.game-wizard-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
+  color: #212529;
+  white-space: nowrap;
+}
+
+.game-wizard-card {
+  background-color: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 507px;
+}
+
+.game-wizard-input {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 28px;
+  color: #68717a;
+  width: 100%;
+  min-height: 140px;
+  border: none;
+  resize: vertical;
+  padding: 0;
+  box-shadow: none;
+}
+
+.game-wizard-input::placeholder {
+  color: #68717a;
+  opacity: 1;
+}
+
+.game-wizard-input:focus {
+  border: none;
+  box-shadow: none;
+  outline: none;
+}
+
+.game-wizard-input:read-only {
+  cursor: default;
+  background-color: transparent;
+}
+
+.game-wizard-input:not(:read-only) {
+  cursor: text;
+  background-color: #ffffff;
+}
