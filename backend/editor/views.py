@@ -40,3 +40,11 @@ def component_test_view(request):
         {"number": 7, "active": False},{"number": 8, "active": False},
     ]
     return render(request, "editor/test.html", {"steps": steps,})
+
+def create_level(request):
+    context = {
+        "is_editable": True,
+        "game_wizard_input": "",
+    }
+
+    return render(request, "chatBox.html", context)

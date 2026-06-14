@@ -1,0 +1,18 @@
+<div class="game-wizard-wrap">
+  <label for="{{ input_id|default:'gameWizardInput' }}" class="game-wizard-title fw-semibold mb-0">
+    {{ title|default:"Game Wizard" }}
+  </label>
+
+  <div class="card game-wizard-card">
+    <div class="card-body p-0">
+      <textarea
+        id="{{ input_id|default:'gameWizardInput' }}"
+        name="{{ input_name|default:'game_wizard_input' }}"
+        class="form-control game-wizard-input"
+        rows="5"
+        placeholder="{{ placeholder_text|default:'Schreibe hier deine Nachricht...' }}"
+        {% if not is_editable %}readonly{% endif %}
+      >{{ game_wizard_input|default:"" }}</textarea>
+    </div>
+  </div>
+</div>
