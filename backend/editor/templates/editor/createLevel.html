@@ -1,0 +1,45 @@
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Level erstellen | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/chatBox/chatBox.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/button/button.css' %}">
+<link rel="stylesheet" href="{% static 'editor/css/createLevel.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="create-level-page">
+
+  <section class="create-level-status">
+    {% include "editor/components/statusBar/statusBar.html" %}
+  </section>
+
+  <section class="create-level-wizard container">
+    <div class="row align-items-center justify-content-center create-level-wizard-row">
+
+      <div class="col-auto">
+        <img
+          src="{% static 'editor/img/cat1.png' %}"
+          alt="Cosmo Wizard"
+          class="create-level-cosmo"
+        >
+      </div>
+
+      <div class="col-md-6">
+        {% include "editor/components/chatBox/chatBox.html" with is_editable=False game_wizard_input="Hey ich bin Cosmo dein Begleiter in der Erstellung von einem neuen Level. Dies klappt ganz einfach ohne großen technischen Hintergrund Step by Step. Klicke auf Start damit wir beginnen können" placeholder_text="Nicht bearbeitbar" %}
+      </div>
+
+    </div>
+  </section>
+
+  <section class="create-level-button-section">
+    {% include "editor/components/button/button.html" with title="Start" %}
+  </section>
+
+</main>
+{% endblock %}
