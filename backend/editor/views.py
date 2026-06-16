@@ -42,9 +42,19 @@ def component_test_view(request):
     return render(request, "editor/test.html", {"steps": steps,})
 
 def create_level(request):
+    steps = [
+        {"number": 1, "active": False},
+        {"number": 2, "active": False},
+        {"number": 3, "active": False},
+        {"number": 4, "active": False},
+        {"number": 5, "active": False},
+        {"number": 6, "active": False},
+        {"number": 7, "active": False},
+        {"number": 8, "active": False},
+    ]
+
     context = {
-        "is_editable": True,
-        "game_wizard_input": "",
+        "steps": steps,
     }
 
-    return render(request, "chatBox.html", context)
+    return render(request, "editor/createLevel.html", context)

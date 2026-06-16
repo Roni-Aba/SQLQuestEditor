@@ -13,10 +13,10 @@
     rel="stylesheet"
   >
 
-  {% load static %}
   <link rel="stylesheet" href="{% static 'editor/components/navbar/navbar.css' %}">
-  <link rel="stylesheet" href="{% static 'editor/components/button/button.css' %}">
-  <link rel="stylesheet" href="{% static 'editor/css/start.css' %}">
+
+  {% block additional_css %}
+  {% endblock %}
 </head>
 
 <body>
