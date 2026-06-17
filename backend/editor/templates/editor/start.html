@@ -1,11 +1,16 @@
 {% extends "editor/base.html" %}
+{% load static %}
 
 {% block title %}
 Startseite | SQL Spell Quest Editor
 {% endblock %}
 
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'editor/css/start.css' %}">
+{% endblock %}
+
 {% block content %}
-<main class="start-page d-flex align-items-center">
+<main class="start-page">
   <div class="container text-center">
     <section class="start-hero mx-auto">
       <h1 class="display-5 fw-bold mb-3">
