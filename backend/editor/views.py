@@ -52,9 +52,20 @@ def create_level(request):
         {"number": 7, "active": False},
         {"number": 8, "active": False},
     ]
-
-    context = {
-        "steps": steps,
-    }
-
+    context = {"steps": steps,}
     return render(request, "editor/createLevel.html", context)
+
+def auswahl_view(request):
+    steps = [
+        {"number": 1, "active": True},
+        {"number": 2, "active": False},
+        {"number": 3, "active": False},
+        {"number": 4, "active": False},
+        {"number": 5, "active": False},
+        {"number": 6, "active": False},
+        {"number": 7, "active": False},
+        {"number": 8, "active": False},
+    ]
+    return render(request, "editor/auswahl.html", {
+        "steps": steps
+    })
