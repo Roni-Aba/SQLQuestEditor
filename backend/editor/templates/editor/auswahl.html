@@ -47,11 +47,14 @@
   </section>
 
   <section class="guided-section">
-    <a href="/createLevel/guided/" class="text-decoration-none">
+    <a href="/createLevel/" class="text-decoration-none">
       {% include "editor/components/button/button.html" with title="Geführte Levelerstellung" %}
     </a>
   </section>
 
 </main>
-
+<script>
+  const currentLevelDebug = JSON.parse('{{ debug_json|escapejs }}');
+  console.log("Aktueller Level-Zwischenstand:", currentLevelDebug);
+</script>
 {% endblock %}

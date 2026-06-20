@@ -7,4 +7,5 @@ urlpatterns = [
     path("upload-json/", views.upload_json_view, name="upload_json"),
     path("components/", views.component_test_view, name="component_test"),
     path("createLevel/", views.create_level, name="create_level"),
-    path("auswahl/", views.auswahl_view, name="auswahl_view"),]
+    path("auswahl/", views.auswahl_view, name="auswahl_view"),
+    path("createLevel1/", views.create_level1_view, name="create_level1"),]
