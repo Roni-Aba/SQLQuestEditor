@@ -1,13 +1,5 @@
-.create-level-button-section {
-  margin-top: 230px;
-  display: flex;
-  justify-content: center;
-  width: 100%;
-}
-
 .create-level-page {
   min-height: calc(100vh - 56px);
-  background-color: #ffffff;
 }
 
 .create-level-status {
@@ -29,7 +21,4 @@
 
 .create-level-button-section {
   margin-top: 260px;
-  display: flex;
-  justify-content: center;
-  width: 100%;
 }

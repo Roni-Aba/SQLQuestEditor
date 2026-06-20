@@ -1,0 +1,149 @@
+.create-level1-page {
+  min-height: calc(100vh - 56px);
+  padding: 36px 64px 48px;
+}
+
+.create-level1-content {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.create-level1-form-row {
+  --bs-gutter-x: 72px;
+  --bs-gutter-y: 40px;
+}
+
+.create-level1-helper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.create-level1-cosmo {
+  width: 220px;
+  height: 220px;
+  margin-left: 12px;
+}
+
+.create-level1-helper p {
+  max-width: 260px;
+  margin: 36px 0 0;
+  color: var(--create-level-text);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.08;
+}
+
+.create-level1-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 44px;
+}
+
+.create-level1-image-actions {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  margin-top: -8px;
+}
+
+.create-level1-small-button {
+  font-size: 11px;
+  line-height: 1;
+  padding: 5px 10px;
+}
+
+.create-level1-navigation {
+  display: flex;
+  justify-content: center;
+  gap: 96px;
+  margin-top: 74px;
+}
+
+.create-level1-button {
+  min-width: 110px;
+  font-size: 24px;
+  line-height: 1.2;
+  padding: 10px 20px;
+  text-align: center;
+}
+
+@media (max-width: 1120px) {
+  .create-level1-page {
+    padding: 32px 40px 48px;
+  }
+
+  .create-level1-content {
+    max-width: 900px;
+  }
+
+  .create-level1-form-row {
+    --bs-gutter-x: 48px;
+  }
+
+  .create-level1-cosmo {
+    width: 200px;
+    height: 200px;
+  }
+}
+
+@media (max-width: 820px) {
+  .create-level1-page {
+    padding: 24px 32px 48px;
+  }
+
+  .create-level1-steps {
+    justify-content: flex-start;
+    gap: 16px;
+    margin-bottom: 40px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .create-level1-helper {
+    align-items: center;
+    text-align: center;
+  }
+
+  .create-level1-helper p {
+    max-width: 480px;
+    margin-top: 24px;
+  }
+
+  .create-level1-fields {
+    margin-top: 32px;
+  }
+
+  .create-level1-image-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .create-level1-navigation {
+    gap: 28px;
+    margin-top: 48px;
+  }
+}
+
+@media (max-width: 520px) {
+  .create-level1-page {
+    padding: 20px;
+  }
+
+  .create-level1-steps li {
+    width: 48px;
+    height: 48px;
+    flex-basis: 48px;
+    font-size: 22px;
+  }
+
+  .create-level1-field label,
+  .create-level1-helper p {
+    font-size: 18px;
+  }
+
+  .create-level1-button {
+    font-size: 22px;
+  }
+}

@@ -9,6 +9,7 @@ Level erstellen | SQL Spell Quest Editor
 <link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
 <link rel="stylesheet" href="{% static 'editor/components/chatBox/chatBox.css' %}">
 <link rel="stylesheet" href="{% static 'editor/components/button/button.css' %}">
+<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
 <link rel="stylesheet" href="{% static 'editor/css/createLevel.css' %}">
 {% endblock %}
 
@@ -37,9 +38,11 @@ Level erstellen | SQL Spell Quest Editor
     </div>
   </section>
 
-  <section class="create-level-button-section">
+<section class="create-level-button-section">
+  <a href="{% url 'create_level1' %}" class="text-decoration-none">
     {% include "editor/components/button/button.html" with title="Start" %}
-  </section>
+  </a>
+</section>
 
 </main>
 {% endblock %}

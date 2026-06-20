@@ -1,0 +1,145 @@
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Level erstellen | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
+<link rel="stylesheet" href="{% static 'editor/css/createLevel1.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="create-level1-page">
+  <div class="container-fluid px-0">
+    <ol class="create-level1-steps" aria-label="Fortschritt der Levelerstellung">
+      {% if steps %}
+        {% for step in steps %}
+          <li class="{% if step.active %}is-active{% endif %}">
+            {{ step.number }}
+          </li>
+        {% endfor %}
+      {% else %}
+        <li class="is-active">1</li>
+        <li>2</li>
+        <li>3</li>
+        <li>4</li>
+        <li>5</li>
+        <li>6</li>
+        <li>7</li>
+        <li>8</li>
+      {% endif %}
+    </ol>
+
+    <form
+      class="create-level1-content"
+      action="{% url 'create_level1' %}"
+      method="post"
+      enctype="multipart/form-data"
+    >
+      {% csrf_token %}
+
+      <div class="row align-items-start create-level1-form-row">
+        <aside class="col-12 col-md-4 create-level1-helper" aria-label="Hilfetext von Cosmo">
+          <img
+            src="{% static 'editor/img/cat1.png' %}"
+            alt="Cosmo Wizard"
+            class="create-level1-cosmo"
+          >
+
+          <p>
+            Hier legen wir die Grundsteine unseres Levels fest. Gib dem Level
+            einen Namen, wähle ein Hintergrundbild aus und lege fest, wie der
+            Nutzer begrüßt werden soll.
+          </p>
+        </aside>
+
+        <section class="col-12 col-md-8 create-level1-fields" aria-label="Levelgrunddaten">
+          <div class="create-level1-field">
+            <label for="level-name">
+              Verrate mir doch bitte wie das Level heißen soll
+            </label>
+
+            <input
+              id="level-name"
+              name="level_name"
+              type="text"
+              placeholder="Schreibe hinein"
+              value="{{ saved_level.id|default:'' }}"
+            >
+          </div>
+
+          <div class="create-level1-field">
+            <label for="level-picture-input">
+              Welches Hintergrundbild soll das Level verwenden?
+            </label>
+
+            <div class="create-level1-image-actions" aria-label="Bildoptionen">
+              <label for="level-picture-input" class="create-level1-small-button">
+                Verwende eigenes Bild für das Level
+              </label>
+
+              <input
+                type="file"
+                id="level-picture-input"
+                name="levelPicture"
+                accept="image/*"
+                hidden
+              >
+
+              <span class="create-level1-image-feedback">
+                {% if saved_level.levelPicture %}
+                  {{ saved_level.levelPicture }}
+                {% else %}
+                  Noch kein Bild ausgewählt
+                {% endif %}
+              </span>
+            </div>
+          </div>
+
+          <div class="create-level1-field">
+            <label for="level-greeting">
+              Wie soll der Nutzer des Levels begrüßt werden?
+            </label>
+
+            <input
+              id="level-greeting"
+              name="level_greeting"
+              type="text"
+              placeholder="Schreibe hinein"
+              value="{{ saved_level.startDialog|default:'' }}"
+            >
+          </div>
+        </section>
+      </div>
+
+      <section class="create-level1-navigation" aria-label="Seitennavigation">
+      <a class="create-level1-button" href="{% url 'create_level' %}">
+        Zurück
+      </a>
+
+      <button type="submit" class="create-level1-button">
+        Weiter
+      </button>
+    </section>
+    </form>
+  </div>
+</main>
+
+<script>
+  const createLevel1Form = document.querySelector(".create-level1-content");
+
+  createLevel1Form.addEventListener("submit", function () {
+    const formData = new FormData(createLevel1Form);
+
+    const debugData = {
+      id: formData.get("level_name"),
+      levelPicture: formData.get("levelPicture")?.name || "",
+      startDialog: formData.get("level_greeting")
+    };
+
+    console.log("createLevel1 wird abgeschickt:", debugData);
+  });
+</script>
+{% endblock %}
