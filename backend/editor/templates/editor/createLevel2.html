@@ -9,7 +9,6 @@ Level erstellen | SQL Spell Quest Editor
 <link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
 <link rel="stylesheet" href="{% static 'editor/css/createLevel2.css' %}">
 <link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
-
 {% endblock %}
 
 {% block content %}
@@ -45,23 +44,23 @@ Level erstellen | SQL Spell Quest Editor
                 <section class="col-12 col-md-8 create-level2-fields" aria-label="SQL-Anzeigebegrenzung">
 
                     <div class="mb-5">
-                        {% include "editor/components/chatbox/chatbox.html" with title="Anzahl der Spalten, welche angezeigt werden sollen" input_id="max_columns" input_name="max_columns" placeholder_text="Schreibe eine Nummer hinein" game_wizard_input=saved_level.maxColumns is_editable=True %}
+                        {% include "editor/components/chatbox/chatbox.html" with title="Anzahl der Spalten, welche angezeigt werden sollen" input_id="max_columns" input_name="max_columns" placeholder_text="Schreibe eine Nummer hinein" game_wizard_input=form_values.max_columns is_editable=True %}
                     </div>
 
                     <div class="mb-5">
-                        {% include "editor/components/chatbox/chatbox.html" with title="Anzahl der Zeilen, welche angezeigt werden sollen" input_id="max_rows" input_name="max_rows" placeholder_text="Schreibe eine Nummer hinein" game_wizard_input=saved_level.maxRows is_editable=True %}
+                        {% include "editor/components/chatbox/chatbox.html" with title="Anzahl der Zeilen, welche angezeigt werden sollen" input_id="max_rows" input_name="max_rows" placeholder_text="Schreibe eine Nummer hinein" game_wizard_input=form_values.max_rows is_editable=True %}
                     </div>
 
                     <div class="mb-4">
-                        {% include "editor/components/chatbox/chatbox.html" with title="Meldung bei zu vielen Zeilen" input_id="too_many_rows_message" input_name="too_many_rows_message" placeholder_text="Schreibe hinein" game_wizard_input=saved_level.tooManyRowsMessage is_editable=True %}
+                        {% include "editor/components/chatbox/chatbox.html" with title="Meldung bei zu vielen Zeilen" input_id="too_many_rows_message" input_name="too_many_rows_message" placeholder_text="Schreibe hinein" game_wizard_input=form_values.too_many_rows_message is_editable=True %}
                     </div>
 
                     <div class="mb-4">
-                        {% include "editor/components/chatbox/chatbox.html" with title="Meldung bei zu vielen Spalten" input_id="too_many_columns_message" input_name="too_many_columns_message" placeholder_text="Schreibe hinein" game_wizard_input=saved_level.tooManyColumnsMessage is_editable=True %}
+                        {% include "editor/components/chatbox/chatbox.html" with title="Meldung bei zu vielen Spalten" input_id="too_many_columns_message" input_name="too_many_columns_message" placeholder_text="Schreibe hinein" game_wizard_input=form_values.too_many_columns_message is_editable=True %}
                     </div>
 
                     <div class="mb-5">
-                        {% include "editor/components/chatbox/chatbox.html" with title="Meldung bei zu vielen Zeilen und Spalten" input_id="too_many_rows_columns_message" input_name="too_many_rows_columns_message" placeholder_text="Schreibe hinein" game_wizard_input=saved_level.tooManyRowsColumnsMessage is_editable=True %}
+                        {% include "editor/components/chatbox/chatbox.html" with title="Meldung bei zu vielen Zeilen und Spalten" input_id="too_many_rows_columns_message" input_name="too_many_rows_columns_message" placeholder_text="Schreibe hinein" game_wizard_input=form_values.too_many_rows_columns_message is_editable=True %}
                     </div>
 
                 </section>
@@ -79,5 +78,4 @@ Level erstellen | SQL Spell Quest Editor
 
     </div>
 </main>
-
 {% endblock %}

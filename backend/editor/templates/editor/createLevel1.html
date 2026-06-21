@@ -119,27 +119,12 @@ Level erstellen | SQL Spell Quest Editor
         Zurück
       </a>
 
-     <a class="create-level1-button" href="{% url 'create_level2' %}">
-        Weiter
-      </a>
+     <button type="submit" class="create-level1-button">
+      Weiter
+    </button>
     </section>
     </form>
   </div>
 </main>
 
-<script>
-  const createLevel1Form = document.querySelector(".create-level1-content");
-
-  createLevel1Form.addEventListener("submit", function () {
-    const formData = new FormData(createLevel1Form);
-
-    const debugData = {
-      id: formData.get("level_name"),
-      levelPicture: formData.get("levelPicture")?.name || "",
-      startDialog: formData.get("level_greeting")
-    };
-
-    console.log("createLevel1 wird abgeschickt:", debugData);
-  });
-</script>
 {% endblock %}
