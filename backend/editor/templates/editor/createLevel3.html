@@ -1,0 +1,188 @@
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Level erstellen | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
+<link rel="stylesheet" href="{% static 'editor/css/createLevel3.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/tag/tag.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<main class="create-level3-page">
+  <div class="container-fluid px-0">
+
+    {% include "editor/components/statusbar/statusbar.html" with steps=steps %}
+
+    <form
+      class="create-level3-content"
+      action="{% url 'create_level3' %}"
+      method="post"
+    >
+      {% csrf_token %}
+
+      <div class="row align-items-start create-level3-form-row">
+
+        <aside class="col-12 col-md-4 create-level3-helper" aria-label="Hilfetext von Cosmo">
+          <p>
+            Erzähle mir gerne was du dir gerade so vorstellst.
+          </p>
+
+          <img
+            src="{% static 'editor/img/cat1.png' %}"
+            alt="Cosmo Wizard"
+            class="create-level3-cosmo"
+          >
+        </aside>
+
+        <section class="col-12 col-md-8 create-level3-fields" aria-label="Gegenstände">
+
+          <div class="create-level3-field">
+            <label for="item-name">
+              Wie soll der Gegenstand heißen?
+            </label>
+
+            <input
+              id="item-name"
+              name="item_name"
+              type="text"
+              class="form-control"
+              placeholder="Schreibe hinein"
+              value="{{ form_values.item_name|default:'' }}"
+            >
+          </div>
+
+          <div class="create-level3-field">
+            <label for="item-select">
+              Wähle Gegenstände aus welche freigeschaltet sein sollten
+            </label>
+
+            <select id="item-select" class="form-select">
+              <option value="">Gegenstände</option>
+              <option value="Ausrüstungsliste">Ausrüstungsliste</option>
+              <option value="Zauberhut">Zauberhut</option>
+              <option value="Zauberstab">Zauberstab</option>
+            </select>
+          </div>
+
+          <div
+            id="selected-tags"
+            class="create-level3-tags"
+            aria-label="Ausgewählte Gegenstände"
+          ></div>
+
+          <input
+            type="hidden"
+            id="unlocked-items-input"
+            name="unlocked_items"
+            value="{{ form_values.unlocked_items_json|default:'[]' }}"
+          >
+
+        </section>
+      </div>
+
+      <section class="create-level3-navigation" aria-label="Seitennavigation">
+        <a class="create-level1-button" href="{% url 'create_level2' %}">
+          Zurück
+        </a>
+
+        <button type="submit" class="create-level1-button">
+          Weiter
+        </button>
+      </section>
+
+    </form>
+  </div>
+</main>
+
+<script src="{% static 'editor/js/debugJson.js' %}"></script>
+
+<script>
+  const itemSelect = document.querySelector("#item-select");
+  const selectedTagsContainer = document.querySelector("#selected-tags");
+  const unlockedItemsInput = document.querySelector("#unlocked-items-input");
+  const createLevel3Form = document.querySelector(".create-level3-content");
+
+  let selectedItems = [];
+
+  try {
+    selectedItems = JSON.parse(unlockedItemsInput.value || "[]");
+  } catch {
+    selectedItems = [];
+  }
+
+  function updateHiddenInput() {
+    unlockedItemsInput.value = JSON.stringify(selectedItems);
+  }
+
+  function renderTags() {
+    selectedTagsContainer.innerHTML = "";
+
+    selectedItems.forEach(function (item) {
+      const tag = document.createElement("span");
+      tag.className = "tag-neutral";
+
+      const title = document.createElement("span");
+      title.className = "tag-title";
+      title.textContent = item;
+
+      const removeButton = document.createElement("button");
+      removeButton.type = "button";
+      removeButton.className = "tag-btn tag-remove";
+      removeButton.setAttribute("aria-label", "Entfernen");
+      removeButton.textContent = "×";
+
+      removeButton.addEventListener("click", function () {
+        selectedItems = selectedItems.filter(function (selectedItem) {
+          return selectedItem !== item;
+        });
+
+        updateHiddenInput();
+        renderTags();
+      });
+
+      tag.appendChild(title);
+      tag.appendChild(removeButton);
+
+      selectedTagsContainer.appendChild(tag);
+    });
+  }
+
+  itemSelect.addEventListener("change", function () {
+    const selectedValue = itemSelect.value;
+
+    if (!selectedValue) {
+      return;
+    }
+
+    if (!selectedItems.includes(selectedValue)) {
+      selectedItems.push(selectedValue);
+      updateHiddenInput();
+      renderTags();
+    }
+
+    itemSelect.value = "";
+  });
+
+  createLevel3Form.addEventListener("submit", function () {
+    const formData = new FormData(createLevel3Form);
+
+    const json = {
+      item: {
+        id: formData.get("item_name"),
+        unlockedItems: JSON.parse(formData.get("unlocked_items") || "[]")
+      }
+    };
+
+    debugJson(json);
+  });
+
+  renderTags();
+</script>
+
+{% endblock %}
