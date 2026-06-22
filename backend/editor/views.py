@@ -8,11 +8,7 @@ def get_steps(active_step):
     steps = []
 
     for number in range(0, 9):
-        steps.append({
-            "number": number,
-            "active": number == active_step
-        })
-
+        steps.append({"number": number,"active": number <= active_step})
     return steps
 
 
@@ -157,9 +153,45 @@ def create_level2_view(request):
         request.session.modified = True
         print("createLevel2 gespeichert:")
         print(json.dumps(saved_level, ensure_ascii=False, indent=2))
-        return redirect("auswahl_view")
+        return redirect("create_level3")
 
     return render(request, "editor/createLevel2.html", {
+        "steps": steps,
+        "saved_level": saved_level,
+        "form_values": form_values,
+    })
+
+def create_level3_view(request):
+    steps = get_steps(active_step=3)
+    saved_level = request.session.get("new_level", {})
+
+    form_values = {
+        "item_name": "",
+        "unlocked_items_json": "[]",
+    }
+
+    if request.method == "POST":
+        item_name = request.POST.get("item_name", "").strip()
+        unlocked_items_raw = request.POST.get("unlocked_items", "[]")
+        try:
+            unlocked_items = json.loads(unlocked_items_raw)
+        except json.JSONDecodeError:
+            unlocked_items = []
+
+        saved_level["item"] = {
+            "id": item_name,
+            "unlockedItems": unlocked_items
+        }
+
+        request.session["new_level"] = saved_level
+        request.session.modified = True
+
+        print("createLevel3 gespeichert:")
+        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+
+        return redirect("auswahl_view")
+
+    return render(request, "editor/createLevel3.html", {
         "steps": steps,
         "saved_level": saved_level,
         "form_values": form_values,

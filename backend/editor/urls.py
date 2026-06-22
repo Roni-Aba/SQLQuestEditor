@@ -10,4 +10,5 @@ urlpatterns = [
     path("auswahl/", views.auswahl_view, name="auswahl_view"),
     path("createLevel1/", views.create_level1_view, name="create_level1"),
     path("createLevel2/", views.create_level2_view, name="create_level2"),
+    path("createLevel3/", views.create_level3_view, name="create_level3"),
 ]
