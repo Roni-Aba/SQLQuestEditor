@@ -1,0 +1,11 @@
+image: python:3.12
+
+stages:
+  - test
+
+test:
+  stage: test
+  script:
+    - python --version
+    - pip install pytest
+    - pytest
