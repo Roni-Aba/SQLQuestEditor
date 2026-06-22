@@ -1,0 +1,10 @@
+[init]
+	defaultBranch = none
+[fetch]
+	recurseSubmodules = false
+[credential]
+	interactive = never
+[gc]
+	autoDetach = false
+[include]
+	path = /Users/roniaba/WebstormProjects/sql-quest-editor/backend/builds/4GXVelnn_/0/stu235370/sql-quest-editor.tmp/.gitlab-runner.ext.conf
