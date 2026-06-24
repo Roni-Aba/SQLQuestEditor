@@ -1,0 +1,139 @@
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Level erstellen | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
+<link rel="stylesheet" href="{% static 'editor/css/createLevel4-2.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<main class="create-level4-2-page">
+  <div class="container-fluid px-0">
+
+    {% include "editor/components/statusbar/statusbar.html" with steps=steps %}
+
+    <form
+      class="create-level4-2-content"
+      action="{% url 'create_level42' %}"
+      method="post"
+    >
+      {% csrf_token %}
+
+      <div class="row align-items-start create-level4-2-form-row">
+
+        <aside class="col-12 col-md-4 create-level4-2-helper" aria-label="Hilfetext von Cosmo">
+          <p class="create-level4-2-heading">
+            Überleg dir gerne wie wir helfen können
+          </p>
+
+          <img
+            src="{% static 'editor/img/cat1.png' %}"
+            alt="Cosmo Wizard"
+            class="create-level4-2-cosmo"
+          >
+        </aside>
+
+        <section class="col-12 col-md-8 create-level4-2-fields" aria-label="Hinweise bei falschen Passwortversuchen">
+
+          <p class="create-level4-2-label">
+            Wie soll der Spieler hingewiesen werden
+          </p>
+
+          <div id="hint-rows" class="create-level4-2-hint-rows">
+
+            <div class="create-level4-2-hint-row">
+              <input
+                type="number"
+                name="hint_attempts[]"
+                class="form-control create-level4-2-attempt-input"
+                placeholder="Anzahl der Versuche"
+                min="1"
+              >
+
+              <input
+                type="text"
+                name="hint_texts[]"
+                class="form-control create-level4-2-text-input"
+                placeholder="Hinweistext"
+              >
+            </div>
+
+          </div>
+
+          <button
+            type="button"
+            id="add-hint-row"
+            class="create-level4-2-add-button"
+          >
+            Füge weitere Zeile hinzu
+          </button>
+
+        </section>
+      </div>
+
+      <section class="create-level4-2-navigation" aria-label="Seitennavigation">
+        <a class="create-level1-button" href="{% url 'create_level41' %}">
+          Zurück
+        </a>
+
+        <button type="submit" class="create-level1-button">
+          Weiter
+        </button>
+      </section>
+
+    </form>
+  </div>
+</main>
+
+<script>
+  const hintRows = document.querySelector("#hint-rows");
+  const addHintRowButton = document.querySelector("#add-hint-row");
+
+  addHintRowButton.addEventListener("click", function () {
+    const row = document.createElement("div");
+    row.className = "create-level4-2-hint-row";
+
+    row.innerHTML = `
+      <input
+        type="number"
+        name="hint_attempts[]"
+        class="form-control create-level4-2-attempt-input"
+        placeholder="Anzahl der Versuche"
+        min="1"
+      >
+      <input
+        type="text"
+        name="hint_texts[]"
+        class="form-control create-level4-2-text-input"
+        placeholder="Hinweistext"
+      >
+      <button
+        type="button"
+        class="create-level4-2-remove-button"
+        aria-label="Zeile entfernen"
+      >
+        ×
+      </button>
+    `;
+
+    hintRows.appendChild(row);
+  });
+
+  hintRows.addEventListener("click", function (event) {
+    const removeButton = event.target.closest(".create-level4-2-remove-button");
+
+    if (!removeButton) {
+      return;
+    }
+
+    removeButton.closest(".create-level4-2-hint-row").remove();
+  });
+</script>
+
+{% endblock %}

@@ -1,0 +1,128 @@
+/* ============================================================
+   createLevel4-1.css — Password / unlock-condition step
+   Design tokens:
+     Primary dark:  #5227CC
+     Primary light: #EBE5FC
+     Gray 900:      #212529
+     Body text:     #68717A
+     Border:        #DEE2E6
+   ============================================================ */
+
+/* ── Page shell ─────────────────────────────────────────────── */
+.create-level4-1-page {
+  min-height: 100vh;
+  background-color: #fff;
+}
+
+/* ── Form wrapper ────────────────────────────────────────────── */
+.create-level4-1-content {
+  padding: 2.5rem 1rem 2rem;
+}
+
+/* ── Two-column form row ─────────────────────────────────────── */
+.create-level4-1-form-row {
+  margin-bottom: 2rem;
+}
+
+/* ── Left aside: heading + cat image ────────────────────────── */
+.create-level4-1-helper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.25rem;
+  padding-top: 0.5rem;
+}
+
+.create-level4-1-heading {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 1.25rem;          /* 20 px — Semi-Bold / H5 from design tokens */
+  color: #212529;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.create-level4-1-cosmo {
+  width: 260px;
+  height: 260px;
+  object-fit: contain;
+}
+
+/* ── Right section: form fields ─────────────────────────────── */
+.create-level4-1-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.create-level4-1-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* ── Field label ─────────────────────────────────────────────── */
+.create-level4-1-label {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.9375rem;        /* ~15.8 px matches Figma */
+  color: #212529;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ── Ja / Nein radio toggle group ────────────────────────────── */
+.create-level4-1-choice-group {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.create-level4-1-choice-button {
+  background-color: #d9d9d9;
+  color: #5227cc;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;           /* ~12.8 px from Figma */
+  border: none;
+  border-radius: 12px;
+  padding: 0.3rem 0;
+  width: 110px;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-check:checked + .create-level4-1-choice-button {
+  background-color: #ebe5fc;
+  color: #5227cc;
+}
+
+.create-level4-1-choice-button:hover {
+  background-color: #ebe5fc;
+}
+
+/* ── Bottom navigation: Zurück / Weiter ──────────────────────── */
+.create-level4-1-navigation {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4rem;
+  padding: 2rem 0 2.5rem;
+}
+
+/* ── Responsive adjustments ──────────────────────────────────── */
+@media (max-width: 767.98px) {
+  .create-level4-1-cosmo {
+    width: 180px;
+    height: 180px;
+  }
+
+  .create-level4-1-content {
+    padding: 1.5rem 1rem 2rem;
+  }
+
+  .create-level4-1-navigation {
+    gap: 2rem;
+  }
+}
