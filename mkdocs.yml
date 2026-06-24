@@ -1,0 +1,18 @@
+site_name: SQL Quest Editor Dokumentation
+site_description: Dokumentation für den SQL Spell Quest Level Editor
+site_author: Roni Aba
+
+theme:
+  name: material
+  language: de
+
+nav:
+  - Grundlagen:
+      - HTML zu Django: grundlagen/htmlZuDjango.md
+  - Mockups:
+      - Übersicht: mockups/README.md
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true

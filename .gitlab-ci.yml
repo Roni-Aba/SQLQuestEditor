@@ -1,8 +1,21 @@
 stages:
   - test
+  - docs
 
 test:
   stage: test
+  image: python:3.11
   script:
-    - python3 --version
-    - python3 -m compileall .
+    - python --version
+    - python -m compileall .
+
+docs:
+  stage: docs
+  image: python:3.11
+  script:
+    - pip install mkdocs mkdocs-material
+    - mkdocs build --strict
+  artifacts:
+    paths:
+      - site/
+    expire_in: 1 week
