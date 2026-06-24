@@ -1,0 +1,109 @@
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Level erstellen | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
+<link rel="stylesheet" href="{% static 'editor/css/createLevel4.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/tag/tag.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<main class="create-level4-page">
+  <div class="container-fluid px-0">
+
+    {% include "editor/components/statusbar/statusbar.html" with steps=steps %}
+
+    <form
+      class="create-level4-content"
+      action="{% url 'create_level4' %}"
+      method="post"
+    >
+      {% csrf_token %}
+
+      <div class="row align-items-start create-level4-form-row">
+
+        <aside class="col-12 col-md-4 create-level4-helper" aria-label="Hilfetext von Cosmo">
+          <p>
+            Du darfst jetzt entscheiden ob wir es dem Spieler einfach oder schwer machen.
+          </p>
+
+          <img
+            src="{% static 'editor/img/cat1.png' %}"
+            alt="Cosmo Wizard"
+            class="create-level4-cosmo"
+          >
+        </aside>
+
+        <section class="col-12 col-md-8 create-level4-fields" aria-label="Freischaltbedingungen">
+
+          <div class="create-level4-field">
+            <p class="create-level4-label">
+              Folgende Gegenstände müssen freigeschaltet sein
+            </p>
+
+            <div class="create-level4-tags">
+              {% for item in form_values.required_items %}
+                {% include "editor/components/tag/tag.html" with title=item show_remove=False %}
+              {% empty %}
+                <p class="text-muted mb-0">
+                  Noch keine Gegenstände ausgewählt.
+                </p>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="create-level4-field">
+            <p class="create-level4-label">
+              Brauchen wir ein Passwort um diesen Gegenstand freizuschalten
+            </p>
+
+            <div class="create-level4-choice-group" role="group" aria-label="Passwort erforderlich">
+              <input
+                type="radio"
+                class="btn-check"
+                name="requires_password"
+                id="requires-password-yes"
+                value="true"
+                autocomplete="off"
+                {% if form_values.requires_password == "true" %}checked{% endif %}
+              >
+              <label class="btn create-level4-choice-button" for="requires-password-yes">
+                Ja
+              </label>
+
+              <input
+                type="radio"
+                class="btn-check"
+                name="requires_password"
+                id="requires-password-no"
+                value="false"
+                autocomplete="off"
+                {% if form_values.requires_password != "true" %}checked{% endif %}
+              >
+              <label class="btn create-level4-choice-button" for="requires-password-no">
+                Nein
+              </label>
+            </div>
+          </div>
+
+        </section>
+      </div>
+
+      <section class="create-level4-navigation" aria-label="Seitennavigation">
+        <a class="create-level1-button" href="{% url 'create_level3' %}">
+          Zurück
+        </a>
+        <button type="submit" class="create-level1-button">
+          Weiter
+        </button>
+      </section>
+    </form>
+  </div>
+</main>
+{% endblock %}
