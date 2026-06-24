@@ -1,6 +1,7 @@
 stages:
   - test
   - docs
+  - lint
 
 test:
   stage: test
@@ -19,3 +20,13 @@ docs:
     paths:
       - site/
     expire_in: 1 week
+lint:
+  stage: lint
+  image: python:3.11
+  script:
+    - cd backend
+    - pip install -r requirements.txt
+    - pip install pylint pylint-django
+    - pylint editor config
+    - pylint editor config --fail-under=7.0
+
