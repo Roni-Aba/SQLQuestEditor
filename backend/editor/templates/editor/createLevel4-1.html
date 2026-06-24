@@ -1,0 +1,108 @@
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Level erstellen | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
+<link rel="stylesheet" href="{% static 'editor/css/createLevel4-1.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/chatbox/chatbox.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<main class="create-level4-1-page">
+  <div class="container-fluid px-0">
+
+    {% include "editor/components/statusbar/statusbar.html" with steps=steps %}
+
+    <form
+      class="create-level4-1-content"
+      action="{% url 'create_level41' %}"
+      method="post"
+    >
+      {% csrf_token %}
+
+      <div class="row align-items-start create-level4-1-form-row">
+
+        <aside class="col-12 col-md-4 create-level4-1-helper" aria-label="Hilfetext von Cosmo">
+          <p class="create-level4-1-heading">
+            Jetzt entscheiden wir wonach der Spieler schauen soll
+          </p>
+
+          <img
+            src="{% static 'editor/img/cat1.png' %}"
+            alt="Cosmo Wizard"
+            class="create-level4-1-cosmo"
+          >
+        </aside>
+
+        <section class="col-12 col-md-8 create-level4-1-fields" aria-label="Passworteinstellungen">
+
+          <div class="create-level4-1-field">
+            {% include "editor/components/chatbox/chatbox.html" with title="Wähle ein oder mehrere Passwörter um das Item freizuschalten. Bestätige mit der Enter Taste deine Eingabe" input_id="item_passwords" input_name="item_passwords" placeholder_text="Tippe ein Passwort hinein" game_wizard_input=form_values.item_passwords is_editable=True %}
+          </div>
+
+          <div class="create-level4-1-field">
+            {% include "editor/components/chatbox/chatbox.html" with title="Wie soll der Nutzer vor der Eingabe auf das Passwort hingewiesen werden?" input_id="password_hint" input_name="password_hint" placeholder_text="Den bekommst du erst, wenn du mir sagst wie viele Dinge zu deiner Ausrüstung gehören" game_wizard_input=form_values.password_hint is_editable=True %}
+          </div>
+
+          <div class="create-level4-1-field">
+            {% include "editor/components/chatbox/chatbox.html" with title="Wie gratulieren wir dem Spieler nachdem er das Item entdeckt hat?" input_id="success_message" input_name="success_message" placeholder_text="Schreibe einen tollen Text" game_wizard_input=form_values.success_message is_editable=True %}
+          </div>
+
+          <div class="create-level4-1-field">
+            <p class="create-level4-1-label">
+              Willst du das der Nutzer bei mehreren falschen Passwortversuchen Tipps bekommt?
+            </p>
+
+            <div class="create-level4-1-choice-group" role="group" aria-label="Tipps bei falschen Versuchen">
+              <input
+                type="radio"
+                class="btn-check"
+                name="show_hints"
+                id="show-hints-yes"
+                value="true"
+                autocomplete="off"
+                {% if form_values.show_hints == "true" %}checked{% endif %}
+              >
+              <label class="btn create-level4-1-choice-button" for="show-hints-yes">
+                Ja
+              </label>
+
+              <input
+                type="radio"
+                class="btn-check"
+                name="show_hints"
+                id="show-hints-no"
+                value="false"
+                autocomplete="off"
+                {% if form_values.show_hints != "true" %}checked{% endif %}
+              >
+              <label class="btn create-level4-1-choice-button" for="show-hints-no">
+                Nein
+              </label>
+            </div>
+          </div>
+
+        </section>
+      </div>
+
+      <section class="create-level4-1-navigation" aria-label="Seitennavigation">
+        <a class="create-level1-button" href="{% url 'create_level4' %}">
+          Zurück
+        </a>
+
+        <button type="submit" class="create-level1-button">
+          Weiter
+        </button>
+      </section>
+
+    </form>
+  </div>
+</main>
+
+{% endblock %}
