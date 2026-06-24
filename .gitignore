@@ -8,6 +8,7 @@ venv/
 env/
 
 /builds/
+builds/
 # Django
 *.log
 db.sqlite3
