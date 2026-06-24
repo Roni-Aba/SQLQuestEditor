@@ -20,7 +20,6 @@ docs:
       - site/
     expire_in: 1 week
 lint:
-  stage: lint
   image: python:3.11
   script:
     - cd backend
