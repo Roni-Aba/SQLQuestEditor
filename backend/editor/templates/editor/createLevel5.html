@@ -1,1 +1,104 @@
-<h1>Hello World</h1>
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Level erstellen | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
+<link rel="stylesheet" href="{% static 'editor/css/createLevel5.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/tag/tag.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<main class="create-level5-page">
+  <div class="container-fluid px-0">
+
+    {% include "editor/components/statusbar/statusbar.html" with steps=steps %}
+
+    <form
+      class="create-level5-content"
+      action="{% url 'create_level5' %}"
+      method="post"
+    >
+      {% csrf_token %}
+
+      <div class="row align-items-start create-level5-form-row">
+
+        <aside class="col-12 col-md-4 create-level5-helper" aria-label="Hilfetext von Cosmo">
+          <p class="create-level5-helper-text">
+            Halbzeit fast geschafft
+          </p>
+
+          <img
+            src="{% static 'editor/img/cat1.png' %}"
+            alt="Cosmo Wizard"
+            class="create-level5-cosmo"
+          >
+        </aside>
+
+        <section class="col-12 col-md-8 create-level5-fields" aria-label="Gegenstand Position">
+
+          <div class="create-level5-field">
+            <p class="create-level5-label">
+              Folgende Gegenstände müssen freigeschaltet sein
+            </p>
+
+            <div class="create-level5-tags">
+              {% for item in form_values.required_items %}
+                {% include "editor/components/tag/tag.html" with title=item show_remove=False %}
+              {% empty %}
+                <p class="text-muted mb-0">
+                  Noch keine Gegenstände ausgewählt.
+                </p>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="create-level5-field create-level5-password-field">
+            <p class="create-level5-label">
+              Brauchen wir ein Passwort um diesen Gegenstand freizuschalten
+            </p>
+
+            <div class="create-level5-choice-group" aria-label="Passwort erforderlich">
+              <span class="create-level5-choice-button create-level5-choice-button-yes {% if form_values.requires_password %}create-level5-choice-button-active{% endif %}">
+                Ja
+              </span>
+
+              <span class="create-level5-choice-button create-level5-choice-button-no {% if not form_values.requires_password %}create-level5-choice-button-active{% endif %}">
+                Nein
+              </span>
+            </div>
+          </div>
+
+          <div class="create-level5-field create-level5-position-field">
+            <p class="create-level5-label">
+              Wo befindet sich der Gegenstand im Hintergrund?
+            </p>
+
+            <a class="create-level5-adjust-button" href="{% url 'create_level51' %}">
+              Anpassen
+            </a>
+          </div>
+
+        </section>
+      </div>
+
+      <section class="create-level5-navigation" aria-label="Seitennavigation">
+        <a class="create-level1-button" href="{% url 'create_level4' %}">
+          Zurück
+        </a>
+
+        <button type="submit" class="create-level1-button">
+          Weiter
+        </button>
+      </section>
+
+    </form>
+  </div>
+</main>
+
+{% endblock %}
