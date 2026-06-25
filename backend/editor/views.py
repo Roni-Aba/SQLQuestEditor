@@ -269,6 +269,27 @@ def create_level42_view(request):
     })
 
 def create_level5_view(request):
-    steps = get_steps(active_step=6)
+    steps = get_steps(active_step=5)
     saved_level = request.session.get("new_level", {})
-    return render(request, "editor/createLevel5.html")
+    unlock_condition = saved_level.get("unlockCondition", {})
+    required_items = unlock_condition.get("requiredItems", [])
+    requires_password = unlock_condition.get("requiresPassword", False)
+    form_values = {
+        "required_items": required_items,
+        "requires_password": requires_password,
+    }
+    if request.method == "POST":
+        print("createLevel5 gespeichert:")
+        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        return redirect("create_level51")
+
+    return render(request, "editor/createLevel5.html", {
+        "steps": steps,
+        "saved_level": saved_level,
+        "form_values": form_values,
+    })
+
+def create_level51_view(request):
+    steps = get_steps(active_step=5)
+    return render(request, "editor/createLevel51.html")
+

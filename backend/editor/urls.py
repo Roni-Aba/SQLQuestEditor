@@ -15,4 +15,6 @@ urlpatterns = [
     path("createLevel4-1/", views.create_level41_view, name="create_level41"),  # ← NEW
     path("createLevel4-2/", views.create_level42_view, name="create_level42"),
     path("createLevel5/", views.create_level5_view, name="create_level5"),
+    path("createLevel51/", views.create_level51_view, name="create_level51"),
+
 ]
