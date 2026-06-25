@@ -291,5 +291,59 @@ def create_level5_view(request):
 
 def create_level51_view(request):
     steps = get_steps(active_step=5)
-    return render(request, "editor/createLevel51.html")
+    saved_level = request.session.get("new_level", {})
 
+    position = saved_level.get("position", {})
+
+    bounding_box_image = position.get("boundingBoxImage", {})
+    bounding_box_icon = position.get("boundingBoxIcon", {})
+
+    level_picture = saved_level.get("levelPicture", "")
+
+    if level_picture:
+        level_picture_path = f"editor/img/levels/{level_picture}"
+    else:
+        level_picture_path = "editor/img/magie1.png"
+
+    form_values = {
+        "level_picture_path": level_picture_path,
+
+        "image_x": bounding_box_image.get("x", ""),
+        "image_y": bounding_box_image.get("y", ""),
+        "image_width": bounding_box_image.get("width", ""),
+        "image_height": bounding_box_image.get("height", ""),
+
+        "icon_x": bounding_box_icon.get("x", ""),
+        "icon_y": bounding_box_icon.get("y", ""),
+        "icon_width": bounding_box_icon.get("width", ""),
+        "icon_height": bounding_box_icon.get("height", ""),
+    }
+
+    if request.method == "POST":
+        saved_level["position"] = {
+            "boundingBoxImage": {
+                "x": int(request.POST.get("image_x", "")),
+                "y": int(request.POST.get("image_y", "")),
+                "width": int(request.POST.get("image_width", "")),
+                "height": int(request.POST.get("image_height", "")),
+            },
+            "boundingBoxIcon": {
+                "x": int(request.POST.get("icon_x", "")),
+                "y": int(request.POST.get("icon_y", "")),
+                "width": int(request.POST.get("icon_width", "")),
+                "height": int(request.POST.get("icon_height", "")),
+            },
+        }
+        request.session["new_level"] = saved_level
+        request.session.modified = True
+        print("createLevel5-1 gespeichert:")
+        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        return redirect("create_level6")
+    return render(request, "editor/createLevel51.html", {
+        "steps": steps,
+        "saved_level": saved_level,
+        "form_values": form_values,
+    })
+
+def create_level6_view(request):
+    return render(request, "editor/createLevel6.html", {})

@@ -16,5 +16,5 @@ urlpatterns = [
     path("createLevel4-2/", views.create_level42_view, name="create_level42"),
     path("createLevel5/", views.create_level5_view, name="create_level5"),
     path("createLevel51/", views.create_level51_view, name="create_level51"),
-
+    path("createLevel6/",views.create_level6_view, name="create_level6"),
 ]

@@ -1,1 +1,274 @@
-<h1>Hello</h1>
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Position anpassen | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
+<link rel="stylesheet" href="{% static 'editor/css/createLevel51.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<main class="create-level51-page">
+  <div class="container-fluid px-0">
+
+    {% include "editor/components/statusbar/statusbar.html" with steps=steps %}
+
+    <form
+      class="create-level51-content"
+      action="{% url 'create_level51' %}"
+      method="post"
+    >
+      {% csrf_token %}
+
+      <div class="row align-items-start create-level51-form-row">
+
+        <aside class="col-12 col-md-3 create-level51-helper" aria-label="Hilfetext von Cosmo">
+          <p class="create-level51-helper-text">
+            Ziehe einen Rahmen um die gewünschte Position deines Gegenstandes.
+            Dies machen wir 2x einmal für unseren Objektbereich und nochmal für das Icon
+          </p>
+
+          <img
+            src="{% static 'editor/img/cat1.png' %}"
+            alt="Cosmo Wizard"
+            class="create-level51-cosmo"
+          >
+        </aside>
+
+        <section class="col-12 col-md-6 create-level51-image-section" aria-label="Hintergrundbild">
+          <div class="create-level51-image-wrap" id="image-area">
+            <img
+              src="{% static form_values.level_picture_path %}"
+              alt="Level Hintergrund"
+              class="create-level51-background-image"
+              id="level-background-image"
+            >
+
+            <div id="selection-box" class="create-level51-selection-box"></div>
+          </div>
+
+          <div class="create-level51-start-actions">
+            <button
+              type="button"
+              class="create-level51-action-button"
+              id="start-image-selection"
+            >
+              Start für Bild
+            </button>
+
+            <button
+              type="button"
+              class="create-level51-action-button"
+              id="start-icon-selection"
+            >
+              Start für Icon
+            </button>
+          </div>
+        </section>
+
+        <section class="col-12 col-md-3 create-level51-values" aria-label="Positionswerte">
+
+          <div class="create-level51-value-group">
+            <p class="create-level51-value-title">Bild</p>
+
+            <div class="create-level51-value-grid">
+              <label class="create-level51-input-wrap">
+                X
+                <input
+                  type="number"
+                  name="image_x"
+                  id="image-x"
+                  class="form-control create-level51-input"
+                  placeholder="Wert"
+                  value="{{ form_values.image_x|default:'' }}"
+                >
+              </label>
+
+              <label class="create-level51-input-wrap">
+                Y
+                <input
+                  type="number"
+                  name="image_y"
+                  id="image-y"
+                  class="form-control create-level51-input"
+                  placeholder="Wert"
+                  value="{{ form_values.image_y|default:'' }}"
+                >
+              </label>
+
+              <label class="create-level51-input-wrap">
+                Height
+                <input
+                  type="number"
+                  name="image_height"
+                  id="image-height"
+                  class="form-control create-level51-input"
+                  placeholder="Wert"
+                  value="{{ form_values.image_height|default:'' }}"
+                >
+              </label>
+
+              <label class="create-level51-input-wrap">
+                Width
+                <input
+                  type="number"
+                  name="image_width"
+                  id="image-width"
+                  class="form-control create-level51-input"
+                  placeholder="Wert"
+                  value="{{ form_values.image_width|default:'' }}"
+                >
+              </label>
+            </div>
+          </div>
+
+          <div class="create-level51-value-group create-level51-icon-group">
+            <p class="create-level51-value-title">Icon</p>
+
+            <div class="create-level51-value-grid">
+              <label class="create-level51-input-wrap">
+                X
+                <input
+                  type="number"
+                  name="icon_x"
+                  id="icon-x"
+                  class="form-control create-level51-input"
+                  placeholder="Wert"
+                  value="{{ form_values.icon_x|default:'' }}"
+                >
+              </label>
+
+              <label class="create-level51-input-wrap">
+                Y
+                <input
+                  type="number"
+                  name="icon_y"
+                  id="icon-y"
+                  class="form-control create-level51-input"
+                  placeholder="Wert"
+                  value="{{ form_values.icon_y|default:'' }}"
+                >
+              </label>
+
+              <label class="create-level51-input-wrap">
+                Height
+                <input
+                  type="number"
+                  name="icon_height"
+                  id="icon-height"
+                  class="form-control create-level51-input"
+                  placeholder="Wert"
+                  value="{{ form_values.icon_height|default:'' }}"
+                >
+              </label>
+
+              <label class="create-level51-input-wrap">
+                Width
+                <input
+                  type="number"
+                  name="icon_width"
+                  id="icon-width"
+                  class="form-control create-level51-input"
+                  placeholder="Wert"
+                  value="{{ form_values.icon_width|default:'' }}"
+                >
+              </label>
+            </div>
+          </div>
+
+        </section>
+      </div>
+
+      <section class="create-level51-navigation" aria-label="Seitennavigation">
+        <a class="create-level1-button" href="{% url 'create_level5' %}">
+          Zurück
+        </a>
+
+        <button type="submit" class="create-level1-button">
+          Weiter
+        </button>
+      </section>
+
+    </form>
+  </div>
+</main>
+
+<script>
+  const imageArea = document.querySelector("#image-area");
+  const selectionBox = document.querySelector("#selection-box");
+
+  const startImageButton = document.querySelector("#start-image-selection");
+  const startIconButton = document.querySelector("#start-icon-selection");
+
+  let activeTarget = null;
+  let isDrawing = false;
+  let startX = 0;
+  let startY = 0;
+
+  function setActiveTarget(target) {
+    activeTarget = target;
+    selectionBox.style.display = "none";
+
+    startImageButton.classList.toggle("create-level51-action-button-active", target === "image");
+    startIconButton.classList.toggle("create-level51-action-button-active", target === "icon");
+  }
+  function setValues(target, x, y, width, height) {
+    document.querySelector(`#${target}-x`).value = x;
+    document.querySelector(`#${target}-y`).value = y;
+    document.querySelector(`#${target}-width`).value = width;
+    document.querySelector(`#${target}-height`).value = height;
+  }
+  startImageButton.addEventListener("click", function () {
+    setActiveTarget("image");
+  });
+  startIconButton.addEventListener("click", function () {
+    setActiveTarget("icon");
+  });
+  imageArea.addEventListener("mousedown", function (event) {
+    if (!activeTarget) {
+      return;
+    }
+    const rect = imageArea.getBoundingClientRect();
+    isDrawing = true;
+    startX = event.clientX - rect.left;
+    startY = event.clientY - rect.top;
+    selectionBox.style.display = "block";
+    selectionBox.style.left = `${startX}px`;
+    selectionBox.style.top = `${startY}px`;
+    selectionBox.style.width = "0px";
+    selectionBox.style.height = "0px";
+  });
+  imageArea.addEventListener("mousemove", function (event) {
+    if (!isDrawing || !activeTarget) {
+      return;
+    }
+    const rect = imageArea.getBoundingClientRect();
+    const currentX = event.clientX - rect.left;
+    const currentY = event.clientY - rect.top;
+    const x = Math.min(startX, currentX);
+    const y = Math.min(startY, currentY);
+    const width = Math.abs(currentX - startX);
+    const height = Math.abs(currentY - startY);
+    selectionBox.style.left = `${x}px`;
+    selectionBox.style.top = `${y}px`;
+    selectionBox.style.width = `${width}px`;
+    selectionBox.style.height = `${height}px`;
+  });
+  document.addEventListener("mouseup", function () {
+    if (!isDrawing || !activeTarget) {
+      return;
+    }
+    isDrawing = false;
+    const x = Math.round(parseFloat(selectionBox.style.left) || 0);
+    const y = Math.round(parseFloat(selectionBox.style.top) || 0);
+    const width = Math.round(parseFloat(selectionBox.style.width) || 0);
+    const height = Math.round(parseFloat(selectionBox.style.height) || 0);
+    setValues(activeTarget, x, y, width, height);
+  });
+</script>
+{% endblock %}
