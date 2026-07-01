@@ -514,7 +514,7 @@ def create_level6table_view(request):
         request.session.modified = True
         print("createLevel6table gespeichert:")
         print(json.dumps(saved_level, ensure_ascii=False, indent=2))
-        return redirect("auswahl_view")
+        return redirect("create_level7")
     return render(request, "editor/createLevel6table.html", {
         "steps": steps,
         "saved_level": saved_level,
