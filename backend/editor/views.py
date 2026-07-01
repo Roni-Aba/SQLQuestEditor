@@ -400,12 +400,39 @@ def create_level61_view(request):
         "form_values": form_values,
         "type_options": type_options,
     })
+def create_level6exit_view(request):
+    steps = get_steps(active_step=6)
+    saved_level = request.session.get("new_level", {})
+    item = saved_level.get("item", {})
+    form_values = {
+        "exit_success_message": item.get("exitSuccessMessage", ""),
+        "next_level_id": item.get("nextLevelId", ""),
+    }
+    if request.method == "POST":
+        exit_success_message = request.POST.get("exit_success_message", "").strip()
+        next_level_id = request.POST.get("next_level_id", "").strip()
+        item = saved_level.get("item", {})
+        item["type"] = "exit"
+        item["exitSuccessMessage"] = exit_success_message
+        item["nextLevelId"] = next_level_id
+        saved_level["item"] = item
+        request.session["new_level"] = saved_level
+        request.session.modified = True
+        print("createLevel6exit gespeichert:")
+        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        return redirect("create_level7")
+    return render(request, "editor/createLevel6exit.html", {
+        "steps": steps,
+        "saved_level": saved_level,
+        "form_values": form_values,
+    })
 
 def create_level6hint_view(request):
     return render(request, "editor/createLevel6hint.html", {})
 
-def create_level6exit_view(request):
-    return render(request, "editor/createLevel6exit.html", {})
 
 def create_level6table_view(request):
     return render(request, "editor/createLevel6table.html", {})
+
+def create_level7_view(request):
+    return render(request,"editor/createLevel7.html", {})

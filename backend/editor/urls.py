@@ -18,8 +18,8 @@ urlpatterns = [
     path("createLevel51/", views.create_level51_view, name="create_level51"),
     path("createLevel6/",views.create_level6_view, name="create_level6"),
     path("createLevel61/", views.create_level61_view, name="create_level61"),
-    path("createLevel6hint", views.create_level6hint_view, name="create_level6hint"),
-    path("createLevel6exit", views.create_level6exit_view, name="create_level6exit"),
-    path("createLevel6table",views.create_level6table_view, name="create_level6table"),
-
+    path("createLevel6hint/", views.create_level6hint_view, name="create_level6hint"),
+    path("createLevel6exit/", views.create_level6exit_view, name="create_level6exit"),
+    path("createLevel6table/",views.create_level6table_view, name="create_level6table"),
+    path("createLevel7/", views.create_level7_view, name="create_level7"),
 ]
