@@ -1,0 +1,37 @@
+<div class="dropdown-field">
+  {% if label %}
+    <label for="{{ id }}" class="dropdown-label">
+      {{ label }}
+    </label>
+  {% endif %}
+
+  <div class="dropdown-control-wrapper">
+    <select
+      id="{{ id }}"
+      name="{{ name }}"
+      class="dropdown-control"
+      {% if required %}required{% endif %}
+    >
+      {% if placeholder %}
+        <option value="" {% if not selected_value %}selected{% endif %}>
+          {{ placeholder }}
+        </option>
+      {% endif %}
+
+      {% for option in options %}
+        <option
+          value="{{ option.value }}"
+          {% if selected_value == option.value %}selected{% endif %}
+        >
+          {{ option.label }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  {% if error %}
+    <p class="dropdown-error">
+      {{ error }}
+    </p>
+  {% endif %}
+</div>

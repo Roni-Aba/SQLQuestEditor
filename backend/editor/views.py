@@ -346,4 +346,66 @@ def create_level51_view(request):
     })
 
 def create_level6_view(request):
-    return render(request, "editor/createLevel6.html", {})
+    steps = get_steps(active_step=6)
+    saved_level = request.session.get("new_level", {})
+    unlock_condition = saved_level.get("unlockCondition", {})
+    required_items = unlock_condition.get("requiredItems", [])
+    requires_password = unlock_condition.get("requiresPassword", False)
+    form_values = {
+        "required_items": required_items,
+        "requires_password": requires_password,
+    }
+    if request.method == "POST":
+        print("createLevel6 gespeichert:")
+        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        return redirect("create_level61")
+    return render(request, "editor/createLevel6.html", {
+        "steps": steps,
+        "saved_level": saved_level,
+        "form_values": form_values,
+    })
+def create_level61_view(request):
+    steps = get_steps(active_step=6)
+    saved_level = request.session.get("new_level", {})
+    item = saved_level.get("item", {})
+    current_type = item.get("type", "")
+    type_options = [
+        {"value": "table", "label": "Table"},
+        {"value": "hint", "label": "Hint"},
+        {"value": "exit", "label": "Exit"},
+    ]
+    form_values = {
+        "item_type": current_type,
+    }
+    if request.method == "POST":
+        item_type = request.POST.get("item_type", "").strip()
+        if item_type not in ["table", "hint", "exit"]:
+            item_type = "table"
+        item = saved_level.get("item", {})
+        item["type"] = item_type
+        saved_level["item"] = item
+        request.session["new_level"] = saved_level
+        request.session.modified = True
+        print("createLevel6-1 gespeichert:")
+        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        if item_type == "table":
+            return redirect("create_level6table")
+        if item_type == "hint":
+            return redirect("create_level6hint")
+        if item_type == "exit":
+            return redirect("create_level6exit")
+    return render(request, "editor/createLevel61.html", {
+        "steps": steps,
+        "saved_level": saved_level,
+        "form_values": form_values,
+        "type_options": type_options,
+    })
+
+def create_level6hint_view(request):
+    return render(request, "editor/createLevel6hint.html", {})
+
+def create_level6exit_view(request):
+    return render(request, "editor/createLevel6exit.html", {})
+
+def create_level6table_view(request):
+    return render(request, "editor/createLevel6table.html", {})
