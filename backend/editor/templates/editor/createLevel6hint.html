@@ -1,1 +1,128 @@
-<h1>Hello Hint</h1>
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Hint-Gegenstand | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
+<link rel="stylesheet" href="{% static 'editor/css/createLevel6hint.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/dropdown/dropdown.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/chatBox/chatBox.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<main class="create-level6hint-page">
+  <div class="container-fluid px-0">
+
+    {% include "editor/components/statusbar/statusbar.html" with steps=steps %}
+
+    <form
+      class="create-level6hint-content"
+      action="{% url 'create_level6hint' %}"
+      method="post"
+      enctype="multipart/form-data"
+    >
+      {% csrf_token %}
+
+      <div class="row align-items-start create-level6hint-form-row">
+
+        <aside class="col-12 col-md-4 create-level6hint-helper" aria-label="Hilfetext von Cosmo">
+          <p class="create-level6hint-helper-text">
+            Ein Hinweis-Gegenstand also, dann überlege dir was hilfreiches
+          </p>
+
+          <img
+            src="{% static 'editor/img/cat1.png' %}"
+            alt="Cosmo Wizard"
+            class="create-level6hint-cosmo"
+          >
+        </aside>
+
+        <section class="col-12 col-md-8 create-level6hint-fields" aria-label="Hint-Gegenstand">
+
+          {% include "editor/components/dropdown/dropdown.html" with id="hint-type" name="hint_type" label="Wie soll der Spieler informiert werden?" placeholder="Hinweisart" options=hint_options selected_value=form_values.hint_type required=True %}
+
+          <div
+            id="hint-text-area"
+            class="create-level6hint-dynamic-field"
+          >
+            {% include "editor/components/chatBox/chatBox.html" with title="Welchen Hinweistext soll der Spieler bekommen?" input_id="hint-text" input_name="hint_text" placeholder_text="Schreibe deinen Hinweis hinein" game_wizard_input=form_values.hint_text is_editable=True %}
+          </div>
+
+          <div
+            id="hint-image-area"
+            class="create-level6hint-dynamic-field"
+          >
+            <label for="hint-image" class="create-level6hint-upload-label">
+              Welches Bild soll angezeigt werden?
+            </label>
+
+            <input
+              id="hint-image"
+              name="hint_image"
+              type="file"
+              accept="image/*"
+              class="create-level6hint-file-input"
+            >
+
+            <p id="hint-image-name" class="create-level6hint-file-name">
+              {% if form_values.hint_image %}
+                {{ form_values.hint_image }}
+              {% endif %}
+            </p>
+          </div>
+
+        </section>
+      </div>
+
+      <section class="create-level6hint-navigation" aria-label="Seitennavigation">
+        <a class="create-level1-button" href="{% url 'create_level61' %}">
+          Zurück
+        </a>
+
+        <button type="submit" class="create-level1-button">
+          Weiter
+        </button>
+      </section>
+
+    </form>
+  </div>
+</main>
+
+<script>
+  const hintTypeSelect = document.querySelector("#hint-type");
+  const hintTextArea = document.querySelector("#hint-text-area");
+  const hintImageArea = document.querySelector("#hint-image-area");
+  const hintImageInput = document.querySelector("#hint-image");
+  const hintImageName = document.querySelector("#hint-image-name");
+
+  function updateHintFields() {
+    const selectedValue = hintTypeSelect.value;
+    hintTextArea.classList.add("d-none");
+    hintImageArea.classList.add("d-none");
+    if (selectedValue === "text") {
+      hintTextArea.classList.remove("d-none");
+    }
+    if (selectedValue === "image") {
+      hintImageArea.classList.remove("d-none");
+    }
+    if (selectedValue === "text_image") {
+      hintTextArea.classList.remove("d-none");
+      hintImageArea.classList.remove("d-none");
+    }
+  }
+  hintTypeSelect.addEventListener("change", updateHintFields);
+  hintImageInput.addEventListener("change", function () {
+    if (hintImageInput.files.length > 0) {
+      hintImageName.textContent = hintImageInput.files[0].name;
+    } else {
+      hintImageName.textContent = "";
+    }
+  });
+  updateHintFields();
+</script>
+{% endblock %}

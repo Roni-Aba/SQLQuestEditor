@@ -373,10 +373,8 @@ def create_level61_view(request):
         {"value": "table", "label": "Table"},
         {"value": "hint", "label": "Hint"},
         {"value": "exit", "label": "Exit"},
-    ]
-    form_values = {
-        "item_type": current_type,
-    }
+]
+    form_values = {"item_type": current_type,}
     if request.method == "POST":
         item_type = request.POST.get("item_type", "").strip()
         if item_type not in ["table", "hint", "exit"]:
@@ -428,7 +426,55 @@ def create_level6exit_view(request):
     })
 
 def create_level6hint_view(request):
-    return render(request, "editor/createLevel6hint.html", {})
+    steps = get_steps(active_step=6)
+    saved_level = request.session.get("new_level", {})
+    item = saved_level.get("item", {})
+    current_hint_type = item.get("hintType", "")
+    hint_options = [
+        {"value": "text", "label": "Über einen Text"},
+        {"value": "image", "label": "Über ein Bild"},
+        {"value": "text_image", "label": "Über ein Text und ein Bild"},
+    ]
+    form_values = {
+        "hint_type": current_hint_type,
+        "hint_text": item.get("text", ""),
+        "hint_image": item.get("imageLink", ""),
+    }
+    if request.method == "POST":
+        hint_type = request.POST.get("hint_type", "").strip()
+        hint_text = request.POST.get("hint_text", "").strip()
+        uploaded_image = request.FILES.get("hint_image")
+        if hint_type not in ["text", "image", "text_image"]:
+            hint_type = "text"
+        item = saved_level.get("item", {})
+        item["type"] = "hint"
+        item["hintType"] = hint_type
+        if hint_type in ["text", "text_image"]:
+            item["text"] = hint_text
+        else:
+            item["text"] = ""
+        if uploaded_image:
+            upload_dir = settings.BASE_DIR / "editor" / "static" / "editor" / "img" / "hints"
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            storage = FileSystemStorage(location=upload_dir)
+            filename = storage.save(uploaded_image.name, uploaded_image)
+            item["imageLink"] = filename
+        elif hint_type == "text":
+            item["imageLink"] = item.get("imageLink", "")
+        else:
+            item["imageLink"] = item.get("imageLink", "")
+        saved_level["item"] = item
+        request.session["new_level"] = saved_level
+        request.session.modified = True
+        print("createLevel6hint gespeichert:")
+        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        return redirect("create_level7")
+    return render(request, "editor/createLevel6hint.html", {
+        "steps": steps,
+        "saved_level": saved_level,
+        "form_values": form_values,
+        "hint_options": hint_options,
+    })
 
 
 def create_level6table_view(request):
