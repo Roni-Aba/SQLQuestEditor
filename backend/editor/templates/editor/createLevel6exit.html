@@ -1,1 +1,71 @@
-<h1>Hello exit</h1>
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Exit-Gegenstand | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
+<link rel="stylesheet" href="{% static 'editor/css/createLevel6exit.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/chatBox/chatBox.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<main class="create-level6exit-page">
+  <div class="container-fluid px-0">
+
+    {% include "editor/components/statusbar/statusbar.html" with steps=steps %}
+
+    <form
+      class="create-level6exit-content"
+      action="{% url 'create_level6exit' %}"
+      method="post"
+    >
+      {% csrf_token %}
+
+      <div class="row align-items-start create-level6exit-form-row">
+
+        <aside class="col-12 col-md-4 create-level6exit-helper" aria-label="Hilfetext von Cosmo">
+          <p class="create-level6exit-helper-text">
+            Vergiss nicht dem Spieler gut zu gratulieren das er es so weit geschafft hat.
+            Das gibt ihm ein tolles Gefühl
+          </p>
+
+          <img
+            src="{% static 'editor/img/cat1.png' %}"
+            alt="Cosmo Wizard"
+            class="create-level6exit-cosmo"
+          >
+        </aside>
+
+        <section class="col-12 col-md-8 create-level6exit-fields" aria-label="Exit-Gegenstand">
+
+          <div class="create-level6exit-field">
+            {% include "editor/components/chatBox/chatBox.html" with title="Wie soll dem Spieler gratuliert werden?" input_id="exit-success-message" input_name="exit_success_message" placeholder_text="Schreibe was nettes hinein" game_wizard_input=form_values.exit_success_message is_editable=True %}
+          </div>
+
+          <div class="create-level6exit-field">
+            {% include "editor/components/chatBox/chatBox.html" with title="Wie ist die ID vom nächsten Level?" input_id="next-level-id" input_name="next_level_id" placeholder_text="Schreibe was nettes hinein" game_wizard_input=form_values.next_level_id is_editable=True %}
+          </div>
+
+        </section>
+      </div>
+
+      <section class="create-level6exit-navigation" aria-label="Seitennavigation">
+        <a class="create-level1-button" href="{% url 'create_level61' %}">
+          Zurück
+        </a>
+
+        <button type="submit" class="create-level1-button">
+          Weiter
+        </button>
+      </section>
+
+    </form>
+  </div>
+</main>
+
+{% endblock %}
