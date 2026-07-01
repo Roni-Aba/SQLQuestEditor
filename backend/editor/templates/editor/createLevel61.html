@@ -15,62 +15,60 @@ Typart wählen | SQL Spell Quest Editor
 {% block content %}
 
 <main class="create-level61-page">
-  <div class="container-fluid px-0">
+
+  <form
+    class="create-level61-content"
+    action="{% url 'create_level61' %}"
+    method="post"
+  >
+    {% csrf_token %}
 
     {% include "editor/components/statusbar/statusbar.html" with steps=steps %}
 
-    <form
-      class="create-level61-content"
-      action="{% url 'create_level61' %}"
-      method="post"
-    >
-      {% csrf_token %}
+    <div class="create-level61-layout">
 
-      <div class="row align-items-start create-level61-form-row">
+      <aside class="create-level61-helper" aria-label="Erklärung der Gegenstandstypen">
+        <img
+          src="{% static 'editor/img/cat1.png' %}"
+          alt="Cosmo Wizard"
+          class="create-level61-cosmo"
+        >
 
-        <aside class="col-12 col-md-4 create-level61-helper" aria-label="Erklärung der Gegenstandstypen">
-          <img
-            src="{% static 'editor/img/cat1.png' %}"
-            alt="Cosmo Wizard"
-            class="create-level61-cosmo"
-          >
+        <div class="create-level61-info-text">
+          <p>
+            Ein Tabellengegenstand besitzt eine SQL Tabelle mit Daten.
+            Hierin kann man SQL Anfragen stellen.
+          </p>
 
-          <div class="create-level61-info-text">
-            <p>
-              Ein Tabellengegenstand besitzt eine SQL Tabelle mit Daten.
-              Hierin kann man SQL Anfragen stellen.
-            </p>
+          <p>
+            Ein Hint-Gegenstand besitzt einen Hinweis, dies kann ein Bild und oder ein Hinweistext sein.
+          </p>
 
-            <p>
-              Ein Hint-Gegenstand besitzt einen Hinweis, dies kann ein Bild und oder ein Hinweistext sein.
-            </p>
+          <p>
+            Ein Exit-Gegenstand definiert den Ausgang eines Spiels.
+            Hierin definiert man welches Level als nächstes folgt.
+          </p>
+        </div>
+      </aside>
 
-            <p>
-              Ein Exit-Gegenstand definiert den Ausgang eines Spiels.
-              Hierin definiert man welches Level als nächstes folgt.
-            </p>
-          </div>
-        </aside>
-
-        <section class="col-12 col-md-8 create-level61-fields" aria-label="Typauswahl">
-
-          {% include "editor/components/dropdown/dropdown.html" with id="item-type" name="item_type" label="Welcher Typ soll dein Gegenstand haben?" placeholder="Typart" options=type_options selected_value=form_values.item_type required=True %}
-
-        </section>
-      </div>
-
-      <section class="create-level61-navigation" aria-label="Seitennavigation">
-        <a class="create-level1-button" href="{% url 'create_level6' %}">
-          Zurück
-        </a>
-
-        <button type="submit" class="create-level1-button">
-          Weiter
-        </button>
+      <section class="create-level61-fields" aria-label="Typauswahl">
+        {% include "editor/components/dropdown/dropdown.html" with id="item-type" name="item_type" label="Welcher Typ soll dein Gegenstand haben?" placeholder="Typart" options=type_options selected_value=form_values.item_type required=True %}
       </section>
 
-    </form>
-  </div>
+    </div>
+
+    <section class="create-level61-navigation" aria-label="Seitennavigation">
+      <a class="create-level1-button" href="{% url 'create_level6' %}">
+        Zurück
+      </a>
+
+      <button type="submit" class="create-level1-button">
+        Weiter
+      </button>
+    </section>
+
+  </form>
+
 </main>
 
 {% endblock %}
