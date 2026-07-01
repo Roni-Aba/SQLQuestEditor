@@ -478,7 +478,49 @@ def create_level6hint_view(request):
 
 
 def create_level6table_view(request):
-    return render(request, "editor/createLevel6table.html", {})
+    steps = get_steps(active_step=6)
+    saved_level = request.session.get("new_level", {})
+    item = saved_level.get("item", {})
+    data_type_options = [
+        {"value": "text", "label": "Text"},
+        {"value": "number", "label": "Zahl"},
+        {"value": "date", "label": "Datum"},
+        {"value": "boolean", "label": "Boolean"},
+    ]
+    form_values = {
+        "table_name": item.get("tableName", ""),
+        "columns": item.get("columns", []),
+    }
+    if request.method == "POST":
+        column_ids = request.POST.getlist("column_ids[]")
+        column_types = request.POST.getlist("column_types[]")
+        columns = []
+        for column_id, column_type in zip(column_ids, column_types):
+            column_id = column_id.strip()
+            column_type = column_type.strip()
+            if not column_id and not column_type:
+                continue
+            columns.append({
+                "id": column_id,
+                "type": column_type,
+            })
+        item_name = item.get("id", "")
+        item = saved_level.get("item", {})
+        item["type"] = "table"
+        item["tableName"] = item_name + ".sql"
+        item["columns"] = columns
+        saved_level["item"] = item
+        request.session["new_level"] = saved_level
+        request.session.modified = True
+        print("createLevel6table gespeichert:")
+        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        return redirect("auswahl_view")
+    return render(request, "editor/createLevel6table.html", {
+        "steps": steps,
+        "saved_level": saved_level,
+        "form_values": form_values,
+        "data_type_options": data_type_options,
+    })
 
 def create_level7_view(request):
     return render(request,"editor/createLevel7.html", {})

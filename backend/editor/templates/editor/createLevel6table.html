@@ -1,1 +1,217 @@
-<h1>Hello table</h1>
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Tabellen-Gegenstand | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
+<link rel="stylesheet" href="{% static 'editor/css/createLevel6table.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/dropdown/dropdown.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<main class="create-level6table-page">
+  <div class="container-fluid px-0">
+
+    {% include "editor/components/statusbar/statusbar.html" with steps=steps %}
+
+    <form
+      class="create-level6table-content"
+      action="{% url 'create_level6table' %}"
+      method="post"
+    >
+      {% csrf_token %}
+
+      <div class="row align-items-start create-level6table-form-row">
+
+        <aside class="col-12 col-md-4 create-level6table-helper" aria-label="Hilfetext von Cosmo">
+          <p class="create-level6table-helper-text">
+            Ein Tabellen-Gegenstand jetzt müssen wir überlegen was wir darstellen wollen.
+            Streng dich an
+          </p>
+
+          <img
+            src="{% static 'editor/img/cat1.png' %}"
+            alt="Cosmo Wizard"
+            class="create-level6table-cosmo"
+          >
+        </aside>
+
+        <section class="col-12 col-md-8 create-level6table-fields" aria-label="Tabellen-Gegenstand">
+
+          <div class="create-level6table-field">
+            <p class="create-level6table-label">
+              Aus welchen Spalten besteht die Tabelle?
+            </p>
+
+            <p class="create-level6table-info">
+              Die Tabelle wird automatisch nach deinem Gegenstand benannt:
+              <strong>{{ form_values.table_name }}</strong>
+            </p>
+
+            <div id="column-rows" class="create-level6table-column-rows">
+
+              {% if form_values.columns %}
+                {% for column in form_values.columns %}
+                  <div class="create-level6table-column-row">
+                    <input
+                      type="text"
+                      name="column_ids[]"
+                      class="form-control create-level6table-column-id-input"
+                      placeholder="Spalten-ID"
+                      value="{{ column.id }}"
+                    >
+
+                    <select
+                      name="column_types[]"
+                      class="form-select create-level6table-column-type-select"
+                    >
+                      <option value="">Datentyp</option>
+                      {% for option in data_type_options %}
+                        <option
+                          value="{{ option.value }}"
+                          {% if column.type == option.value %}selected{% endif %}
+                        >
+                          {{ option.label }}
+                        </option>
+                      {% endfor %}
+                    </select>
+
+                    {% if not forloop.first %}
+                      <button
+                        type="button"
+                        class="create-level6table-remove-button"
+                        aria-label="Zeile entfernen"
+                      >
+                        ×
+                      </button>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              {% else %}
+                <div class="create-level6table-column-row">
+                  <input
+                    type="text"
+                    name="column_ids[]"
+                    class="form-control create-level6table-column-id-input"
+                    placeholder="Spalten-ID"
+                    value=""
+                  >
+
+                  <select
+                    name="column_types[]"
+                    class="form-select create-level6table-column-type-select"
+                  >
+                    <option value="">Datentyp</option>
+                    {% for option in data_type_options %}
+                      <option value="{{ option.value }}">
+                        {{ option.label }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              {% endif %}
+
+            </div>
+
+            <button
+              type="button"
+              id="add-column-row"
+              class="create-level6table-add-button"
+            >
+              Weitere Spalten hinzufügen
+            </button>
+          </div>
+
+        </section>
+      </div>
+
+      <section class="create-level6table-navigation" aria-label="Seitennavigation">
+        <a class="create-level1-button" href="{% url 'create_level61' %}">
+          Zurück
+        </a>
+
+        <button type="submit" class="create-level1-button">
+          Weiter
+        </button>
+      </section>
+
+    </form>
+  </div>
+</main>
+
+<script>
+  const columnRows = document.querySelector("#column-rows");
+  const addColumnRowButton = document.querySelector("#add-column-row");
+
+  const dataTypeOptions = [
+    {% for option in data_type_options %}
+      {
+        value: "{{ option.value }}",
+        label: "{{ option.label }}"
+      }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  function buildDataTypeOptions() {
+    let optionsHtml = '<option value="">Datentyp</option>';
+
+    dataTypeOptions.forEach(function (option) {
+      optionsHtml += `
+        <option value="${option.value}">
+          ${option.label}
+        </option>
+      `;
+    });
+
+    return optionsHtml;
+  }
+
+  addColumnRowButton.addEventListener("click", function () {
+    const row = document.createElement("div");
+    row.className = "create-level6table-column-row";
+
+    row.innerHTML = `
+      <input
+        type="text"
+        name="column_ids[]"
+        class="form-control create-level6table-column-id-input"
+        placeholder="Spalten-ID"
+        value=""
+      >
+
+      <select
+        name="column_types[]"
+        class="form-select create-level6table-column-type-select"
+      >
+        ${buildDataTypeOptions()}
+      </select>
+
+      <button
+        type="button"
+        class="create-level6table-remove-button"
+        aria-label="Zeile entfernen"
+      >
+        ×
+      </button>
+    `;
+
+    columnRows.appendChild(row);
+  });
+
+  columnRows.addEventListener("click", function (event) {
+    const removeButton = event.target.closest(".create-level6table-remove-button");
+
+    if (!removeButton) {
+      return;
+    }
+
+    removeButton.closest(".create-level6table-column-row").remove();
+  });
+</script>
+
+{% endblock %}
