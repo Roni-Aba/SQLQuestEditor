@@ -1,1 +1,117 @@
-<h1>Hello Welt</h1>
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Level erstellen | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
+<link rel="stylesheet" href="{% static 'editor/css/createLevel6.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/tag/tag.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<main class="create-level6-page">
+  <div class="container-fluid px-0">
+
+    {% include "editor/components/statusbar/statusbar.html" with steps=steps %}
+
+    <form
+      class="create-level6-content"
+      action="{% url 'create_level6' %}"
+      method="post"
+    >
+      {% csrf_token %}
+
+      <div class="row align-items-start create-level6-form-row">
+
+        <aside class="col-12 col-md-4 create-level6-helper" aria-label="Hilfetext von Cosmo">
+          <p class="create-level6-helper-text">
+            Nun überlegen wir uns nochmal welchen Typ unser Gegenstand haben soll
+          </p>
+
+          <img
+            src="{% static 'editor/img/cat1.png' %}"
+            alt="Cosmo Wizard"
+            class="create-level6-cosmo"
+          >
+        </aside>
+
+        <section class="col-12 col-md-8 create-level6-fields" aria-label="Zusammenfassung und Typauswahl">
+
+          <div class="create-level6-field">
+            <p class="create-level6-label">
+              Folgende Gegenstände müssen freigeschaltet sein
+            </p>
+
+            <div class="create-level6-tags">
+              {% for item in form_values.required_items %}
+                {% include "editor/components/tag/tag.html" with title=item show_remove=False %}
+              {% empty %}
+                <p class="text-muted mb-0">
+                  Noch keine Gegenstände ausgewählt.
+                </p>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="create-level6-field create-level6-password-field">
+            <p class="create-level6-label">
+              Brauchen wir ein Passwort um diesen Gegenstand freizuschalten
+            </p>
+
+            <div class="create-level6-choice-group" aria-label="Passwort erforderlich">
+              <span class="create-level6-choice-button {% if form_values.requires_password %}create-level6-choice-button-done{% endif %}">
+                Ja
+                {% if form_values.requires_password %}
+                  <span class="create-level6-checkmark">✓</span>
+                {% endif %}
+              </span>
+
+              <span class="create-level6-choice-button {% if not form_values.requires_password %}create-level6-choice-button-done{% endif %}">
+                Nein
+                {% if not form_values.requires_password %}
+                  <span class="create-level6-checkmark">✓</span>
+                {% endif %}
+              </span>
+            </div>
+          </div>
+
+          <div class="create-level6-field create-level6-position-field">
+            <p class="create-level6-label">
+              Wo befindet sich der Gegenstand im Hintergrund?
+            </p>
+
+            <a class="create-level6-done-button" href="{% url 'create_level51' %}">
+              Anpassen
+              <span class="create-level6-checkmark">✓</span>
+            </a>
+          </div>
+
+          <div class="create-level6-type-action-wrap">
+            <a class="create-level6-type-action" href="{% url 'create_level61' %}">
+              Wähle die Typart des Gegenstandes
+            </a>
+          </div>
+
+        </section>
+      </div>
+
+      <section class="create-level6-navigation" aria-label="Seitennavigation">
+        <a class="create-level1-button" href="{% url 'create_level5' %}">
+          Zurück
+        </a>
+
+        <button type="submit" class="create-level1-button">
+          Weiter
+        </button>
+      </section>
+
+    </form>
+  </div>
+</main>
+
+{% endblock %}
