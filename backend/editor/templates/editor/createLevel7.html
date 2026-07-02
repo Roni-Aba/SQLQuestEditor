@@ -1,1 +1,228 @@
-<h1>Zusammenfassung</h1>
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Gegenstand Übersicht | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
+<link rel="stylesheet" href="{% static 'editor/css/createLevel7.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<main class="create-level7-page">
+  <div class="container-fluid px-0">
+
+    {% include "editor/components/statusbar/statusbar.html" with steps=steps %}
+
+    <form
+      class="create-level7-content"
+      action="{% url 'create_level7' %}"
+      method="post"
+    >
+      {% csrf_token %}
+      <div class="row align-items-start create-level7-form-row">
+
+        <aside class="col-12 col-md-4 create-level7-helper" aria-label="Hilfetext von Cosmo">
+          <p class="create-level7-helper-text">
+            Hier ist dein Gegenstand auf einen Blick.
+            Wähle aus, was du bearbeiten möchtest
+          </p>
+
+          <img
+            src="{% static 'editor/img/cat1.png' %}"
+            alt="Cosmo Wizard"
+            class="create-level7-cosmo"
+          >
+        </aside>
+
+        <section class="col-12 col-md-8 create-level7-summary" aria-label="Zusammenfassung des Gegenstandes">
+
+          <div class="create-level7-card create-level7-card-heading">
+            <p>Hier ist die Zusammenfassung deines Gegenstandes:</p>
+          </div>
+
+          <article class="create-level7-card">
+            <div class="create-level7-card-content">
+              <p><strong>Name:</strong> {{ summary.item_name|default:"-" }}</p>
+
+              <p>
+                <strong>Voraussetzungen:</strong>
+                {% if summary.required_items %}
+                  {{ summary.required_items|join:", " }}
+                {% else %}
+                  Keine
+                {% endif %}
+              </p>
+            </div>
+
+            <a
+              class="create-level7-edit-link"
+              href="{% url 'create_level3' %}"
+              aria-label="Name und Voraussetzungen bearbeiten"
+            >
+              ✎
+            </a>
+          </article>
+
+          <article class="create-level7-card">
+            <div class="create-level7-card-content">
+              <p><strong>Passwort</strong></p>
+
+              <p>
+                <strong>Antwort:</strong>
+                {% if summary.passwords %}
+                  {{ summary.passwords|join:", " }}
+                {% else %}
+                  Kein Passwort
+                {% endif %}
+              </p>
+
+              <p>
+                <strong>Hinweis:</strong>
+                {{ summary.password_hint|default:"-" }}
+              </p>
+
+              <p>
+                <strong>Fehlversuchtext:</strong>
+                {% if summary.failure_hints %}
+                  {% for hint in summary.failure_hints %}
+                    {{ hint.attempts }} Versuch(e): {{ hint.message }}{% if not forloop.last %}, {% endif %}
+                  {% endfor %}
+                {% else %}
+                  -
+                {% endif %}
+              </p>
+
+              <p>
+                <strong>afterUnlock:</strong>
+                {{ summary.success_message|default:"-" }}
+              </p>
+            </div>
+
+            <a
+              class="create-level7-edit-link"
+              href="{% url 'create_level4' %}"
+              aria-label="Passwort bearbeiten"
+            >
+              ✎
+            </a>
+          </article>
+
+          <article class="create-level7-card">
+            <div class="create-level7-card-content">
+              <p><strong>Gegenstandskoordination</strong></p>
+
+              <p>
+                <strong>Bild:</strong>
+                x: {{ summary.bounding_box_image.x|default:0 }},
+                y: {{ summary.bounding_box_image.y|default:0 }},
+                width: {{ summary.bounding_box_image.width|default:0 }},
+                height: {{ summary.bounding_box_image.height|default:0 }}
+              </p>
+
+              <p>
+                <strong>Icon:</strong>
+                x: {{ summary.bounding_box_icon.x|default:0 }},
+                y: {{ summary.bounding_box_icon.y|default:0 }},
+                width: {{ summary.bounding_box_icon.width|default:0 }},
+                height: {{ summary.bounding_box_icon.height|default:0 }}
+              </p>
+            </div>
+
+            <a
+              class="create-level7-edit-link"
+              href="{% url 'create_level51' %}"
+              aria-label="Gegenstandskoordination bearbeiten"
+            >
+              ✎
+            </a>
+          </article>
+
+          <article class="create-level7-card">
+            <div class="create-level7-card-content">
+              <p><strong>Typ:</strong> {{ summary.item_type|default:"-" }}</p>
+
+              {% if summary.item_type == "table" %}
+                <p><strong>TableName:</strong> {{ summary.table_name|default:"-" }}</p>
+
+                <p><strong>Columns:</strong></p>
+
+                {% if summary.columns %}
+                  <ul class="create-level7-list">
+                    {% for column in summary.columns %}
+                      <li>{{ column.id }} — {{ column.type }}</li>
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <p>-</p>
+                {% endif %}
+              {% endif %}
+
+              {% if summary.item_type == "hint" %}
+                <p><strong>Description:</strong> {{ summary.text|default:"-" }}</p>
+                <p><strong>ImageLink:</strong> {{ summary.image_link|default:"-" }}</p>
+              {% endif %}
+
+              {% if summary.item_type == "exit" %}
+                <p><strong>Gratulation:</strong> {{ summary.exit_success_message|default:"-" }}</p>
+                <p><strong>Nächstes Level:</strong> {{ summary.next_level_id|default:"-" }}</p>
+              {% endif %}
+            </div>
+
+            {% if summary.item_type == "table" %}
+              <a
+                class="create-level7-edit-link"
+                href="{% url 'create_level6table' %}"
+                aria-label="Tabelleninformationen bearbeiten"
+              >
+                ✎
+              </a>
+            {% elif summary.item_type == "hint" %}
+              <a
+                class="create-level7-edit-link"
+                href="{% url 'create_level6hint' %}"
+                aria-label="Hintinformationen bearbeiten"
+              >
+                ✎
+              </a>
+            {% elif summary.item_type == "exit" %}
+              <a
+                class="create-level7-edit-link"
+                href="{% url 'create_level6exit' %}"
+                aria-label="Exitinformationen bearbeiten"
+              >
+                ✎
+              </a>
+            {% else %}
+              <a
+                class="create-level7-edit-link"
+                href="{% url 'create_level61' %}"
+                aria-label="Typ bearbeiten"
+              >
+                ✎
+              </a>
+            {% endif %}
+          </article>
+
+        </section>
+      </div>
+
+      <section class="create-level7-navigation" aria-label="Seitennavigation">
+        <a class="create-level1-button" href="{% url 'create_level61' %}">
+          Zurück
+        </a>
+
+        <button type="submit" class="create-level1-button">
+          Weiter
+        </button>
+      </section>
+
+    </form>
+  </div>
+</main>
+
+{% endblock %}

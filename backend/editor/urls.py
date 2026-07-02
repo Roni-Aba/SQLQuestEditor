@@ -22,4 +22,5 @@ urlpatterns = [
     path("createLevel6exit/", views.create_level6exit_view, name="create_level6exit"),
     path("createLevel6table/",views.create_level6table_view, name="create_level6table"),
     path("createLevel7/", views.create_level7_view, name="create_level7"),
+    path("createLevel8/", views.create_level8_view, name="create_level8"),
 ]
