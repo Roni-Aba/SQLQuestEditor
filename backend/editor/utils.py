@@ -123,3 +123,20 @@ def save_new_level_to_game_json(request):
     request.session["new_level"] = saved_level
     request.session.modified = True
     return game_json, saved_level
+
+
+def get_item_options_for_current_level(saved_level):
+    item_options = []
+    seen_item_ids = set()
+    for item in saved_level.get("items", []):
+        item_id = item.get("id", "").strip()
+        if not item_id:
+            continue
+        if item_id in seen_item_ids:
+            continue
+        item_options.append({
+            "value": item_id,
+            "label": item_id,
+        })
+        seen_item_ids.add(item_id)
+    return item_options

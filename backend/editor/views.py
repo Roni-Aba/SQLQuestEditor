@@ -148,9 +148,14 @@ def create_level2_view(request):
 def create_level3_view(request):
     steps = get_steps(active_step=3)
     saved_level = request.session.get("new_level", {})
+    current_item = saved_level.get("item", {})
+    item_options = utils.get_item_options_for_current_level(saved_level)
     form_values = {
-        "item_name": "",
-        "unlocked_items_json": "[]",
+        "item_name": current_item.get("id", ""),
+        "unlocked_items_json": json.dumps(
+            current_item.get("unlockedItems", []),
+            ensure_ascii=False
+        ),
     }
     if request.method == "POST":
         item_name = request.POST.get("item_name", "").strip()
@@ -161,7 +166,7 @@ def create_level3_view(request):
             unlocked_items = []
         saved_level["item"] = {
             "id": item_name,
-            "unlockedItems": unlocked_items
+            "unlockedItems": unlocked_items,
         }
         request.session["new_level"] = saved_level
         request.session.modified = True
@@ -172,8 +177,8 @@ def create_level3_view(request):
         "steps": steps,
         "saved_level": saved_level,
         "form_values": form_values,
+        "item_options": item_options,
     })
-
 def create_level4_view(request):
     steps = get_steps(active_step=4)
     saved_level = request.session.get("new_level", {})

@@ -64,9 +64,11 @@ Level erstellen | SQL Spell Quest Editor
 
             <select id="item-select" class="form-select">
               <option value="">Gegenstände</option>
-              <option value="Ausrüstungsliste">Ausrüstungsliste</option>
-              <option value="Zauberhut">Zauberhut</option>
-              <option value="Zauberstab">Zauberstab</option>
+                {% for item_option in item_options %}
+                <option value="{{ item_option.value }}">
+                  {{ item_option.label }}
+                </option>
+              {% endfor %}
             </select>
           </div>
 
@@ -166,20 +168,6 @@ Level erstellen | SQL Spell Quest Editor
 
     itemSelect.value = "";
   });
-
-  createLevel3Form.addEventListener("submit", function () {
-    const formData = new FormData(createLevel3Form);
-
-    const json = {
-      item: {
-        id: formData.get("item_name"),
-        unlockedItems: JSON.parse(formData.get("unlocked_items") || "[]")
-      }
-    };
-
-    debugJson(json);
-  });
-
   renderTags();
 </script>
 
