@@ -101,4 +101,10 @@
     gap: 28px;
     margin-top: 80px;
   }
+  .create-level3-empty-text {
+  margin-top: 0.75rem;
+  color: var(--create-level-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
 }
