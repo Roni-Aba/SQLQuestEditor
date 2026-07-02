@@ -43,7 +43,9 @@
       welchen du bearbeiten möchtest.
     </p>
 
-    {% include "editor/components/button/button.html" with title="Exportiere das Spiel" disabled=True %}
+    <a href="{% url 'export_game' %}" class="text-decoration-none">
+      {% include "editor/components/button/button.html" with title="Exportiere das Spiel" %}
+    </a>
   </section>
 
   <section class="guided-section">
@@ -53,8 +55,5 @@
   </section>
 
 </main>
-<script>
-  const currentLevelDebug = JSON.parse('{{ debug_json|escapejs }}');
-  console.log("Aktueller Level-Zwischenstand:", currentLevelDebug);
-</script>
+
 {% endblock %}

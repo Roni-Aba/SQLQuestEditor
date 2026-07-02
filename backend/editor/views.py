@@ -2,7 +2,9 @@ import json
 from pathlib import Path
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
+from . import utils
 
 def get_steps(active_step):
     steps = []
@@ -39,6 +41,8 @@ def upload_json_view(request):
             return render(request, "editor/start.html", {
                 "error": "Die Datei ist keine gültige JSON-Datei."
             })
+        request.session["game_json"] = game
+        request.session.modified = True
         name_of_levels = []
         for level in game.get("level", []):
             name_of_levels.append(level.get("id", "Unbenanntes Level"))
@@ -68,10 +72,11 @@ def create_level(request):
     })
 
 def auswahl_view(request):
-    new_level = request.session.get("new_level", {})
+    game_json = request.session.get("game_json", {})
+    print("Aktuelle gesamte JSON in auswahl_view:")
+    print(json.dumps(game_json, ensure_ascii=False, indent=2))
     return render(request, "editor/auswahl.html", {
-        "steps": get_steps(active_step=0),
-        "new_level": new_level,
+        "game_json": game_json,
     })
 
 def create_level1_view(request):
@@ -507,7 +512,7 @@ def create_level6table_view(request):
         item_name = item.get("id", "")
         item = saved_level.get("item", {})
         item["type"] = "table"
-        item["tableName"] = item_name + ".sql"
+        item["tableName"] = item_name
         item["columns"] = columns
         saved_level["item"] = item
         request.session["new_level"] = saved_level
@@ -558,5 +563,65 @@ def create_level7_view(request):
         "summary": summary,
     })
 
+def save_current_item_to_level(saved_level):
+    item = saved_level.get("item", {})
+
+    if not item.get("id"):
+        return saved_level
+
+    items = saved_level.get("items", [])
+
+    existing_index = None
+    for index, existing_item in enumerate(items):
+        if existing_item.get("id") == item.get("id"):
+            existing_index = index
+            break
+
+    if existing_index is not None:
+        items[existing_index] = item
+    else:
+        items.append(item)
+
+    saved_level["items"] = items
+    return saved_level
+
+
 def create_level8_view(request):
-    return render(request, "editor/createLevel8.html", {})
+    steps = get_steps(active_step=8)
+    saved_level = request.session.get("new_level", {})
+    if request.method == "POST":
+        next_action = request.POST.get("next_action")
+        game_json, saved_level = utils.save_new_level_to_game_json(request)
+        if next_action == "more_items":
+            saved_level.pop("item", None)
+            saved_level.pop("unlockCondition", None)
+            saved_level.pop("position", None)
+            request.session["new_level"] = saved_level
+            request.session["game_json"] = game_json
+            request.session.modified = True
+            print("Gegenstand wurde in die JSON eingefügt. Neuer Gegenstand kann erstellt werden:")
+            print(json.dumps(game_json, ensure_ascii=False, indent=2))
+            return redirect("create_level3")
+        request.session["new_level"] = saved_level
+        request.session["game_json"] = game_json
+        request.session.modified = True
+        print("Gegenstand wurde in die JSON eingefügt. Zurück zur Auswahl:")
+        print(json.dumps(game_json, ensure_ascii=False, indent=2))
+
+        return redirect("auswahl_view")
+
+    return render(request, "editor/createLevel8.html", {
+        "steps": steps,
+        "saved_level": saved_level,
+    })
+
+def export_game_view(request):
+    game_json = request.session.get("game_json", {})
+    json_string = json.dumps(game_json, ensure_ascii=False, indent=2)
+    response = HttpResponse(
+        json_string,
+        content_type="application/json; charset=utf-8"
+    )
+    response["Content-Disposition"] = 'attachment; filename="SQLSpellQuest_export.json"'
+    return response
+
