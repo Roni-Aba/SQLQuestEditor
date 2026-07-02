@@ -1,1 +1,65 @@
-<h1>Geschafft</h1>
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Gegenstand fertig | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
+<link rel="stylesheet" href="{% static 'editor/css/createLevel8.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<main class="create-level8-page">
+
+  <form
+    class="create-level8-content"
+    action="{% url 'create_level8' %}"
+    method="post"
+  >
+    {% csrf_token %}
+
+    {% include "editor/components/statusbar/statusbar.html" with steps=steps %}
+
+    <section class="create-level8-finish" aria-label="Gegenstand fertig erstellt">
+
+      <h1 class="create-level8-heading">
+        Du hast es geschafft :)
+      </h1>
+
+      <img
+        src="{% static 'editor/img/cat1.png' %}"
+        alt="Cosmo Wizard"
+        class="create-level8-cosmo"
+      >
+
+      <div class="create-level8-actions">
+        <button
+          type="submit"
+          name="next_action"
+          value="more_items"
+          class="create-level8-button"
+        >
+          Erstelle weitere Gegenstände
+        </button>
+
+        <button
+          type="submit"
+          name="next_action"
+          value="level_management"
+          class="create-level8-button"
+        >
+          Springe zur Levelverwaltung
+        </button>
+      </div>
+
+    </section>
+
+  </form>
+
+</main>
+
+{% endblock %}

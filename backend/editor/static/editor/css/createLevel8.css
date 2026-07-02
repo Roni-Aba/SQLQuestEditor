@@ -1,0 +1,98 @@
+.create-level8-page {
+  min-height: calc(100vh - 56px);
+  background-color: #ffffff;
+  color: var(--create-level-text);
+}
+
+.create-level8-content {
+  width: min(980px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2.5rem 0 2rem;
+}
+
+.create-level8-content .status-bar {
+  margin-bottom: 4.5rem;
+}
+
+.create-level8-finish {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.create-level8-heading {
+  margin: 0 0 70px;
+  color: var(--create-level-text);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.create-level8-cosmo {
+  width: 260px;
+  height: 260px;
+  object-fit: contain;
+  margin-bottom: 70px;
+}
+
+.create-level8-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 78px;
+}
+
+.create-level8-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  padding: 10px 26px;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--create-level-primary-light);
+  color: var(--create-level-primary);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.create-level8-button:hover {
+  background-color: var(--create-level-primary-light-hover);
+}
+
+@media (max-width: 820px) {
+  .create-level8-content {
+    width: min(100% - 2rem, 520px);
+    padding-top: 1.5rem;
+  }
+
+  .create-level8-content .status-bar {
+    margin-bottom: 3rem;
+  }
+
+  .create-level8-heading {
+    margin-bottom: 42px;
+    font-size: 22px;
+  }
+
+  .create-level8-cosmo {
+    width: 190px;
+    height: 190px;
+    margin-bottom: 52px;
+  }
+
+  .create-level8-actions {
+    gap: 36px;
+  }
+
+  .create-level8-button {
+    width: 100%;
+    max-width: 360px;
+    min-height: 52px;
+    font-size: 20px;
+  }
+}
