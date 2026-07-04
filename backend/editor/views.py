@@ -1,10 +1,10 @@
-import json
+from . import utils, sqlParser
+import json, io, zipfile
 from pathlib import Path
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
-from . import utils
 
 def get_steps(active_step):
     steps = []
@@ -449,7 +449,7 @@ def create_level6hint_view(request):
         "hint_type": current_hint_type,
         "hint_text": item.get("text", ""),
         "hint_image": item.get("imageLink", ""),
-    }
+}
     if request.method == "POST":
         hint_type = request.POST.get("hint_type", "").strip()
         hint_text = request.POST.get("hint_text", "").strip()
@@ -485,7 +485,6 @@ def create_level6hint_view(request):
         "form_values": form_values,
         "hint_options": hint_options,
     })
-
 
 def create_level6table_view(request):
     steps = get_steps(active_step=6)
@@ -623,10 +622,27 @@ def create_level8_view(request):
 def export_game_view(request):
     game_json = request.session.get("game_json", {})
     json_string = json.dumps(game_json, ensure_ascii=False, indent=2)
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        zip_file.writestr(
+            "SQLSpellQuest_export.json",
+            json_string
+        )
+        for level in game_json.get("level", []):
+            level_id = level.get("id", "level")
+            level_sql = sqlParser.build_level_sql(level)
+            if not level_sql.strip():
+                continue
+            sql_filename = f"{level_id}.sql"
+            zip_file.writestr(
+                sql_filename,
+                level_sql
+            )
+    zip_buffer.seek(0)
     response = HttpResponse(
-        json_string,
-        content_type="application/json; charset=utf-8"
+        zip_buffer.getvalue(),
+        content_type="application/zip"
     )
-    response["Content-Disposition"] = 'attachment; filename="SQLSpellQuest_export.json"'
+    response["Content-Disposition"] = 'attachment; filename="SQLSpellQuest_export.zip"'
     return response
 
