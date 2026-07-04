@@ -200,6 +200,7 @@ Position anpassen | SQL Spell Quest Editor
 
 <script>
   const imageArea = document.querySelector("#image-area");
+  const backgroundImage = document.querySelector("#level-background-image");
   const selectionBox = document.querySelector("#selection-box");
 
   const startImageButton = document.querySelector("#start-image-selection");
@@ -217,58 +218,122 @@ Position anpassen | SQL Spell Quest Editor
     startImageButton.classList.toggle("create-level51-action-button-active", target === "image");
     startIconButton.classList.toggle("create-level51-action-button-active", target === "icon");
   }
+
   function setValues(target, x, y, width, height) {
     document.querySelector(`#${target}-x`).value = x;
     document.querySelector(`#${target}-y`).value = y;
     document.querySelector(`#${target}-width`).value = width;
     document.querySelector(`#${target}-height`).value = height;
   }
+
+  function getImageScale() {
+    const displayedRect = backgroundImage.getBoundingClientRect();
+
+    const scaleX = backgroundImage.naturalWidth / displayedRect.width;
+    const scaleY = backgroundImage.naturalHeight / displayedRect.height;
+
+    return {
+      scaleX: scaleX,
+      scaleY: scaleY,
+      displayedRect: displayedRect
+    };
+  }
+
+  function getMousePositionOnDisplayedImage(event) {
+    const imageData = getImageScale();
+    const displayedRect = imageData.displayedRect;
+
+    return {
+      x: event.clientX - displayedRect.left,
+      y: event.clientY - displayedRect.top
+    };
+  }
+
+  function convertDisplayedBoxToOriginalImageBox(x, y, width, height) {
+    const imageData = getImageScale();
+
+    return {
+      x: Math.round(x * imageData.scaleX),
+      y: Math.round(y * imageData.scaleY),
+      width: Math.round(width * imageData.scaleX),
+      height: Math.round(height * imageData.scaleY)
+    };
+  }
+
   startImageButton.addEventListener("click", function () {
     setActiveTarget("image");
   });
+
   startIconButton.addEventListener("click", function () {
     setActiveTarget("icon");
   });
+
   imageArea.addEventListener("mousedown", function (event) {
     if (!activeTarget) {
       return;
     }
-    const rect = imageArea.getBoundingClientRect();
+
     isDrawing = true;
-    startX = event.clientX - rect.left;
-    startY = event.clientY - rect.top;
+
+    const position = getMousePositionOnDisplayedImage(event);
+
+    startX = position.x;
+    startY = position.y;
+
     selectionBox.style.display = "block";
     selectionBox.style.left = `${startX}px`;
     selectionBox.style.top = `${startY}px`;
     selectionBox.style.width = "0px";
     selectionBox.style.height = "0px";
   });
+
   imageArea.addEventListener("mousemove", function (event) {
     if (!isDrawing || !activeTarget) {
       return;
     }
-    const rect = imageArea.getBoundingClientRect();
-    const currentX = event.clientX - rect.left;
-    const currentY = event.clientY - rect.top;
+
+    const position = getMousePositionOnDisplayedImage(event);
+
+    const currentX = position.x;
+    const currentY = position.y;
+
     const x = Math.min(startX, currentX);
     const y = Math.min(startY, currentY);
     const width = Math.abs(currentX - startX);
     const height = Math.abs(currentY - startY);
+
     selectionBox.style.left = `${x}px`;
     selectionBox.style.top = `${y}px`;
     selectionBox.style.width = `${width}px`;
     selectionBox.style.height = `${height}px`;
   });
+
   document.addEventListener("mouseup", function () {
     if (!isDrawing || !activeTarget) {
       return;
     }
+
     isDrawing = false;
-    const x = Math.round(parseFloat(selectionBox.style.left) || 0);
-    const y = Math.round(parseFloat(selectionBox.style.top) || 0);
-    const width = Math.round(parseFloat(selectionBox.style.width) || 0);
-    const height = Math.round(parseFloat(selectionBox.style.height) || 0);
-    setValues(activeTarget, x, y, width, height);
+
+    const displayedX = parseFloat(selectionBox.style.left) || 0;
+    const displayedY = parseFloat(selectionBox.style.top) || 0;
+    const displayedWidth = parseFloat(selectionBox.style.width) || 0;
+    const displayedHeight = parseFloat(selectionBox.style.height) || 0;
+
+    const originalBox = convertDisplayedBoxToOriginalImageBox(
+      displayedX,
+      displayedY,
+      displayedWidth,
+      displayedHeight
+    );
+
+    setValues(
+      activeTarget,
+      originalBox.x,
+      originalBox.y,
+      originalBox.width,
+      originalBox.height
+    );
   });
 </script>
 {% endblock %}
