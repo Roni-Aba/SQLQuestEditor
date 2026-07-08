@@ -67,8 +67,9 @@ Level erstellen | SQL Spell Quest Editor
             </div>
 
             <section class="create-level2-navigation" aria-label="Seitennavigation">
-                {% url 'create_level1' as create_level1_url %}
-                {% include "editor/components/button/button.html" with title="Zurück" href=create_level1_url %}
+                <a class="btn btn-lg rounded-pill create-level-submit-button" href="{% url 'create_level1' %}">
+                    Zurück
+                </a>
 
                 <button type="submit" class="btn btn-lg rounded-pill create-level-submit-button">
                     Weiter

@@ -2,13 +2,13 @@ def build_item_for_json(saved_level):
     item_data = saved_level.get("item", {})
     unlock_condition = saved_level.get("unlockCondition", {})
     position = saved_level.get("position", {})
-
     required_items = unlock_condition.get(
         "requiredItems",
         item_data.get("unlockedItems", [])
     )
     failure_hints = unlock_condition.get("failureHints", [])
     unlock_hints = []
+    requires_password = unlock_condition.get("requiresPassword", False)
     for hint in failure_hints:
         attempts = hint.get("attempts")
         message = hint.get("message", "")
@@ -26,7 +26,7 @@ def build_item_for_json(saved_level):
         },
         "neededItems": required_items,
         "type": item_data.get("type", ""),
-        "unlocked": item_data.get("unlocked", False),
+        "unlocked": not requires_password,
         "boundingBoxImage": position.get("boundingBoxImage", {
             "x": 0,
             "y": 0,
