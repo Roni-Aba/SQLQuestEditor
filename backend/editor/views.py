@@ -275,25 +275,28 @@ def create_level4_view(request):
     steps = get_steps(active_step=4)
     saved_level = request.session.get("new_level", {})
     selected_item = saved_level.get("item", {})
-    required_items = selected_item.get("unlockedItems", [])
+    unlock_condition = saved_level.get("unlockCondition", {})
+    required_items = unlock_condition.get("requiredItems",selected_item.get("unlockedItems", []))
+    requires_password = unlock_condition.get("requiresPassword",False)
     form_values = {
-        "requires_password": "false",
+        "requires_password": (
+            "true" if requires_password else "false"),
         "required_items": required_items,
     }
     if request.method == "POST":
-        requires_password = request.POST.get("requires_password") == "true"
-        saved_level["unlockCondition"] = {
-            "requiredItems": required_items,
-            "requiresPassword": requires_password
-        }
+        requires_password = (request.POST.get("requires_password","false")== "true")
+        selected_item = saved_level.get("item", {})
+        required_items = selected_item.get("unlockedItems",[])
+        unlock_condition = saved_level.get("unlockCondition",{})
+        unlock_condition["requiredItems"] = required_items
+        unlock_condition["requiresPassword"] = requires_password
+        saved_level["unlockCondition"] = unlock_condition
         request.session["new_level"] = saved_level
         request.session.modified = True
         print("createLevel4 gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
-
+        print(json.dumps(saved_level,ensure_ascii=False,indent=2))
         if requires_password:
             return redirect("create_level41")
-
         return redirect("create_level5")
     return render(request, "editor/createLevel4.html", {
         "steps": steps,
