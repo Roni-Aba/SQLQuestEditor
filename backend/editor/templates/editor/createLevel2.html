@@ -6,9 +6,18 @@ Level erstellen | SQL Spell Quest Editor
 {% endblock %}
 
 {% block additional_css %}
-<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
-<link rel="stylesheet" href="{% static 'editor/css/createLevel2.css' %}">
-<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+<link
+    rel="stylesheet"
+    href="{% static 'editor/css/createLevelShared.css' %}"
+>
+<link
+    rel="stylesheet"
+    href="{% static 'editor/css/createLevel2.css' %}"
+>
+<link
+    rel="stylesheet"
+    href="{% static 'editor/components/statusBar/statusBar.css' %}"
+>
 {% endblock %}
 
 {% block content %}
@@ -27,7 +36,10 @@ Level erstellen | SQL Spell Quest Editor
 
             <div class="row align-items-start create-level2-form-row">
 
-                <aside class="col-12 col-md-4 create-level2-helper" aria-label="Hilfetext von Cosmo">
+                <aside
+                    class="col-12 col-md-4 create-level2-helper"
+                    aria-label="Hilfetext von Cosmo"
+                >
                     <img
                         src="{% static 'editor/img/cat1.png' %}"
                         alt="Cosmo Wizard"
@@ -35,13 +47,17 @@ Level erstellen | SQL Spell Quest Editor
                     >
 
                     <p>
-                        Hier legen wir fest, wie viele Zeilen und Spalten eine SQL-Abfrage
-                        maximal anzeigen darf. Außerdem bestimmst du die passenden Meldungen,
-                        falls zu viele Ergebnisse angezeigt werden.
+                        Hier legen wir fest, wie viele Zeilen und Spalten
+                        eine SQL-Abfrage maximal anzeigen darf. Außerdem
+                        bestimmst du die passenden Meldungen, falls zu viele
+                        Ergebnisse angezeigt werden.
                     </p>
                 </aside>
 
-                <section class="col-12 col-md-8 create-level2-fields" aria-label="SQL-Anzeigebegrenzung">
+                <section
+                    class="col-12 col-md-8 create-level2-fields"
+                    aria-label="SQL-Anzeigebegrenzung"
+                >
 
                     <div class="mb-5">
                         {% include "editor/components/chatbox/chatbox.html" with title="Anzahl der Spalten, welche angezeigt werden sollen" input_id="max_columns" input_name="max_columns" placeholder_text="Schreibe eine Nummer hinein" game_wizard_input=form_values.max_columns is_editable=True %}
@@ -66,12 +82,20 @@ Level erstellen | SQL Spell Quest Editor
                 </section>
             </div>
 
-            <section class="create-level2-navigation" aria-label="Seitennavigation">
-                <a class="btn btn-lg rounded-pill create-level-submit-button" href="{% url 'create_level1' %}">
+            <section
+                class="create-level2-navigation"
+                aria-label="Seitennavigation"
+            >
+                <a
+                    class="btn btn-lg rounded-pill create-level-submit-button"
+                    href="{% url 'create_level1' %}"
+                >
                     Zurück
                 </a>
-
-                <button type="submit" class="btn btn-lg rounded-pill create-level-submit-button">
+                <button
+                    type="submit"
+                    class="btn btn-lg rounded-pill create-level-submit-button"
+                >
                     Weiter
                 </button>
             </section>
@@ -79,4 +103,5 @@ Level erstellen | SQL Spell Quest Editor
 
     </div>
 </main>
+
 {% endblock %}
