@@ -13,7 +13,11 @@ Level erstellen | SQL Spell Quest Editor
 {% block content %}
 <main class="create-level1-page">
   <div class="container-fluid px-0">
-    <ol class="create-level1-steps" aria-label="Fortschritt der Levelerstellung">
+
+    <ol
+      class="create-level1-steps"
+      aria-label="Fortschritt der Levelerstellung"
+    >
       {% if steps %}
         {% for step in steps %}
           <li class="{% if step.active %}is-active{% endif %}">
@@ -41,7 +45,11 @@ Level erstellen | SQL Spell Quest Editor
       {% csrf_token %}
 
       <div class="row align-items-start create-level1-form-row">
-        <aside class="col-12 col-md-4 create-level1-helper" aria-label="Hilfetext von Cosmo">
+
+        <aside
+          class="col-12 col-md-4 create-level1-helper"
+          aria-label="Hilfetext von Cosmo"
+        >
           <img
             src="{% static 'editor/img/cat1.png' %}"
             alt="Cosmo Wizard"
@@ -55,10 +63,14 @@ Level erstellen | SQL Spell Quest Editor
           </p>
         </aside>
 
-        <section class="col-12 col-md-8 create-level1-fields" aria-label="Levelgrunddaten">
+        <section
+          class="col-12 col-md-8 create-level1-fields"
+          aria-label="Levelgrunddaten"
+        >
+
           <div class="create-level1-field">
             <label for="level-name">
-              Verrate mir doch bitte wie das Level heißen soll
+              Verrate mir doch bitte, wie das Level heißen soll
             </label>
 
             <input
@@ -66,7 +78,7 @@ Level erstellen | SQL Spell Quest Editor
               name="level_name"
               type="text"
               placeholder="Schreibe hinein"
-              value="{{ saved_level.id|default:'' }}"
+              value="{{ form_values.level_name|default:'' }}"
             >
           </div>
 
@@ -75,8 +87,14 @@ Level erstellen | SQL Spell Quest Editor
               Welches Hintergrundbild soll das Level verwenden?
             </label>
 
-            <div class="create-level1-image-actions" aria-label="Bildoptionen">
-              <label for="level-picture-input" class="create-level1-small-button">
+            <div
+              class="create-level1-image-actions"
+              aria-label="Bildoptionen"
+            >
+              <label
+                for="level-picture-input"
+                class="create-level1-small-button"
+              >
                 Verwende eigenes Bild für das Level
               </label>
 
@@ -88,9 +106,12 @@ Level erstellen | SQL Spell Quest Editor
                 hidden
               >
 
-              <span class="create-level1-image-feedback">
-                {% if saved_level.levelPicture %}
-                  {{ saved_level.levelPicture }}
+              <span
+                id="level-picture-feedback"
+                class="create-level1-image-feedback"
+              >
+                {% if form_values.level_picture %}
+                  Bereits ausgewählt: {{ form_values.level_picture }}
                 {% else %}
                   Noch kein Bild ausgewählt
                 {% endif %}
@@ -99,7 +120,8 @@ Level erstellen | SQL Spell Quest Editor
           </div>
 
           <p class="create-level1-image-info">
-          Das Hintergrundbild muss eine Auflösung von 1536 × 1024 Pixeln besitzen.
+            Das Hintergrundbild muss eine Auflösung von
+            1536 × 1024 Pixeln besitzen.
           </p>
 
           <div class="create-level1-field">
@@ -112,23 +134,54 @@ Level erstellen | SQL Spell Quest Editor
               name="level_greeting"
               type="text"
               placeholder="Schreibe hinein"
-              value="{{ saved_level.startDialog|default:'' }}"
+              value="{{ form_values.level_greeting|default:'' }}"
             >
           </div>
+
         </section>
       </div>
 
-      <section class="create-level1-navigation" aria-label="Seitennavigation">
-      <a class="create-level1-button" href="{% url 'create_level' %}">
-        Zurück
-      </a>
+      <section
+        class="create-level1-navigation"
+        aria-label="Seitennavigation"
+      >
+        <a
+          class="create-level1-button"
+          href="{% url 'create_level' %}"
+        >
+          Zurück
+        </a>
 
-     <button type="submit" class="create-level1-button">
-      Weiter
-    </button>
-    </section>
+        <button
+          type="submit"
+          class="create-level1-button"
+        >
+          Weiter
+        </button>
+      </section>
     </form>
   </div>
 </main>
 
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const pictureInput = document.getElementById(
+      "level-picture-input"
+    );
+    const pictureFeedback = document.getElementById(
+      "level-picture-feedback"
+    );
+    if (!pictureInput || !pictureFeedback) {
+      return;
+    }
+    pictureInput.addEventListener("change", function () {
+      const selectedFile = pictureInput.files[0];
+      if (!selectedFile) {
+        return;
+      }
+      pictureFeedback.textContent =
+        "Neu ausgewählt: " + selectedFile.name;
+    });
+  });
+</script>
 {% endblock %}
