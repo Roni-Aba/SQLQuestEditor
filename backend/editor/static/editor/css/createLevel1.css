@@ -146,4 +146,10 @@
   .create-level1-button {
     font-size: 22px;
   }
+  .create-level1-image-info {
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
 }
