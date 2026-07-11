@@ -304,32 +304,51 @@ def create_level4_view(request):
 def create_level41_view(request):
     steps = get_steps(active_step=5)
     saved_level = request.session.get("new_level", {})
+    unlock_condition = saved_level.get("unlockCondition", {})
+    passwords = unlock_condition.get("passwords", [])
+    if not isinstance(passwords, list):
+        passwords = []
     form_values = {
-        "item_passwords": "",
-        "password_hint": "",
-        "success_message": "",
-        "show_hints": "false",
+        "item_passwords": ", ".join(passwords),
+        "password_hint": unlock_condition.get(
+            "passwordHint",
+            ""
+        ),
+        "success_message": unlock_condition.get(
+            "successMessage",
+            ""
+        ),
+        "show_hints": (
+            "true"
+            if unlock_condition.get(
+                "showHintsOnFailure",
+                False
+            )
+            else "false"
+        ),
     }
     if request.method == "POST":
-        item_passwords_raw = request.POST.get("item_passwords", "").strip()
-        password_hint = request.POST.get("password_hint", "").strip()
-        success_message = request.POST.get("success_message", "").strip()
-        show_hints = request.POST.get("show_hints", "false")
+        item_passwords_raw = request.POST.get("item_passwords","").strip()
+        password_hint = request.POST.get("password_hint","").strip()
+        success_message = request.POST.get("success_message","").strip()
+        show_hints = request.POST.get("show_hints","false")
         passwords = [
-            p.strip()
-            for p in item_passwords_raw.replace(",", "\n").splitlines()
-            if p.strip()
-        ]
-        unlock_condition = saved_level.get("unlockCondition", {})
+            password.strip()
+            for password in item_passwords_raw
+            .replace(",", "\n")
+            .splitlines()
+            if password.strip()
+]
+        unlock_condition = saved_level.get("unlockCondition",{})
         unlock_condition["passwords"] = passwords
         unlock_condition["passwordHint"] = password_hint
         unlock_condition["successMessage"] = success_message
-        unlock_condition["showHintsOnFailure"] = show_hints == "true"
+        unlock_condition["showHintsOnFailure"] = (show_hints == "true")
         saved_level["unlockCondition"] = unlock_condition
         request.session["new_level"] = saved_level
         request.session.modified = True
-        print("createLevel5 gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        print("createLevel4-1 gespeichert:")
+        print(json.dumps(saved_level,ensure_ascii=False,indent=2))
         if show_hints == "true":
             return redirect("create_level42")
         return redirect("create_level5")
