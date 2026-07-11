@@ -231,28 +231,39 @@ def create_level3_view(request):
     saved_level = request.session.get("new_level", {})
     current_item = saved_level.get("item", {})
     item_options = utils.get_item_options_for_current_level(saved_level)
+    unlocked_items = current_item.get("unlockedItems",[])
+    if not isinstance(unlocked_items, list):
+        unlocked_items = []
     form_values = {
         "item_name": current_item.get("id", ""),
         "unlocked_items_json": json.dumps(
-            current_item.get("unlockedItems", []),
+            unlocked_items,
             ensure_ascii=False
         ),
     }
     if request.method == "POST":
-        item_name = request.POST.get("item_name", "").strip()
-        unlocked_items_raw = request.POST.get("unlocked_items", "[]")
+        item_name = request.POST.get(
+            "item_name",
+            ""
+        ).strip()
+        unlocked_items_raw = request.POST.get(
+            "unlocked_items",
+            "[]"
+        )
         try:
             unlocked_items = json.loads(unlocked_items_raw)
-        except json.JSONDecodeError:
+            if not isinstance(unlocked_items, list):
+                unlocked_items = []
+        except (json.JSONDecodeError, TypeError):
             unlocked_items = []
-        saved_level["item"] = {
-            "id": item_name,
-            "unlockedItems": unlocked_items,
-        }
+        current_item = saved_level.get("item", {})
+        current_item["id"] = item_name
+        current_item["unlockedItems"] = unlocked_items
+        saved_level["item"] = current_item
         request.session["new_level"] = saved_level
         request.session.modified = True
         print("createLevel3 gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        print(json.dumps(saved_level,ensure_ascii=False,indent=2))
         return redirect("create_level4")
     return render(request, "editor/createLevel3.html", {
         "steps": steps,
