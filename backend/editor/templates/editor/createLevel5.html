@@ -6,10 +6,22 @@ Level erstellen | SQL Spell Quest Editor
 {% endblock %}
 
 {% block additional_css %}
-<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
-<link rel="stylesheet" href="{% static 'editor/css/createLevel5.css' %}">
-<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
-<link rel="stylesheet" href="{% static 'editor/components/tag/tag.css' %}">
+<link
+  rel="stylesheet"
+  href="{% static 'editor/css/createLevelShared.css' %}"
+>
+<link
+  rel="stylesheet"
+  href="{% static 'editor/css/createLevel5.css' %}"
+>
+<link
+  rel="stylesheet"
+  href="{% static 'editor/components/statusBar/statusBar.css' %}"
+>
+<link
+  rel="stylesheet"
+  href="{% static 'editor/components/tag/tag.css' %}"
+>
 {% endblock %}
 
 {% block content %}
@@ -28,7 +40,10 @@ Level erstellen | SQL Spell Quest Editor
 
       <div class="row align-items-start create-level5-form-row">
 
-        <aside class="col-12 col-md-4 create-level5-helper" aria-label="Hilfetext von Cosmo">
+        <aside
+          class="col-12 col-md-4 create-level5-helper"
+          aria-label="Hilfetext von Cosmo"
+        >
           <p class="create-level5-helper-text">
             Halbzeit fast geschafft
           </p>
@@ -40,7 +55,10 @@ Level erstellen | SQL Spell Quest Editor
           >
         </aside>
 
-        <section class="col-12 col-md-8 create-level5-fields" aria-label="Gegenstand Position">
+        <section
+          class="col-12 col-md-8 create-level5-fields"
+          aria-label="Gegenstandsposition"
+        >
 
           <div class="create-level5-field">
             <p class="create-level5-label">
@@ -58,28 +76,43 @@ Level erstellen | SQL Spell Quest Editor
             </div>
           </div>
 
-          <div class="create-level5-field create-level5-password-field">
+          <div
+            class="create-level5-field create-level5-password-field"
+          >
             <p class="create-level5-label">
-              Brauchen wir ein Passwort um diesen Gegenstand freizuschalten
+              Brauchen wir ein Passwort, um diesen Gegenstand
+              freizuschalten?
             </p>
 
-            <div class="create-level5-choice-group" aria-label="Passwort erforderlich">
-              <span class="create-level5-choice-button create-level5-choice-button-yes {% if form_values.requires_password %}create-level5-choice-button-active{% endif %}">
+            <div
+              class="create-level5-choice-group"
+              aria-label="Passwort erforderlich"
+            >
+              <span
+                class="create-level5-choice-button create-level5-choice-button-yes {% if form_values.requires_password %}create-level5-choice-button-active{% endif %}"
+              >
                 Ja
               </span>
 
-              <span class="create-level5-choice-button create-level5-choice-button-no {% if not form_values.requires_password %}create-level5-choice-button-active{% endif %}">
+              <span
+                class="create-level5-choice-button create-level5-choice-button-no {% if not form_values.requires_password %}create-level5-choice-button-active{% endif %}"
+              >
                 Nein
               </span>
             </div>
           </div>
 
-          <div class="create-level5-field create-level5-position-field">
+          <div
+            class="create-level5-field create-level5-position-field"
+          >
             <p class="create-level5-label">
               Wo befindet sich der Gegenstand im Hintergrund?
             </p>
 
-            <a class="create-level5-adjust-button" href="{% url 'create_level51' %}">
+            <a
+              class="create-level5-adjust-button"
+              href="{% url 'create_level51' %}"
+            >
               Anpassen
             </a>
           </div>
@@ -87,12 +120,21 @@ Level erstellen | SQL Spell Quest Editor
         </section>
       </div>
 
-      <section class="create-level5-navigation" aria-label="Seitennavigation">
-        <a class="create-level1-button" href="{% url 'create_level4' %}">
+      <section
+        class="create-level5-navigation"
+        aria-label="Seitennavigation"
+      >
+        <a
+          class="create-level1-button"
+          href="{% url back_url_name %}"
+        >
           Zurück
         </a>
 
-        <button type="submit" class="create-level1-button">
+        <button
+          type="submit"
+          class="create-level1-button"
+        >
           Weiter
         </button>
       </section>

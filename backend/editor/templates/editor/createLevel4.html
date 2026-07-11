@@ -6,10 +6,22 @@ Level erstellen | SQL Spell Quest Editor
 {% endblock %}
 
 {% block additional_css %}
-<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
-<link rel="stylesheet" href="{% static 'editor/css/createLevel4.css' %}">
-<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
-<link rel="stylesheet" href="{% static 'editor/components/tag/tag.css' %}">
+<link
+  rel="stylesheet"
+  href="{% static 'editor/css/createLevelShared.css' %}"
+>
+<link
+  rel="stylesheet"
+  href="{% static 'editor/css/createLevel4.css' %}"
+>
+<link
+  rel="stylesheet"
+  href="{% static 'editor/components/statusBar/statusBar.css' %}"
+>
+<link
+  rel="stylesheet"
+  href="{% static 'editor/components/tag/tag.css' %}"
+>
 {% endblock %}
 
 {% block content %}
@@ -25,23 +37,25 @@ Level erstellen | SQL Spell Quest Editor
       method="post"
     >
       {% csrf_token %}
-
       <div class="row align-items-start create-level4-form-row">
-
-        <aside class="col-12 col-md-4 create-level4-helper" aria-label="Hilfetext von Cosmo">
+        <aside
+          class="col-12 col-md-4 create-level4-helper"
+          aria-label="Hilfetext von Cosmo"
+        >
           <p>
-            Du darfst jetzt entscheiden ob wir es dem Spieler einfach oder schwer machen.
+            Du darfst jetzt entscheiden, ob wir es dem Spieler
+            einfach oder schwer machen.
           </p>
-
           <img
             src="{% static 'editor/img/cat1.png' %}"
             alt="Cosmo Wizard"
             class="create-level4-cosmo"
           >
         </aside>
-
-        <section class="col-12 col-md-8 create-level4-fields" aria-label="Freischaltbedingungen">
-
+        <section
+          class="col-12 col-md-8 create-level4-fields"
+          aria-label="Freischaltbedingungen"
+        >
           <div class="create-level4-field">
             <p class="create-level4-label">
               Folgende Gegenstände müssen freigeschaltet sein
@@ -57,13 +71,16 @@ Level erstellen | SQL Spell Quest Editor
               {% endfor %}
             </div>
           </div>
-
           <div class="create-level4-field">
             <p class="create-level4-label">
-              Brauchen wir ein Passwort um diesen Gegenstand freizuschalten
+              Brauchen wir ein Passwort, um diesen Gegenstand
+              freizuschalten?
             </p>
-
-            <div class="create-level4-choice-group" role="group" aria-label="Passwort erforderlich">
+            <div
+              class="create-level4-choice-group"
+              role="radiogroup"
+              aria-label="Passwort erforderlich"
+            >
               <input
                 type="radio"
                 class="btn-check"
@@ -71,9 +88,14 @@ Level erstellen | SQL Spell Quest Editor
                 id="requires-password-yes"
                 value="true"
                 autocomplete="off"
-                {% if form_values.requires_password == "true" %}checked{% endif %}
+                {% if form_values.requires_password == "true" %}
+                  checked
+                {% endif %}
               >
-              <label class="btn create-level4-choice-button" for="requires-password-yes">
+              <label
+                class="btn create-level4-choice-button"
+                for="requires-password-yes"
+              >
                 Ja
               </label>
 
@@ -84,9 +106,14 @@ Level erstellen | SQL Spell Quest Editor
                 id="requires-password-no"
                 value="false"
                 autocomplete="off"
-                {% if form_values.requires_password != "true" %}checked{% endif %}
+                {% if form_values.requires_password == "false" %}
+                  checked
+                {% endif %}
               >
-              <label class="btn create-level4-choice-button" for="requires-password-no">
+              <label
+                class="btn create-level4-choice-button"
+                for="requires-password-no"
+              >
                 Nein
               </label>
             </div>
@@ -94,16 +121,25 @@ Level erstellen | SQL Spell Quest Editor
 
         </section>
       </div>
-
-      <section class="create-level4-navigation" aria-label="Seitennavigation">
-        <a class="create-level1-button" href="{% url 'create_level3' %}">
+      <section
+        class="create-level4-navigation"
+        aria-label="Seitennavigation"
+      >
+        <a
+          class="create-level1-button"
+          href="{% url 'create_level3' %}"
+        >
           Zurück
         </a>
-        <button type="submit" class="create-level1-button">
+        <button
+          type="submit"
+          class="create-level1-button"
+        >
           Weiter
         </button>
       </section>
     </form>
   </div>
 </main>
+
 {% endblock %}

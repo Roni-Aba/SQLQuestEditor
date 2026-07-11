@@ -6,6 +6,19 @@ from django.core.files.storage import FileSystemStorage
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 
+def first_or_empty(values):
+    return values[0] if values else ""
+
+def parse_optional_int(value):
+    value = str(value).strip()
+    if value.isdigit():
+        return int(value)
+    return None
+
+def save_new_level_session(request, saved_level):
+    request.session["new_level"] = saved_level
+    request.session.modified = True
+
 def get_steps(active_step):
     steps = []
     for number in range(0, 9):
@@ -82,62 +95,130 @@ def auswahl_view(request):
 def create_level1_view(request):
     steps = get_steps(active_step=1)
     saved_level = request.session.get("new_level", {})
+    form_values = {
+        "level_name": saved_level.get("id", ""),
+        "level_greeting": saved_level.get("startDialog", ""),
+        "level_picture": saved_level.get("levelPicture", ""),
+    }
     if request.method == "POST":
         level_id = request.POST.get("level_name", "").strip()
         start_dialog = request.POST.get("level_greeting", "").strip()
-        saved_level = {}
-        level_picture_name = ""
+        saved_level["id"] = level_id
+        saved_level["startDialog"] = start_dialog
         uploaded_picture = request.FILES.get("levelPicture")
         if uploaded_picture:
             upload_dir = (Path(settings.BASE_DIR)/ "editor"/ "static"/ "editor"/ "img"/ "levels")
             upload_dir.mkdir(parents=True, exist_ok=True)
             storage = FileSystemStorage(location=upload_dir)
-            level_picture_name = storage.save(uploaded_picture.name, uploaded_picture)
-        saved_level["id"] = level_id
-        saved_level["levelPicture"] = level_picture_name
-        saved_level["startDialog"] = start_dialog
-        request.session["new_level"] = saved_level
-        request.session.modified = True
+            level_picture_name = storage.save(
+                uploaded_picture.name,
+                uploaded_picture
+            )
+            saved_level["levelPicture"] = level_picture_name
+        save_new_level_session(request, saved_level)
         print("createLevel1 gespeichert:")
         print(json.dumps(saved_level, ensure_ascii=False, indent=2))
         return redirect("create_level2")
     return render(request, "editor/createLevel1.html", {
         "steps": steps,
         "saved_level": saved_level,
+        "form_values": form_values,
     })
 
 def create_level2_view(request):
     steps = get_steps(active_step=2)
     saved_level = request.session.get("new_level", {})
+    query_restriction = saved_level.get("queryRestriction", {})
+    row_restriction = query_restriction.get("rowRestriction", {})
+    column_restriction = query_restriction.get("columnRestriction", {})
+    row_messages = row_restriction.get("violationMessages", [])
+    column_messages = column_restriction.get("violationMessages", [])
+    row_column_messages = query_restriction.get(
+        "colAndRowViolationMessages",
+        []
+    )
     form_values = {
-        "max_columns": "",
-        "max_rows": "",
-        "too_many_rows_message": "",
-        "too_many_columns_message": "",
-        "too_many_rows_columns_message": "",}
+        "max_columns": (
+            column_restriction.get("maxNumber")
+            if column_restriction.get("maxNumber") is not None
+            else ""
+        ),
+        "max_rows": (
+            row_restriction.get("maxNumber")
+            if row_restriction.get("maxNumber") is not None
+            else ""
+        ),
+        "too_many_rows_message": (
+            row_messages[0]
+            if row_messages
+            else ""
+        ),
+        "too_many_columns_message": (
+            column_messages[0]
+            if column_messages
+            else ""
+        ),
+        "too_many_rows_columns_message": (
+            row_column_messages[0]
+            if row_column_messages
+            else ""
+        ),
+    }
     if request.method == "POST":
-        max_columns = request.POST.get("max_columns", "").strip()
-        max_rows = request.POST.get("max_rows", "").strip()
-        too_many_rows_message = request.POST.get("too_many_rows_message", "").strip()
-        too_many_columns_message = request.POST.get("too_many_columns_message", "").strip()
-        too_many_rows_columns_message = request.POST.get("too_many_rows_columns_message", "").strip()
+        max_columns = request.POST.get(
+            "max_columns",
+            ""
+        ).strip()
+
+        max_rows = request.POST.get(
+            "max_rows",
+            ""
+        ).strip()
+
+        too_many_rows_message = request.POST.get(
+            "too_many_rows_message",
+            ""
+        ).strip()
+
+        too_many_columns_message = request.POST.get(
+            "too_many_columns_message",
+            ""
+        ).strip()
+
+        too_many_rows_columns_message = request.POST.get(
+            "too_many_rows_columns_message",
+            ""
+        ).strip()
         saved_level["queryRestriction"] = {
             "rowRestriction": {
-                "maxNumber": int(max_rows) if max_rows.isdigit() else None,
-                "violationMessages": [too_many_rows_message] if too_many_rows_message else []
+                "maxNumber": (
+                    int(max_rows)
+                    if max_rows.isdigit()
+                    else None
+                ),
+                "violationMessages": (
+                    [too_many_rows_message]
+                    if too_many_rows_message
+                    else []
+                ),
             },
             "columnRestriction": {
-                "maxNumber": int(max_columns) if max_columns.isdigit() else None,
-                "violationMessages": [too_many_columns_message] if too_many_columns_message else []
+                "maxNumber": (
+                    int(max_columns)
+                    if max_columns.isdigit()
+                    else None
+                ),
+                "violationMessages": (
+                    [too_many_columns_message]
+                    if too_many_columns_message
+                    else []
+                ),
             },
-            "colAndRowViolationMessages": [
-                too_many_rows_columns_message
-            ] if too_many_rows_columns_message else []
-        }
+            "colAndRowViolationMessages": ([too_many_rows_columns_message] if too_many_rows_columns_message else []),}
         request.session["new_level"] = saved_level
         request.session.modified = True
         print("createLevel2 gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        print(json.dumps(saved_level,ensure_ascii=False,indent=2))
         return redirect("create_level3")
     return render(request, "editor/createLevel2.html", {
         "steps": steps,
@@ -150,28 +231,39 @@ def create_level3_view(request):
     saved_level = request.session.get("new_level", {})
     current_item = saved_level.get("item", {})
     item_options = utils.get_item_options_for_current_level(saved_level)
+    unlocked_items = current_item.get("unlockedItems",[])
+    if not isinstance(unlocked_items, list):
+        unlocked_items = []
     form_values = {
         "item_name": current_item.get("id", ""),
         "unlocked_items_json": json.dumps(
-            current_item.get("unlockedItems", []),
+            unlocked_items,
             ensure_ascii=False
         ),
     }
     if request.method == "POST":
-        item_name = request.POST.get("item_name", "").strip()
-        unlocked_items_raw = request.POST.get("unlocked_items", "[]")
+        item_name = request.POST.get(
+            "item_name",
+            ""
+        ).strip()
+        unlocked_items_raw = request.POST.get(
+            "unlocked_items",
+            "[]"
+        )
         try:
             unlocked_items = json.loads(unlocked_items_raw)
-        except json.JSONDecodeError:
+            if not isinstance(unlocked_items, list):
+                unlocked_items = []
+        except (json.JSONDecodeError, TypeError):
             unlocked_items = []
-        saved_level["item"] = {
-            "id": item_name,
-            "unlockedItems": unlocked_items,
-        }
+        current_item = saved_level.get("item", {})
+        current_item["id"] = item_name
+        current_item["unlockedItems"] = unlocked_items
+        saved_level["item"] = current_item
         request.session["new_level"] = saved_level
         request.session.modified = True
         print("createLevel3 gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        print(json.dumps(saved_level,ensure_ascii=False,indent=2))
         return redirect("create_level4")
     return render(request, "editor/createLevel3.html", {
         "steps": steps,
@@ -183,25 +275,28 @@ def create_level4_view(request):
     steps = get_steps(active_step=4)
     saved_level = request.session.get("new_level", {})
     selected_item = saved_level.get("item", {})
-    required_items = selected_item.get("unlockedItems", [])
+    unlock_condition = saved_level.get("unlockCondition", {})
+    required_items = unlock_condition.get("requiredItems",selected_item.get("unlockedItems", []))
+    requires_password = unlock_condition.get("requiresPassword",False)
     form_values = {
-        "requires_password": "false",
+        "requires_password": (
+            "true" if requires_password else "false"),
         "required_items": required_items,
     }
     if request.method == "POST":
-        requires_password = request.POST.get("requires_password") == "true"
-        saved_level["unlockCondition"] = {
-            "requiredItems": required_items,
-            "requiresPassword": requires_password
-        }
+        requires_password = (request.POST.get("requires_password","false")== "true")
+        selected_item = saved_level.get("item", {})
+        required_items = selected_item.get("unlockedItems",[])
+        unlock_condition = saved_level.get("unlockCondition",{})
+        unlock_condition["requiredItems"] = required_items
+        unlock_condition["requiresPassword"] = requires_password
+        saved_level["unlockCondition"] = unlock_condition
         request.session["new_level"] = saved_level
         request.session.modified = True
         print("createLevel4 gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
-
+        print(json.dumps(saved_level,ensure_ascii=False,indent=2))
         if requires_password:
             return redirect("create_level41")
-
         return redirect("create_level5")
     return render(request, "editor/createLevel4.html", {
         "steps": steps,
@@ -212,32 +307,51 @@ def create_level4_view(request):
 def create_level41_view(request):
     steps = get_steps(active_step=5)
     saved_level = request.session.get("new_level", {})
+    unlock_condition = saved_level.get("unlockCondition", {})
+    passwords = unlock_condition.get("passwords", [])
+    if not isinstance(passwords, list):
+        passwords = []
     form_values = {
-        "item_passwords": "",
-        "password_hint": "",
-        "success_message": "",
-        "show_hints": "false",
+        "item_passwords": ", ".join(passwords),
+        "password_hint": unlock_condition.get(
+            "passwordHint",
+            ""
+        ),
+        "success_message": unlock_condition.get(
+            "successMessage",
+            ""
+        ),
+        "show_hints": (
+            "true"
+            if unlock_condition.get(
+                "showHintsOnFailure",
+                False
+            )
+            else "false"
+        ),
     }
     if request.method == "POST":
-        item_passwords_raw = request.POST.get("item_passwords", "").strip()
-        password_hint = request.POST.get("password_hint", "").strip()
-        success_message = request.POST.get("success_message", "").strip()
-        show_hints = request.POST.get("show_hints", "false")
+        item_passwords_raw = request.POST.get("item_passwords","").strip()
+        password_hint = request.POST.get("password_hint","").strip()
+        success_message = request.POST.get("success_message","").strip()
+        show_hints = request.POST.get("show_hints","false")
         passwords = [
-            p.strip()
-            for p in item_passwords_raw.replace(",", "\n").splitlines()
-            if p.strip()
-        ]
-        unlock_condition = saved_level.get("unlockCondition", {})
+            password.strip()
+            for password in item_passwords_raw
+            .replace(",", "\n")
+            .splitlines()
+            if password.strip()
+]
+        unlock_condition = saved_level.get("unlockCondition",{})
         unlock_condition["passwords"] = passwords
         unlock_condition["passwordHint"] = password_hint
         unlock_condition["successMessage"] = success_message
-        unlock_condition["showHintsOnFailure"] = show_hints == "true"
+        unlock_condition["showHintsOnFailure"] = (show_hints == "true")
         saved_level["unlockCondition"] = unlock_condition
         request.session["new_level"] = saved_level
         request.session.modified = True
-        print("createLevel5 gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        print("createLevel4-1 gespeichert:")
+        print(json.dumps(saved_level,ensure_ascii=False,indent=2))
         if show_hints == "true":
             return redirect("create_level42")
         return redirect("create_level5")
@@ -250,11 +364,16 @@ def create_level41_view(request):
 def create_level42_view(request):
     steps = get_steps(active_step=5)
     saved_level = request.session.get("new_level", {})
+    unlock_condition = saved_level.get("unlockCondition",{})
+    failure_hints = unlock_condition.get("failureHints",[])
+    if not isinstance(failure_hints, list):
+        failure_hints = []
+    form_values = {"failure_hints": failure_hints,}
     if request.method == "POST":
         hint_attempts = request.POST.getlist("hint_attempts[]")
         hint_texts = request.POST.getlist("hint_texts[]")
         failure_hints = []
-        for attempts, text in zip(hint_attempts, hint_texts):
+        for attempts, text in zip(hint_attempts,hint_texts):
             attempts = attempts.strip()
             text = text.strip()
             if not attempts or not text:
@@ -265,40 +384,48 @@ def create_level42_view(request):
                 "attempts": int(attempts),
                 "message": text,
             })
-        unlock_condition = saved_level.get("unlockCondition", {})
+        unlock_condition = saved_level.get("unlockCondition",{})
         unlock_condition["failureHints"] = failure_hints
         saved_level["unlockCondition"] = unlock_condition
         request.session["new_level"] = saved_level
         request.session.modified = True
         print("createLevel4-2 gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        print(json.dumps(saved_level,ensure_ascii=False,indent=2))
         return redirect("create_level5")
     return render(request, "editor/createLevel4-2.html", {
-        "steps": steps,
-        "saved_level": saved_level,
-    })
-
-def create_level5_view(request):
-    steps = get_steps(active_step=5)
-    saved_level = request.session.get("new_level", {})
-    unlock_condition = saved_level.get("unlockCondition", {})
-    required_items = unlock_condition.get("requiredItems", [])
-    requires_password = unlock_condition.get("requiresPassword", False)
-    form_values = {
-        "required_items": required_items,
-        "requires_password": requires_password,
-    }
-    if request.method == "POST":
-        print("createLevel5 gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
-        return redirect("create_level51")
-
-    return render(request, "editor/createLevel5.html", {
         "steps": steps,
         "saved_level": saved_level,
         "form_values": form_values,
     })
 
+def create_level5_view(request):
+    steps = get_steps(active_step=5)
+    saved_level = request.session.get("new_level", {})
+    unlock_condition = saved_level.get("unlockCondition",{})
+    required_items = unlock_condition.get("requiredItems",[])
+    requires_password = unlock_condition.get("requiresPassword",False)
+    show_hints_on_failure = unlock_condition.get("showHintsOnFailure",False)
+    if show_hints_on_failure:
+        back_url_name = "create_level42"
+    elif requires_password:
+        back_url_name = "create_level41"
+    else:
+        back_url_name = "create_level4"
+    form_values = {
+        "required_items": required_items,
+        "requires_password": requires_password,
+        "show_hints_on_failure": show_hints_on_failure,
+    }
+    if request.method == "POST":
+        print("createLevel5 gespeichert:")
+        print(json.dumps(saved_level,ensure_ascii=False,indent=2))
+        return redirect("create_level51")
+    return render(request, "editor/createLevel5.html", {
+        "steps": steps,
+        "saved_level": saved_level,
+        "form_values": form_values,
+        "back_url_name": back_url_name,
+    })
 def create_level51_view(request):
     steps = get_steps(active_step=5)
     saved_level = request.session.get("new_level", {})
