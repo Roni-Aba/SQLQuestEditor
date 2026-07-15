@@ -33,6 +33,9 @@ build/
 # macOS
 .DS_Store
 
+/backend/builds/
+
+
 # Test / Coverage
 .coverage
 htmlcov/
