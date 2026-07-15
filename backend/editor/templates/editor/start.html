@@ -10,24 +10,45 @@ Startseite | SQL Spell Quest Editor
 {% endblock %}
 
 {% block content %}
-<main class="start-page">
+<main class="start-page py-5">
   <div class="container text-center">
-    <section class="start-hero mx-auto">
-      <h1 class="display-5 fw-bold mb-3">
+    <section
+      class="start-hero mx-auto"
+      aria-labelledby="start-title"
+    >
+      <h1 id="start-title" class="display-5 fw-bold mb-3">
         Eine Möglichkeit, um Lehre zu vereinfachen
       </h1>
 
-      <p class="fs-5 fw-medium text-black-50 mb-5">
+      <p class="fs-5 fw-medium text-body-secondary mb-5">
         Wähle eine Game-Level-JSON-Datei aus, um ein Game zu editieren.
       </p>
 
-      <form method="post" enctype="multipart/form-data" action="{% url 'upload_json' %}">
+      <form
+        method="post"
+        enctype="multipart/form-data"
+        action="{% url 'upload_json' %}"
+        class="mx-auto"
+      >
         {% csrf_token %}
 
-        <input type="file" name="json_file" accept=".json,application/json">
+        <div class="mb-3 text-start">
+          <label for="json-file" class="form-label">
+            Game-Level-JSON-Datei
+          </label>
 
-        <button type="submit">
-          Upload a JSON
+          <input
+            id="json-file"
+            class="form-control"
+            type="file"
+            name="json_file"
+            accept=".json,application/json"
+            required
+          >
+        </div>
+
+        <button type="submit" class="btn btn-primary px-4">
+          JSON-Datei hochladen
         </button>
       </form>
     </section>

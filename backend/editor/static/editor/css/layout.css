@@ -1,0 +1,33 @@
+.create-page {
+    min-height: calc(100vh - var(--navbar-height));
+}
+
+.create-page__content {
+    width: 100%;
+    max-width: var(--content-max-width);
+    margin-inline: auto;
+    padding: var(--space-8) var(--space-4);
+}
+
+.create-page__row {
+    margin-top: var(--space-10);
+}
+
+.create-page__helper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.create-page__navigation {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-6);
+    margin-top: var(--space-12);
+}
+
+.cosmo-image {
+    width: 260px;
+    height: auto;
+    object-fit: contain;
+}
