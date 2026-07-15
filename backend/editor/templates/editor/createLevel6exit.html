@@ -6,66 +6,89 @@ Exit-Gegenstand | SQL Spell Quest Editor
 {% endblock %}
 
 {% block additional_css %}
-<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
-<link rel="stylesheet" href="{% static 'editor/css/createLevel6exit.css' %}">
 <link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/helper/helper.css' %}">
 <link rel="stylesheet" href="{% static 'editor/components/chatBox/chatBox.css' %}">
 {% endblock %}
 
 {% block content %}
+<main class="create-page">
+  <div class="create-page__content">
 
-<main class="create-level6exit-page">
-  <div class="container-fluid px-0">
-
-    {% include "editor/components/statusbar/statusbar.html" with steps=steps %}
+    <section
+      class="create-page__status"
+      aria-label="Fortschritt der Levelerstellung"
+    >
+      {% include "editor/components/statusBar/statusBar.html" with steps=steps %}
+    </section>
 
     <form
-      class="create-level6exit-content"
       action="{% url 'create_level6exit' %}"
       method="post"
+      class="d-flex flex-column flex-grow-1"
     >
       {% csrf_token %}
 
-      <div class="row align-items-start create-level6exit-form-row">
+      <section class="create-page__main">
+        <div class="row create-page__row align-items-start g-4 g-lg-5">
 
-        <aside class="col-12 col-md-4 create-level6exit-helper" aria-label="Hilfetext von Cosmo">
-          <p class="create-level6exit-helper-text">
-            Vergiss nicht dem Spieler gut zu gratulieren das er es so weit geschafft hat.
-            Das gibt ihm ein tolles Gefühl
-          </p>
+          <div class="col-12 col-md-4">
+            {% include "editor/components/helper/helper.html" with helper_image="editor/img/cat9.png" helper_text="Vergiss nicht, dem Spieler zu gratulieren. Nach einem erfolgreich abgeschlossenen Level freut sich jeder über ein paar nette Worte." %}
+          </div>
 
-          <img
-            src="{% static 'editor/img/cat1.png' %}"
-            alt="Cosmo Wizard"
-            class="create-level6exit-cosmo"
+          <section
+            class="col-12 col-md-8"
+            aria-labelledby="exit-item-title"
           >
-        </aside>
+            <h1
+              id="exit-item-title"
+              class="h3 fw-semibold mb-4"
+            >
+              Exit-Gegenstand
+            </h1>
 
-        <section class="col-12 col-md-8 create-level6exit-fields" aria-label="Exit-Gegenstand">
+            <div class="d-flex flex-column gap-4">
 
-          <div class="create-level6exit-field">
-            {% include "editor/components/chatBox/chatBox.html" with title="Wie soll dem Spieler gratuliert werden?" input_id="exit-success-message" input_name="exit_success_message" placeholder_text="Schreibe was nettes hinein" game_wizard_input=form_values.exit_success_message is_editable=True %}
-          </div>
+              {% include "editor/components/chatBox/chatBox.html" with title="Wie soll dem Spieler gratuliert werden?" input_id="exit-success-message" input_name="exit_success_message" placeholder_text="Schreibe eine Glückwunschnachricht" game_wizard_input=form_values.exit_success_message is_editable=True %}
 
-          <div class="create-level6exit-field">
-            {% include "editor/components/chatBox/chatBox.html" with title="Wie ist die ID vom nächsten Level?" input_id="next-level-id" input_name="next_level_id" placeholder_text="Schreibe was nettes hinein" game_wizard_input=form_values.next_level_id is_editable=True %}
-          </div>
+              {% include "editor/components/chatBox/chatBox.html" with title="Wie lautet die ID des nächsten Levels?" input_id="next-level-id" input_name="next_level_id" placeholder_text="Level-ID eingeben" game_wizard_input=form_values.next_level_id is_editable=True %}
 
-        </section>
-      </div>
+            </div>
 
-      <section class="create-level6exit-navigation" aria-label="Seitennavigation">
-        <a class="create-level1-button" href="{% url 'create_level61' %}">
+          </section>
+
+        </div>
+      </section>
+
+      <nav
+        class="create-page__navigation"
+        aria-label="Navigation der Levelerstellung"
+      >
+        <a
+          href="{% url 'create_level61' %}"
+          class="btn btn-outline-primary btn-lg px-4"
+        >
+          <i
+            class="bi bi-arrow-left me-2"
+            aria-hidden="true"
+          ></i>
           Zurück
         </a>
 
-        <button type="submit" class="create-level1-button">
+        <button
+          type="submit"
+          class="btn btn-primary btn-lg px-4"
+        >
           Weiter
+          <i
+            class="bi bi-arrow-right ms-2"
+            aria-hidden="true"
+          ></i>
         </button>
-      </section>
+      </nav>
 
     </form>
+
   </div>
 </main>
-
 {% endblock %}
