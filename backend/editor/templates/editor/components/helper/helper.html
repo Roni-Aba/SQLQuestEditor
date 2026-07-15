@@ -1,0 +1,16 @@
+{% load static %}
+
+<aside
+  class="helper"
+  aria-label="{{ aria_label|default:'Hilfetext von Cosmo' }}"
+>
+  <img
+    src="{% static helper_image %}"
+    alt="{{ image_alt|default:'Cosmo, dein Begleiter bei der Levelerstellung' }}"
+    class="cosmo-image img-fluid helper__image"
+  >
+
+  <p class="helper__text">
+    {{ helper_text }}
+  </p>
+</aside>
