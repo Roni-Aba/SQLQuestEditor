@@ -1,4 +1,5 @@
 :root {
+    /* Farben */
     --color-primary: #6f42c1;
     --color-primary-soft: #ebe5fc;
     --color-text: #212529;
@@ -6,6 +7,7 @@
     --color-border: #d9d9d9;
     --color-background: #ffffff;
 
+    /* Typografie */
     --font-family-base:
         "Inter",
         system-ui,
@@ -14,10 +16,34 @@
         "Segoe UI",
         sans-serif;
 
+    /* Einheitliches Spacing-System */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-10: 2.5rem;
+    --space-12: 3rem;
+    --space-16: 4rem;
+
+    /* Gemeinsames Seitenlayout */
     --content-max-width: 980px;
     --navbar-height: 56px;
 
+    /*
+     * Einheitliche Abstände für alle createLevel-Seiten.
+     */
+    --create-page-padding-top: var(--space-8);
+    --create-page-padding-inline: var(--space-4);
+    --create-page-padding-bottom: var(--space-8);
 
+    --create-page-status-gap: var(--space-10);
+    --create-page-row-gap: var(--space-10);
+    --create-page-navigation-gap: var(--space-12);
+
+    /* Bootstrap-Anpassungen */
     --bs-primary: var(--color-primary);
     --bs-primary-rgb: 111, 66, 193;
 

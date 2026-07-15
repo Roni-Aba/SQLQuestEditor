@@ -1,6 +1,13 @@
-<div class="status-bar d-flex justify-content-between align-items-center w-100">
+<div
+  class="status-bar d-flex align-items-center justify-content-between gap-2 w-100"
+  aria-label="Schritte der Levelerstellung"
+>
   {% for step in steps %}
-    <div class="step-circle rounded-circle d-flex align-items-center justify-content-center {% if step.active %}step-circle-active{% endif %}">
+    <div
+      class="step-circle rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 {% if step.active %}step-circle-active{% endif %}"
+      {% if step.active %}aria-current="step"{% endif %}
+      aria-label="Schritt {{ step.number }}{% if step.active %}, aktuell{% endif %}"
+    >
       {{ step.number }}
     </div>
   {% endfor %}
