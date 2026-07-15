@@ -6,60 +6,87 @@ Gegenstand fertig | SQL Spell Quest Editor
 {% endblock %}
 
 {% block additional_css %}
-<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
-<link rel="stylesheet" href="{% static 'editor/css/createLevel8.css' %}">
 <link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/helper/helper.css' %}">
 {% endblock %}
 
 {% block content %}
 
-<main class="create-level8-page">
+<main class="create-page">
+    <div class="create-page__content">
 
-  <form
-    class="create-level8-content"
-    action="{% url 'create_level8' %}"
-    method="post"
-  >
-    {% csrf_token %}
-
-    {% include "editor/components/statusbar/statusbar.html" with steps=steps %}
-
-    <section class="create-level8-finish" aria-label="Gegenstand fertig erstellt">
-
-      <h1 class="create-level8-heading">
-        Du hast es geschafft :)
-      </h1>
-
-      <img
-        src="{% static 'editor/img/cat1.png' %}"
-        alt="Cosmo Wizard"
-        class="create-level8-cosmo"
-      >
-
-      <div class="create-level8-actions">
-        <button
-          type="submit"
-          name="next_action"
-          value="more_items"
-          class="create-level8-button"
+        <section
+            class="create-page__status"
+            aria-label="Fortschritt der Levelerstellung"
         >
-          Erstelle weitere Gegenstände
-        </button>
+            {% include "editor/components/statusBar/statusBar.html" with steps=steps %}
+        </section>
 
-        <button
-          type="submit"
-          name="next_action"
-          value="level_management"
-          class="create-level8-button"
+        <form
+            action="{% url 'create_level8' %}"
+            method="post"
+            class="d-flex flex-column flex-grow-1"
         >
-          Springe zur Levelverwaltung
-        </button>
-      </div>
+            {% csrf_token %}
 
-    </section>
+            <section
+                class="flex-grow-1 d-flex justify-content-center align-items-center"
+            >
 
-  </form>
+                <div
+                    class="text-center mx-auto"
+                    style="max-width: 520px;"
+                >
 
+                    <h1 class="display-6 fw-bold mb-5">
+                        Du hast es geschafft 🎉
+                    </h1>
+
+                    <img
+                        src="{% static 'editor/img/cat9.png' %}"
+                        alt="Cosmo gratuliert dir"
+                        class="cosmo-image img-fluid mb-5"
+                    >
+
+                    <div
+                        class="d-grid gap-4"
+                    >
+
+                        <button
+                            type="submit"
+                            name="next_action"
+                            value="more_items"
+                            class="btn btn-primary btn-lg"
+                        >
+                            <i
+                                class="bi bi-plus-circle me-2"
+                                aria-hidden="true"
+                            ></i>
+                            Weiteren Gegenstand erstellen
+                        </button>
+
+                        <button
+                            type="submit"
+                            name="next_action"
+                            value="level_management"
+                            class="btn btn-outline-primary btn-lg"
+                        >
+                            <i
+                                class="bi bi-list-ul me-2"
+                                aria-hidden="true"
+                            ></i>
+                            Zur Levelverwaltung
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </form>
+
+    </div>
 </main>
 
 {% endblock %}
