@@ -6,193 +6,318 @@ Position anpassen | SQL Spell Quest Editor
 {% endblock %}
 
 {% block additional_css %}
-<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
-<link rel="stylesheet" href="{% static 'editor/css/createLevel51.css' %}">
-<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+<link
+  rel="stylesheet"
+  href="{% static 'editor/components/statusBar/statusBar.css' %}"
+>
+<link
+  rel="stylesheet"
+  href="{% static 'editor/components/helper/helper.css' %}"
+>
+<link
+  rel="stylesheet"
+  href="{% static 'editor/css/createLevel51.css' %}"
+>
 {% endblock %}
 
 {% block content %}
+<main class="create-page">
+  <div class="container-fluid create-level51-container py-4 px-3 px-xl-4">
 
-<main class="create-level51-page">
-  <div class="container-fluid px-0">
-
-    {% include "editor/components/statusbar/statusbar.html" with steps=steps %}
+    <section
+      class="mb-5"
+      aria-label="Fortschritt der Levelerstellung"
+    >
+      {% include "editor/components/statusBar/statusBar.html" with steps=steps %}
+    </section>
 
     <form
-      class="create-level51-content"
       action="{% url 'create_level51' %}"
       method="post"
     >
       {% csrf_token %}
 
-      <div class="row align-items-start create-level51-form-row">
+      <div class="row align-items-start g-4 g-xxl-5">
 
-        <aside class="col-12 col-md-3 create-level51-helper" aria-label="Hilfetext von Cosmo">
-          <p class="create-level51-helper-text">
-            Ziehe einen Rahmen um die gewünschte Position deines Gegenstandes.
-            Dies machen wir 2x einmal für unseren Objektbereich und nochmal für das Icon
-          </p>
-
-          <img
-            src="{% static 'editor/img/cat1.png' %}"
-            alt="Cosmo Wizard"
-            class="create-level51-cosmo"
-          >
+        <aside
+          class="col-12 col-lg-3 col-xxl-2"
+          aria-label="Hilfetext von Cosmo"
+        >
+          {% include "editor/components/helper/helper.html" with helper_image="editor/img/cat8.png" helper_text="Ziehe einen Rahmen um die gewünschte Position deines Gegenstandes. Lege zuerst den Bildbereich und danach den Iconbereich fest." %}
         </aside>
 
-        <section class="col-12 col-md-6 create-level51-image-section" aria-label="Hintergrundbild">
-          <div class="create-level51-image-wrap" id="image-area">
+        <section
+          class="col-12 col-lg-9 col-xxl-8"
+          aria-labelledby="position-title"
+        >
+          <h1
+            id="position-title"
+            class="h3 fw-semibold text-center mb-4"
+          >
+            Position auswählen
+          </h1>
+
+          <p class="text-body-secondary text-center mb-4">
+            Wähle zuerst einen Bereich aus und ziehe anschließend
+            mit der Maus eine Bounding Box auf dem Bild.
+          </p>
+
+          <div
+            id="image-area"
+            class="create-level51-image-area mx-auto"
+            aria-label="Auswahlbereich auf dem Hintergrundbild"
+          >
             <img
-              src="{% static form_values.level_picture_path %}"
-              alt="Level Hintergrund"
-              class="create-level51-background-image"
               id="level-background-image"
+              src="{% static form_values.level_picture_path %}"
+              alt="Hintergrundbild des Levels"
+              class="create-level51-background-image"
+              draggable="false"
             >
 
-            <div id="selection-box" class="create-level51-selection-box"></div>
+            <div
+              id="selection-box"
+              class="create-level51-selection-box"
+              aria-hidden="true"
+            ></div>
           </div>
 
-          <div class="create-level51-start-actions">
+          <div
+            class="d-flex flex-column flex-sm-row flex-wrap
+                   justify-content-center gap-3 mt-4"
+          >
             <button
               type="button"
-              class="create-level51-action-button"
               id="start-image-selection"
+              class="btn btn-outline-primary btn-lg px-4"
+              aria-pressed="false"
             >
-              Start für Bild
+              <i
+                class="bi bi-bounding-box me-2"
+                aria-hidden="true"
+              ></i>
+              Bildbereich auswählen
             </button>
 
             <button
               type="button"
-              class="create-level51-action-button"
               id="start-icon-selection"
+              class="btn btn-outline-primary btn-lg px-4"
+              aria-pressed="false"
             >
-              Start für Icon
+              <i
+                class="bi bi-app-indicator me-2"
+                aria-hidden="true"
+              ></i>
+              Iconbereich auswählen
             </button>
           </div>
         </section>
 
-        <section class="col-12 col-md-3 create-level51-values" aria-label="Positionswerte">
+        <section
+          class="col-12 col-xxl-2"
+          aria-labelledby="position-values-title"
+        >
+          <h2
+            id="position-values-title"
+            class="h4 fw-semibold mb-4"
+          >
+            Positionswerte
+          </h2>
 
-          <div class="create-level51-value-group">
-            <p class="create-level51-value-title">Bild</p>
+          <fieldset class="mb-5">
+            <legend class="h5 fw-semibold mb-3">
+              Bild
+            </legend>
 
-            <div class="create-level51-value-grid">
-              <label class="create-level51-input-wrap">
-                X
+            <div class="row g-3">
+
+              <div class="col-6 col-md-3 col-xxl-6">
+                <label
+                  for="image-x"
+                  class="form-label fw-semibold"
+                >
+                  X
+                </label>
+
                 <input
                   type="number"
                   name="image_x"
                   id="image-x"
-                  class="form-control create-level51-input"
-                  placeholder="Wert"
+                  class="form-control form-control-lg"
+                  placeholder="0"
                   value="{{ form_values.image_x|default:'' }}"
                 >
-              </label>
+              </div>
 
-              <label class="create-level51-input-wrap">
-                Y
+              <div class="col-6 col-md-3 col-xxl-6">
+                <label
+                  for="image-y"
+                  class="form-label fw-semibold"
+                >
+                  Y
+                </label>
+
                 <input
                   type="number"
                   name="image_y"
                   id="image-y"
-                  class="form-control create-level51-input"
-                  placeholder="Wert"
+                  class="form-control form-control-lg"
+                  placeholder="0"
                   value="{{ form_values.image_y|default:'' }}"
                 >
-              </label>
+              </div>
 
-              <label class="create-level51-input-wrap">
-                Height
-                <input
-                  type="number"
-                  name="image_height"
-                  id="image-height"
-                  class="form-control create-level51-input"
-                  placeholder="Wert"
-                  value="{{ form_values.image_height|default:'' }}"
+              <div class="col-6 col-md-3 col-xxl-6">
+                <label
+                  for="image-width"
+                  class="form-label fw-semibold"
                 >
-              </label>
+                  Breite
+                </label>
 
-              <label class="create-level51-input-wrap">
-                Width
                 <input
                   type="number"
                   name="image_width"
                   id="image-width"
-                  class="form-control create-level51-input"
-                  placeholder="Wert"
+                  class="form-control form-control-lg"
+                  placeholder="0"
                   value="{{ form_values.image_width|default:'' }}"
                 >
-              </label>
+              </div>
+
+              <div class="col-6 col-md-3 col-xxl-6">
+                <label
+                  for="image-height"
+                  class="form-label fw-semibold"
+                >
+                  Höhe
+                </label>
+
+                <input
+                  type="number"
+                  name="image_height"
+                  id="image-height"
+                  class="form-control form-control-lg"
+                  placeholder="0"
+                  value="{{ form_values.image_height|default:'' }}"
+                >
+              </div>
+
             </div>
-          </div>
+          </fieldset>
 
-          <div class="create-level51-value-group create-level51-icon-group">
-            <p class="create-level51-value-title">Icon</p>
+          <fieldset>
+            <legend class="h5 fw-semibold mb-3">
+              Icon
+            </legend>
 
-            <div class="create-level51-value-grid">
-              <label class="create-level51-input-wrap">
-                X
+            <div class="row g-3">
+
+              <div class="col-6 col-md-3 col-xxl-6">
+                <label
+                  for="icon-x"
+                  class="form-label fw-semibold"
+                >
+                  X
+                </label>
+
                 <input
                   type="number"
                   name="icon_x"
                   id="icon-x"
-                  class="form-control create-level51-input"
-                  placeholder="Wert"
+                  class="form-control form-control-lg"
+                  placeholder="0"
                   value="{{ form_values.icon_x|default:'' }}"
                 >
-              </label>
+              </div>
 
-              <label class="create-level51-input-wrap">
-                Y
+              <div class="col-6 col-md-3 col-xxl-6">
+                <label
+                  for="icon-y"
+                  class="form-label fw-semibold"
+                >
+                  Y
+                </label>
+
                 <input
                   type="number"
                   name="icon_y"
                   id="icon-y"
-                  class="form-control create-level51-input"
-                  placeholder="Wert"
+                  class="form-control form-control-lg"
+                  placeholder="0"
                   value="{{ form_values.icon_y|default:'' }}"
                 >
-              </label>
+              </div>
 
-              <label class="create-level51-input-wrap">
-                Height
-                <input
-                  type="number"
-                  name="icon_height"
-                  id="icon-height"
-                  class="form-control create-level51-input"
-                  placeholder="Wert"
-                  value="{{ form_values.icon_height|default:'' }}"
+              <div class="col-6 col-md-3 col-xxl-6">
+                <label
+                  for="icon-width"
+                  class="form-label fw-semibold"
                 >
-              </label>
+                  Breite
+                </label>
 
-              <label class="create-level51-input-wrap">
-                Width
                 <input
                   type="number"
                   name="icon_width"
                   id="icon-width"
-                  class="form-control create-level51-input"
-                  placeholder="Wert"
+                  class="form-control form-control-lg"
+                  placeholder="0"
                   value="{{ form_values.icon_width|default:'' }}"
                 >
-              </label>
-            </div>
-          </div>
+              </div>
 
+              <div class="col-6 col-md-3 col-xxl-6">
+                <label
+                  for="icon-height"
+                  class="form-label fw-semibold"
+                >
+                  Höhe
+                </label>
+
+                <input
+                  type="number"
+                  name="icon_height"
+                  id="icon-height"
+                  class="form-control form-control-lg"
+                  placeholder="0"
+                  value="{{ form_values.icon_height|default:'' }}"
+                >
+              </div>
+
+            </div>
+          </fieldset>
         </section>
+
       </div>
 
-      <section class="create-level51-navigation" aria-label="Seitennavigation">
-        <a class="create-level1-button" href="{% url 'create_level5' %}">
+      <nav
+        class="d-flex flex-wrap justify-content-end gap-3 mt-5 pt-4"
+        aria-label="Navigation der Levelerstellung"
+      >
+        <a
+          href="{% url 'create_level5' %}"
+          class="btn btn-outline-primary btn-lg px-4"
+        >
+          <i
+            class="bi bi-arrow-left me-2"
+            aria-hidden="true"
+          ></i>
           Zurück
         </a>
 
-        <button type="submit" class="create-level1-button">
+        <button
+          type="submit"
+          class="btn btn-primary btn-lg px-4"
+        >
           Weiter
+          <i
+            class="bi bi-arrow-right ms-2"
+            aria-hidden="true"
+          ></i>
         </button>
-      </section>
+      </nav>
 
     </form>
   </div>
@@ -215,8 +340,15 @@ Position anpassen | SQL Spell Quest Editor
     activeTarget = target;
     selectionBox.style.display = "none";
 
-    startImageButton.classList.toggle("create-level51-action-button-active", target === "image");
-    startIconButton.classList.toggle("create-level51-action-button-active", target === "icon");
+    startImageButton.classList.toggle(
+      "active",
+      target === "image"
+    );
+
+    startIconButton.classList.toggle(
+      "active",
+      target === "icon"
+    );
   }
 
   function setValues(target, x, y, width, height) {
@@ -229,8 +361,11 @@ Position anpassen | SQL Spell Quest Editor
   function getImageScale() {
     const displayedRect = backgroundImage.getBoundingClientRect();
 
-    const scaleX = backgroundImage.naturalWidth / displayedRect.width;
-    const scaleY = backgroundImage.naturalHeight / displayedRect.height;
+    const scaleX =
+      backgroundImage.naturalWidth / displayedRect.width;
+
+    const scaleY =
+      backgroundImage.naturalHeight / displayedRect.height;
 
     return {
       scaleX: scaleX,
@@ -249,7 +384,12 @@ Position anpassen | SQL Spell Quest Editor
     };
   }
 
-  function convertDisplayedBoxToOriginalImageBox(x, y, width, height) {
+  function convertDisplayedBoxToOriginalImageBox(
+    x,
+    y,
+    width,
+    height
+  ) {
     const imageData = getImageScale();
 
     return {
@@ -275,7 +415,8 @@ Position anpassen | SQL Spell Quest Editor
 
     isDrawing = true;
 
-    const position = getMousePositionOnDisplayedImage(event);
+    const position =
+      getMousePositionOnDisplayedImage(event);
 
     startX = position.x;
     startY = position.y;
@@ -292,7 +433,8 @@ Position anpassen | SQL Spell Quest Editor
       return;
     }
 
-    const position = getMousePositionOnDisplayedImage(event);
+    const position =
+      getMousePositionOnDisplayedImage(event);
 
     const currentX = position.x;
     const currentY = position.y;
@@ -315,17 +457,25 @@ Position anpassen | SQL Spell Quest Editor
 
     isDrawing = false;
 
-    const displayedX = parseFloat(selectionBox.style.left) || 0;
-    const displayedY = parseFloat(selectionBox.style.top) || 0;
-    const displayedWidth = parseFloat(selectionBox.style.width) || 0;
-    const displayedHeight = parseFloat(selectionBox.style.height) || 0;
+    const displayedX =
+      parseFloat(selectionBox.style.left) || 0;
 
-    const originalBox = convertDisplayedBoxToOriginalImageBox(
-      displayedX,
-      displayedY,
-      displayedWidth,
-      displayedHeight
-    );
+    const displayedY =
+      parseFloat(selectionBox.style.top) || 0;
+
+    const displayedWidth =
+      parseFloat(selectionBox.style.width) || 0;
+
+    const displayedHeight =
+      parseFloat(selectionBox.style.height) || 0;
+
+    const originalBox =
+      convertDisplayedBoxToOriginalImageBox(
+        displayedX,
+        displayedY,
+        displayedWidth,
+        displayedHeight
+      );
 
     setValues(
       activeTarget,
