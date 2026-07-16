@@ -1,3 +1,9 @@
+.btn-light:hover,
+.btn-light:focus-visible {
+    background-color: var(--color-primary-soft);
+    color: var(--bs-link-hover-color);
+}
+
 .editor-button {
     background-color: #f8f9fa;
     color: #6f42c1;

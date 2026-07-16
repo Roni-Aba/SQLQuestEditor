@@ -1,59 +1,97 @@
 {% extends "editor/base.html" %}
 {% load static %}
 
-{% block content %}
+{% block title %}
+Levelübersicht | SQL Spell Quest Editor
+{% endblock %}
 
+{% block additional_css %}
 <link rel="stylesheet" href="{% static 'editor/components/button/button.css' %}">
 <link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
-<link rel="stylesheet" href="{% static 'editor/css/auswahl.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/helper/helper.css' %}">
+{% endblock %}
 
-<main class="create-level-page">
+{% block content %}
+<main class="create-page">
+  <div class="create-page__content">
 
-  <section class="create-level-status">
-    {% include "editor/components/statusBar/statusBar.html" %}
-  </section>
-
-  <section class="level-menu">
-    <a href="/createLevel/basic/" class="text-decoration-none">
-      {% include "editor/components/button/button.html" with title="Levelgrunddaten" %}
-    </a>
-
-    <a href="/createLevel/sql/" class="text-decoration-none">
-      {% include "editor/components/button/button.html" with title="SQL Beschränkungen" %}
-    </a>
-
-    <a href="/createLevel/items/" class="text-decoration-none">
-      {% include "editor/components/button/button.html" with title="Gegenstände" %}
-    </a>
-  </section>
-
-  <section class="level-center">
-    <img
-      src="{% static 'editor/img/cat2.png' %}"
-      alt="Cosmo Wizard"
-      class="create-level-cosmo"
+    <section
+      class="create-page__status"
+      aria-label="Fortschritt der Levelerstellung"
     >
+      {% include "editor/components/statusBar/statusBar.html" with steps=steps %}
+    </section>
 
-    <p class="intro-text">
-      Du befindest dich in der Übersicht zur Levelerstellung.
-      Wenn du möchtest, begleite ich dich Schritt für Schritt durch
-      den gesamten Erstellungsprozess. Wähle hierfür die
-      “Geführte Levelerstellung” rechts von mir.
-      Alternativ kannst du direkt den Bereich links auswählen,
-      welchen du bearbeiten möchtest.
-    </p>
+    <section class="create-page__main">
+      <div class="row align-items-center justify-content-center gx-5 gy-5">
 
-    <a href="{% url 'export_game' %}" class="text-decoration-none">
-      {% include "editor/components/button/button.html" with title="Exportiere das Spiel" %}
-    </a>
-  </section>
+        <section
+          class="col-12 col-lg-3 px-lg-4"
+          aria-label="Bereiche der Levelerstellung"
+        >
+          <div class="d-flex flex-column align-items-center align-items-lg-start gap-5">
 
-  <section class="guided-section">
-    <a href="/createLevel/" class="text-decoration-none">
-      {% include "editor/components/button/button.html" with title="Geführte Levelerstellung" %}
-    </a>
-  </section>
+            <a
+              href="/createLevel/basic/"
+              class="text-decoration-none"
+            >
+              {% include "editor/components/button/button.html" with title="Levelgrunddaten" %}
+            </a>
 
+            <a
+              href="/createLevel/sql/"
+              class="text-decoration-none"
+            >
+              {% include "editor/components/button/button.html" with title="SQL-Beschränkungen" %}
+            </a>
+
+            <a
+              href="/createLevel/items/"
+              class="text-decoration-none"
+            >
+              {% include "editor/components/button/button.html" with title="Gegenstände" %}
+            </a>
+
+          </div>
+        </section>
+
+        <section
+          class="col-12 col-lg-5 px-lg-5"
+          aria-label="Hinweise von Cosmo"
+        >
+          <div class="d-flex flex-column align-items-center text-center">
+
+            {% include "editor/components/helper/helper.html" with helper_image="editor/img/cat2.png" helper_text="Du befindest dich in der Übersicht zur Levelerstellung. Wenn du möchtest, begleite ich dich Schritt für Schritt durch den gesamten Erstellungsprozess. Wähle hierfür die geführte Levelerstellung rechts von mir. Alternativ kannst du direkt den Bereich links auswählen, den du bearbeiten möchtest." %}
+
+            <a
+              href="{% url 'export_game' %}"
+              class="text-decoration-none mt-5 pt-3"
+            >
+              {% include "editor/components/button/button.html" with title="Exportiere das Spiel" %}
+            </a>
+
+          </div>
+        </section>
+
+        <section
+          class="col-12 col-lg-3 px-lg-4"
+          aria-label="Geführte Levelerstellung"
+        >
+          <div class="d-flex justify-content-center ps-lg-4">
+
+            <a
+              href="/createLevel/"
+              class="text-decoration-none"
+            >
+              {% include "editor/components/button/button.html" with title="Geführte Levelerstellung" %}
+            </a>
+
+          </div>
+        </section>
+
+      </div>
+    </section>
+
+  </div>
 </main>
-
 {% endblock %}

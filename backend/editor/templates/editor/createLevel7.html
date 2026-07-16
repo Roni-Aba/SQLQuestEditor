@@ -2,227 +2,373 @@
 {% load static %}
 
 {% block title %}
-Gegenstand Übersicht | SQL Spell Quest Editor
+Gegenstandsübersicht | SQL Spell Quest Editor
 {% endblock %}
 
 {% block additional_css %}
-<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
-<link rel="stylesheet" href="{% static 'editor/css/createLevel7.css' %}">
 <link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/helper/helper.css' %}">
 {% endblock %}
 
 {% block content %}
+<main class="create-page">
+  <div class="create-page__content">
 
-<main class="create-level7-page">
-  <div class="container-fluid px-0">
-
-    {% include "editor/components/statusbar/statusbar.html" with steps=steps %}
+    <section
+      class="create-page__status"
+      aria-label="Fortschritt der Levelerstellung"
+    >
+      {% include "editor/components/statusBar/statusBar.html" with steps=steps %}
+    </section>
 
     <form
-      class="create-level7-content"
       action="{% url 'create_level7' %}"
       method="post"
+      class="d-flex flex-column flex-grow-1"
     >
       {% csrf_token %}
-      <div class="row align-items-start create-level7-form-row">
 
-        <aside class="col-12 col-md-4 create-level7-helper" aria-label="Hilfetext von Cosmo">
-          <p class="create-level7-helper-text">
-            Hier ist dein Gegenstand auf einen Blick.
-            Wähle aus, was du bearbeiten möchtest
-          </p>
+      <section class="create-page__main">
+        <div class="row create-page__row align-items-start g-4 g-lg-5">
 
-          <img
-            src="{% static 'editor/img/cat1.png' %}"
-            alt="Cosmo Wizard"
-            class="create-level7-cosmo"
-          >
-        </aside>
-
-        <section class="col-12 col-md-8 create-level7-summary" aria-label="Zusammenfassung des Gegenstandes">
-
-          <div class="create-level7-card create-level7-card-heading">
-            <p>Hier ist die Zusammenfassung deines Gegenstandes:</p>
+          <div class="col-12 col-md-4">
+            {% include "editor/components/helper/helper.html" with helper_image="editor/img/cat9.png" helper_text="Hier ist dein Gegenstand auf einen Blick. Prüfe noch einmal alle Angaben und bearbeite einzelne Bereiche, falls du etwas ändern möchtest." %}
           </div>
 
-          <article class="create-level7-card">
-            <div class="create-level7-card-content">
-              <p><strong>Name:</strong> {{ summary.item_name|default:"-" }}</p>
-
-              <p>
-                <strong>Voraussetzungen:</strong>
-                {% if summary.required_items %}
-                  {{ summary.required_items|join:", " }}
-                {% else %}
-                  Keine
-                {% endif %}
-              </p>
-            </div>
-
-            <a
-              class="create-level7-edit-link"
-              href="{% url 'create_level3' %}"
-              aria-label="Name und Voraussetzungen bearbeiten"
+          <section
+            class="col-12 col-md-8"
+            aria-labelledby="item-summary-title"
+          >
+            <h1
+              id="item-summary-title"
+              class="h3 fw-semibold mb-4"
             >
-              ✎
-            </a>
-          </article>
+              Gegenstandsübersicht
+            </h1>
 
-          <article class="create-level7-card">
-            <div class="create-level7-card-content">
-              <p><strong>Passwort</strong></p>
+            <div class="d-flex flex-column gap-3">
 
-              <p>
-                <strong>Antwort:</strong>
-                {% if summary.passwords %}
-                  {{ summary.passwords|join:", " }}
-                {% else %}
-                  Kein Passwort
-                {% endif %}
-              </p>
+              <article class="card shadow-sm">
+                <div class="card-body position-relative pe-5">
+                  <h2 class="h5 card-title mb-3">
+                    Grunddaten
+                  </h2>
 
-              <p>
-                <strong>Hinweis:</strong>
-                {{ summary.password_hint|default:"-" }}
-              </p>
+                  <dl class="row mb-0">
+                    <dt class="col-sm-4">
+                      Name
+                    </dt>
 
-              <p>
-                <strong>Fehlversuchtext:</strong>
-                {% if summary.failure_hints %}
-                  {% for hint in summary.failure_hints %}
-                    {{ hint.attempts }} Versuch(e): {{ hint.message }}{% if not forloop.last %}, {% endif %}
-                  {% endfor %}
-                {% else %}
-                  -
-                {% endif %}
-              </p>
+                    <dd class="col-sm-8">
+                      {{ summary.item_name|default:"-" }}
+                    </dd>
 
-              <p>
-                <strong>afterUnlock:</strong>
-                {{ summary.success_message|default:"-" }}
-              </p>
+                    <dt class="col-sm-4">
+                      Voraussetzungen
+                    </dt>
+
+                    <dd class="col-sm-8 mb-0">
+                      {% if summary.required_items %}
+                        {{ summary.required_items|join:", " }}
+                      {% else %}
+                        Keine
+                      {% endif %}
+                    </dd>
+                  </dl>
+
+                  <a
+                    href="{% url 'create_level3' %}"
+                    class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+                    aria-label="Name und Voraussetzungen bearbeiten"
+                  >
+                    <i
+                      class="bi bi-pencil"
+                      aria-hidden="true"
+                    ></i>
+                  </a>
+                </div>
+              </article>
+
+              <article class="card shadow-sm">
+                <div class="card-body position-relative pe-5">
+                  <h2 class="h5 card-title mb-3">
+                    Passwort
+                  </h2>
+
+                  <dl class="row mb-0">
+                    <dt class="col-sm-4">
+                      Antwort
+                    </dt>
+
+                    <dd class="col-sm-8">
+                      {% if summary.passwords %}
+                        {{ summary.passwords|join:", " }}
+                      {% else %}
+                        Kein Passwort
+                      {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4">
+                      Hinweis
+                    </dt>
+
+                    <dd class="col-sm-8">
+                      {{ summary.password_hint|default:"-" }}
+                    </dd>
+
+                    <dt class="col-sm-4">
+                      Fehlversuchtexte
+                    </dt>
+
+                    <dd class="col-sm-8">
+                      {% if summary.failure_hints %}
+                        <ul class="mb-0 ps-3">
+                          {% for hint in summary.failure_hints %}
+                            <li>
+                              Nach {{ hint.attempts }} Versuch(en):
+                              {{ hint.message }}
+                            </li>
+                          {% endfor %}
+                        </ul>
+                      {% else %}
+                        -
+                      {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4">
+                      Erfolgsmeldung
+                    </dt>
+
+                    <dd class="col-sm-8 mb-0">
+                      {{ summary.success_message|default:"-" }}
+                    </dd>
+                  </dl>
+
+                  <a
+                    href="{% url 'create_level4' %}"
+                    class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+                    aria-label="Passworteinstellungen bearbeiten"
+                  >
+                    <i
+                      class="bi bi-pencil"
+                      aria-hidden="true"
+                    ></i>
+                  </a>
+                </div>
+              </article>
+
+              <article class="card shadow-sm">
+                <div class="card-body position-relative pe-5">
+                  <h2 class="h5 card-title mb-3">
+                    Gegenstandsposition
+                  </h2>
+
+                  <dl class="row mb-0">
+                    <dt class="col-sm-4">
+                      Bildbereich
+                    </dt>
+
+                    <dd class="col-sm-8">
+                      X: {{ summary.bounding_box_image.x|default:0 }},
+                      Y: {{ summary.bounding_box_image.y|default:0 }},
+                      Breite:
+                      {{ summary.bounding_box_image.width|default:0 }},
+                      Höhe:
+                      {{ summary.bounding_box_image.height|default:0 }}
+                    </dd>
+
+                    <dt class="col-sm-4">
+                      Iconbereich
+                    </dt>
+
+                    <dd class="col-sm-8 mb-0">
+                      X: {{ summary.bounding_box_icon.x|default:0 }},
+                      Y: {{ summary.bounding_box_icon.y|default:0 }},
+                      Breite:
+                      {{ summary.bounding_box_icon.width|default:0 }},
+                      Höhe:
+                      {{ summary.bounding_box_icon.height|default:0 }}
+                    </dd>
+                  </dl>
+
+                  <a
+                    href="{% url 'create_level51' %}"
+                    class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+                    aria-label="Gegenstandsposition bearbeiten"
+                  >
+                    <i
+                      class="bi bi-pencil"
+                      aria-hidden="true"
+                    ></i>
+                  </a>
+                </div>
+              </article>
+
+              <article class="card shadow-sm">
+                <div class="card-body position-relative pe-5">
+                  <h2 class="h5 card-title mb-3">
+                    Gegenstandstyp
+                  </h2>
+
+                  <dl class="row mb-0">
+                    <dt class="col-sm-4">
+                      Typ
+                    </dt>
+
+                    <dd class="col-sm-8">
+                      {{ summary.item_type|default:"-" }}
+                    </dd>
+
+                    {% if summary.item_type == "table" %}
+                      <dt class="col-sm-4">
+                        Tabellenname
+                      </dt>
+
+                      <dd class="col-sm-8">
+                        {{ summary.table_name|default:"-" }}
+                      </dd>
+
+                      <dt class="col-sm-4">
+                        Spalten
+                      </dt>
+
+                      <dd class="col-sm-8 mb-0">
+                        {% if summary.columns %}
+                          <ul class="mb-0 ps-3">
+                            {% for column in summary.columns %}
+                              <li>
+                                {{ column.id }} – {{ column.type }}
+                              </li>
+                            {% endfor %}
+                          </ul>
+                        {% else %}
+                          -
+                        {% endif %}
+                      </dd>
+                    {% endif %}
+
+                    {% if summary.item_type == "hint" %}
+                      <dt class="col-sm-4">
+                        Hinweistext
+                      </dt>
+
+                      <dd class="col-sm-8">
+                        {{ summary.text|default:"-" }}
+                      </dd>
+
+                      <dt class="col-sm-4">
+                        Bild
+                      </dt>
+
+                      <dd class="col-sm-8 mb-0">
+                        {{ summary.image_link|default:"-" }}
+                      </dd>
+                    {% endif %}
+
+                    {% if summary.item_type == "exit" %}
+                      <dt class="col-sm-4">
+                        Gratulation
+                      </dt>
+
+                      <dd class="col-sm-8">
+                        {{ summary.exit_success_message|default:"-" }}
+                      </dd>
+
+                      <dt class="col-sm-4">
+                        Nächstes Level
+                      </dt>
+
+                      <dd class="col-sm-8 mb-0">
+                        {{ summary.next_level_id|default:"-" }}
+                      </dd>
+                    {% endif %}
+                  </dl>
+
+                  {% if summary.item_type == "table" %}
+                    <a
+                      href="{% url 'create_level6table' %}"
+                      class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+                      aria-label="Tabelleninformationen bearbeiten"
+                    >
+                      <i
+                        class="bi bi-pencil"
+                        aria-hidden="true"
+                      ></i>
+                    </a>
+
+                  {% elif summary.item_type == "hint" %}
+                    <a
+                      href="{% url 'create_level6hint' %}"
+                      class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+                      aria-label="Hinweisinformationen bearbeiten"
+                    >
+                      <i
+                        class="bi bi-pencil"
+                        aria-hidden="true"
+                      ></i>
+                    </a>
+
+                  {% elif summary.item_type == "exit" %}
+                    <a
+                      href="{% url 'create_level6exit' %}"
+                      class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+                      aria-label="Exitinformationen bearbeiten"
+                    >
+                      <i
+                        class="bi bi-pencil"
+                        aria-hidden="true"
+                      ></i>
+                    </a>
+
+                  {% else %}
+                    <a
+                      href="{% url 'create_level61' %}"
+                      class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+                      aria-label="Gegenstandstyp bearbeiten"
+                    >
+                      <i
+                        class="bi bi-pencil"
+                        aria-hidden="true"
+                      ></i>
+                    </a>
+                  {% endif %}
+                </div>
+              </article>
+
             </div>
+          </section>
 
-            <a
-              class="create-level7-edit-link"
-              href="{% url 'create_level4' %}"
-              aria-label="Passwort bearbeiten"
-            >
-              ✎
-            </a>
-          </article>
+        </div>
+      </section>
 
-          <article class="create-level7-card">
-            <div class="create-level7-card-content">
-              <p><strong>Gegenstandskoordination</strong></p>
-
-              <p>
-                <strong>Bild:</strong>
-                x: {{ summary.bounding_box_image.x|default:0 }},
-                y: {{ summary.bounding_box_image.y|default:0 }},
-                width: {{ summary.bounding_box_image.width|default:0 }},
-                height: {{ summary.bounding_box_image.height|default:0 }}
-              </p>
-
-              <p>
-                <strong>Icon:</strong>
-                x: {{ summary.bounding_box_icon.x|default:0 }},
-                y: {{ summary.bounding_box_icon.y|default:0 }},
-                width: {{ summary.bounding_box_icon.width|default:0 }},
-                height: {{ summary.bounding_box_icon.height|default:0 }}
-              </p>
-            </div>
-
-            <a
-              class="create-level7-edit-link"
-              href="{% url 'create_level51' %}"
-              aria-label="Gegenstandskoordination bearbeiten"
-            >
-              ✎
-            </a>
-          </article>
-
-          <article class="create-level7-card">
-            <div class="create-level7-card-content">
-              <p><strong>Typ:</strong> {{ summary.item_type|default:"-" }}</p>
-
-              {% if summary.item_type == "table" %}
-                <p><strong>TableName:</strong> {{ summary.table_name|default:"-" }}</p>
-
-                <p><strong>Columns:</strong></p>
-
-                {% if summary.columns %}
-                  <ul class="create-level7-list">
-                    {% for column in summary.columns %}
-                      <li>{{ column.id }} — {{ column.type }}</li>
-                    {% endfor %}
-                  </ul>
-                {% else %}
-                  <p>-</p>
-                {% endif %}
-              {% endif %}
-
-              {% if summary.item_type == "hint" %}
-                <p><strong>Description:</strong> {{ summary.text|default:"-" }}</p>
-                <p><strong>ImageLink:</strong> {{ summary.image_link|default:"-" }}</p>
-              {% endif %}
-
-              {% if summary.item_type == "exit" %}
-                <p><strong>Gratulation:</strong> {{ summary.exit_success_message|default:"-" }}</p>
-                <p><strong>Nächstes Level:</strong> {{ summary.next_level_id|default:"-" }}</p>
-              {% endif %}
-            </div>
-
-            {% if summary.item_type == "table" %}
-              <a
-                class="create-level7-edit-link"
-                href="{% url 'create_level6table' %}"
-                aria-label="Tabelleninformationen bearbeiten"
-              >
-                ✎
-              </a>
-            {% elif summary.item_type == "hint" %}
-              <a
-                class="create-level7-edit-link"
-                href="{% url 'create_level6hint' %}"
-                aria-label="Hintinformationen bearbeiten"
-              >
-                ✎
-              </a>
-            {% elif summary.item_type == "exit" %}
-              <a
-                class="create-level7-edit-link"
-                href="{% url 'create_level6exit' %}"
-                aria-label="Exitinformationen bearbeiten"
-              >
-                ✎
-              </a>
-            {% else %}
-              <a
-                class="create-level7-edit-link"
-                href="{% url 'create_level61' %}"
-                aria-label="Typ bearbeiten"
-              >
-                ✎
-              </a>
-            {% endif %}
-          </article>
-
-        </section>
-      </div>
-
-      <section class="create-level7-navigation" aria-label="Seitennavigation">
-        <a class="create-level1-button" href="{% url 'create_level61' %}">
+      <nav
+        class="create-page__navigation"
+        aria-label="Navigation der Levelerstellung"
+      >
+        <a
+          href="{% url 'create_level61' %}"
+          class="btn btn-outline-primary btn-lg px-4"
+        >
+          <i
+            class="bi bi-arrow-left me-2"
+            aria-hidden="true"
+          ></i>
           Zurück
         </a>
 
-        <button type="submit" class="create-level1-button">
+        <button
+          type="submit"
+          class="btn btn-primary btn-lg px-4"
+        >
           Weiter
+          <i
+            class="bi bi-arrow-right ms-2"
+            aria-hidden="true"
+          ></i>
         </button>
-      </section>
+      </nav>
 
     </form>
   </div>
 </main>
-
 {% endblock %}

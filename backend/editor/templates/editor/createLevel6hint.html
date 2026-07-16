@@ -2,127 +2,257 @@
 {% load static %}
 
 {% block title %}
-Hint-Gegenstand | SQL Spell Quest Editor
+Hinweis-Gegenstand | SQL Spell Quest Editor
 {% endblock %}
 
 {% block additional_css %}
-<link rel="stylesheet" href="{% static 'editor/css/createLevelShared.css' %}">
-<link rel="stylesheet" href="{% static 'editor/css/createLevel6hint.css' %}">
 <link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/helper/helper.css' %}">
 <link rel="stylesheet" href="{% static 'editor/components/dropdown/dropdown.css' %}">
-<link rel="stylesheet" href="{% static 'editor/components/chatBox/chatBox.css' %}">
 {% endblock %}
 
 {% block content %}
+<main class="create-page">
+  <div class="create-page__content">
 
-<main class="create-level6hint-page">
-  <div class="container-fluid px-0">
-
-    {% include "editor/components/statusbar/statusbar.html" with steps=steps %}
+    <section
+      class="create-page__status"
+      aria-label="Fortschritt der Levelerstellung"
+    >
+      {% include "editor/components/statusBar/statusBar.html" with steps=steps %}
+    </section>
 
     <form
-      class="create-level6hint-content"
       action="{% url 'create_level6hint' %}"
       method="post"
       enctype="multipart/form-data"
+      class="d-flex flex-column flex-grow-1"
     >
       {% csrf_token %}
 
-      <div class="row align-items-start create-level6hint-form-row">
+      <section class="create-page__main">
+        <div class="row create-page__row align-items-start g-4 g-lg-5">
 
-        <aside class="col-12 col-md-4 create-level6hint-helper" aria-label="Hilfetext von Cosmo">
-          <p class="create-level6hint-helper-text">
-            Ein Hinweis-Gegenstand also, dann überlege dir was hilfreiches
-          </p>
-
-          <img
-            src="{% static 'editor/img/cat1.png' %}"
-            alt="Cosmo Wizard"
-            class="create-level6hint-cosmo"
-          >
-        </aside>
-
-        <section class="col-12 col-md-8 create-level6hint-fields" aria-label="Hint-Gegenstand">
-
-          {% include "editor/components/dropdown/dropdown.html" with id="hint-type" name="hint_type" label="Wie soll der Spieler informiert werden?" placeholder="Hinweisart" options=hint_options selected_value=form_values.hint_type required=True %}
-
-          <div
-            id="hint-text-area"
-            class="create-level6hint-dynamic-field"
-          >
-            {% include "editor/components/chatBox/chatBox.html" with title="Welchen Hinweistext soll der Spieler bekommen?" input_id="hint-text" input_name="hint_text" placeholder_text="Schreibe deinen Hinweis hinein" game_wizard_input=form_values.hint_text is_editable=True %}
+          <div class="col-12 col-md-4">
+            {% include "editor/components/helper/helper.html" with helper_image="editor/img/cat9.png" helper_text="Ein Hinweis-Gegenstand also. Überlege dir etwas Hilfreiches und entscheide, ob der Spieler einen Text, ein Bild oder beides erhalten soll." %}
           </div>
 
-          <div
-            id="hint-image-area"
-            class="create-level6hint-dynamic-field"
+          <section
+            class="col-12 col-md-8"
+            aria-labelledby="hint-item-title"
           >
-            <label for="hint-image" class="create-level6hint-upload-label">
-              Welches Bild soll angezeigt werden?
-            </label>
-
-            <input
-              id="hint-image"
-              name="hint_image"
-              type="file"
-              accept="image/*"
-              class="create-level6hint-file-input"
+            <h1
+              id="hint-item-title"
+              class="h3 fw-semibold mb-4"
             >
+              Hinweis-Gegenstand
+            </h1>
 
-            <p id="hint-image-name" class="create-level6hint-file-name">
-              {% if form_values.hint_image %}
-                {{ form_values.hint_image }}
-              {% endif %}
-            </p>
-          </div>
+            <section class="card border-0 shadow-sm">
+              <div class="card-body p-4">
 
-        </section>
-      </div>
+                <div class="d-flex align-items-start gap-3 mb-4">
+                  <div
+                    class="d-inline-flex align-items-center justify-content-center
+                           rounded-circle bg-primary-subtle text-primary flex-shrink-0"
+                    style="width: 44px; height: 44px;"
+                    aria-hidden="true"
+                  >
+                    <i class="bi bi-lightbulb"></i>
+                  </div>
 
-      <section class="create-level6hint-navigation" aria-label="Seitennavigation">
-        <a class="create-level1-button" href="{% url 'create_level61' %}">
+                  <div>
+                    <h2 class="h5 fw-semibold mb-1">
+                      Inhalt des Hinweises
+                    </h2>
+
+                    <p class="text-body-secondary mb-0">
+                      Wähle die Hinweisart und ergänze anschließend die
+                      passenden Inhalte.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="d-flex flex-column gap-4">
+
+                  <div>
+                    {% include "editor/components/dropdown/dropdown.html" with id="hint-type" name="hint_type" label="Wie soll der Spieler informiert werden?" placeholder="Hinweisart auswählen" options=hint_options selected_value=form_values.hint_type required=True %}
+                  </div>
+
+                  <div
+                    id="hint-text-area"
+                    class="d-none"
+                  >
+                    <label
+                      for="hint-text"
+                      class="form-label fw-semibold"
+                    >
+                      Welchen Hinweistext soll der Spieler bekommen?
+                    </label>
+
+                    <textarea
+                      id="hint-text"
+                      name="hint_text"
+                      class="form-control"
+                      rows="4"
+                      placeholder="Schreibe deinen Hinweis hinein"
+                    >{{ form_values.hint_text|default:'' }}</textarea>
+
+                    <div class="form-text">
+                      Formuliere den Hinweis so, dass er hilft, ohne die
+                      Lösung direkt zu verraten.
+                    </div>
+                  </div>
+
+                  <div
+                    id="hint-image-area"
+                    class="d-none"
+                  >
+                    <label
+                      for="hint-image"
+                      class="form-label fw-semibold"
+                    >
+                      Welches Bild soll angezeigt werden?
+                    </label>
+
+                    <input
+                      id="hint-image"
+                      name="hint_image"
+                      type="file"
+                      accept="image/*"
+                      class="form-control form-control-lg"
+                    >
+
+                    <p
+                      id="hint-image-name"
+                      class="form-text mt-2 mb-0"
+                      aria-live="polite"
+                    >
+                      {% if form_values.hint_image %}
+                        Bereits ausgewählt: {{ form_values.hint_image }}
+                      {% else %}
+                        Noch kein Bild ausgewählt
+                      {% endif %}
+                    </p>
+                  </div>
+
+                </div>
+              </div>
+            </section>
+          </section>
+
+        </div>
+      </section>
+
+      <nav
+        class="create-page__navigation"
+        aria-label="Navigation der Levelerstellung"
+      >
+        <a
+          href="{% url 'create_level61' %}"
+          class="btn btn-outline-primary btn-lg px-4"
+        >
+          <i
+            class="bi bi-arrow-left me-2"
+            aria-hidden="true"
+          ></i>
           Zurück
         </a>
 
-        <button type="submit" class="create-level1-button">
+        <button
+          type="submit"
+          class="btn btn-primary btn-lg px-4"
+        >
           Weiter
+          <i
+            class="bi bi-arrow-right ms-2"
+            aria-hidden="true"
+          ></i>
         </button>
-      </section>
+      </nav>
 
     </form>
   </div>
 </main>
 
 <script>
-  const hintTypeSelect = document.querySelector("#hint-type");
-  const hintTextArea = document.querySelector("#hint-text-area");
-  const hintImageArea = document.querySelector("#hint-image-area");
-  const hintImageInput = document.querySelector("#hint-image");
-  const hintImageName = document.querySelector("#hint-image-name");
+  document.addEventListener("DOMContentLoaded", () => {
+    const hintTypeSelect =
+      document.getElementById("hint-type");
 
-  function updateHintFields() {
-    const selectedValue = hintTypeSelect.value;
-    hintTextArea.classList.add("d-none");
-    hintImageArea.classList.add("d-none");
-    if (selectedValue === "text") {
-      hintTextArea.classList.remove("d-none");
+    const hintTextArea =
+      document.getElementById("hint-text-area");
+
+    const hintImageArea =
+      document.getElementById("hint-image-area");
+
+    const hintImageInput =
+      document.getElementById("hint-image");
+
+    const hintImageName =
+      document.getElementById("hint-image-name");
+
+    if (
+      !hintTypeSelect ||
+      !hintTextArea ||
+      !hintImageArea ||
+      !hintImageInput ||
+      !hintImageName
+    ) {
+      return;
     }
-    if (selectedValue === "image") {
-      hintImageArea.classList.remove("d-none");
-    }
-    if (selectedValue === "text_image") {
-      hintTextArea.classList.remove("d-none");
-      hintImageArea.classList.remove("d-none");
-    }
-  }
-  hintTypeSelect.addEventListener("change", updateHintFields);
-  hintImageInput.addEventListener("change", function () {
-    if (hintImageInput.files.length > 0) {
-      hintImageName.textContent = hintImageInput.files[0].name;
-    } else {
-      hintImageName.textContent = "";
-    }
+
+    const updateHintFields = () => {
+      const selectedType = hintTypeSelect.value;
+
+      const showText =
+        selectedType === "text" ||
+        selectedType === "text_image";
+
+      const showImage =
+        selectedType === "image" ||
+        selectedType === "text_image";
+
+      hintTextArea.classList.toggle(
+        "d-none",
+        !showText
+      );
+
+      hintImageArea.classList.toggle(
+        "d-none",
+        !showImage
+      );
+
+      const hintTextInput =
+        document.getElementById("hint-text");
+
+      if (hintTextInput) {
+        hintTextInput.required = showText;
+      }
+
+      hintImageInput.required =
+        showImage && !hintImageName.textContent.includes(
+          "Bereits ausgewählt:"
+        );
+    };
+
+    hintImageInput.addEventListener("change", () => {
+      const selectedFile =
+        hintImageInput.files[0] ?? null;
+
+      hintImageName.textContent = selectedFile
+        ? `Neu ausgewählt: ${selectedFile.name}`
+        : "Noch kein Bild ausgewählt";
+
+      updateHintFields();
+    });
+
+    hintTypeSelect.addEventListener(
+      "change",
+      updateHintFields
+    );
+
+    updateHintFields();
   });
-  updateHintFields();
 </script>
 {% endblock %}

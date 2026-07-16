@@ -1,0 +1,10 @@
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+    border-color: var(--color-primary);
+}
+
+.form-control::placeholder {
+    color: var(--color-text-muted);
+    opacity: 1;
+}

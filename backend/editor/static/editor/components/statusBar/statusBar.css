@@ -1,19 +1,37 @@
 .status-bar {
-  max-width: 900px;
-  margin: 0 auto;
+    max-width: 900px;
+    margin-inline: auto;
 }
 
 .step-circle {
-  width: 60px;
-  height: 60px;
-  background-color: #f8d8f8;
+    width: 60px;
+    height: 60px;
 
-  font-size: 28px;
-  font-weight: 600;
-  color: black;
+    background-color: #f8d8f8;
+    color: var(--color-text);
+
+    font-size: 1.75rem;
+    font-weight: 600;
 }
 
 .step-circle.step-circle-active {
-  background-color: #c77dff;
-  color: white;
+    background-color: #c77dff;
+    color: #ffffff;
+}
+
+@media (max-width: 767.98px) {
+    .status-bar {
+        overflow-x: auto;
+        justify-content: flex-start !important;
+
+        padding-bottom: var(--space-2);
+
+        scrollbar-width: thin;
+    }
+    .step-circle {
+        width: 44px;
+        height: 44px;
+
+        font-size: 1.25rem;
+    }
 }

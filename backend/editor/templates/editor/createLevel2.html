@@ -2,106 +2,265 @@
 {% load static %}
 
 {% block title %}
-Level erstellen | SQL Spell Quest Editor
+SQL-Beschränkungen | SQL Spell Quest Editor
 {% endblock %}
 
 {% block additional_css %}
-<link
-    rel="stylesheet"
-    href="{% static 'editor/css/createLevelShared.css' %}"
->
-<link
-    rel="stylesheet"
-    href="{% static 'editor/css/createLevel2.css' %}"
->
-<link
-    rel="stylesheet"
-    href="{% static 'editor/components/statusBar/statusBar.css' %}"
->
+<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/helper/helper.css' %}">
 {% endblock %}
 
 {% block content %}
+<main class="create-page">
+  <div class="create-page__content">
 
-<main class="create-level-page py-5">
-    <div class="container">
+    <section
+      class="create-page__status"
+      aria-label="Fortschritt der Levelerstellung"
+    >
+      {% include "editor/components/statusBar/statusBar.html" with steps=steps %}
+    </section>
 
-        {% include "editor/components/statusbar/statusbar.html" with steps=steps %}
+    <form
+      action="{% url 'create_level2' %}"
+      method="post"
+      class="d-flex flex-column flex-grow-1"
+    >
+      {% csrf_token %}
 
-        <form
-            class="create-level2-content"
-            action="{% url 'create_level2' %}"
-            method="post"
-        >
-            {% csrf_token %}
+      <section class="create-page__main">
+        <div class="row create-page__row align-items-start g-4 g-lg-5">
 
-            <div class="row align-items-start create-level2-form-row">
+          <div class="col-12 col-md-4">
+            {% include "editor/components/helper/helper.html" with helper_image="editor/img/cat2.png" helper_text="Hier legen wir fest, wie viele Zeilen und Spalten eine SQL-Abfrage maximal anzeigen darf. Außerdem bestimmst du die passenden Meldungen, falls zu viele Ergebnisse angezeigt werden." %}
+          </div>
 
-                <aside
-                    class="col-12 col-md-4 create-level2-helper"
-                    aria-label="Hilfetext von Cosmo"
-                >
-                    <img
-                        src="{% static 'editor/img/cat1.png' %}"
-                        alt="Cosmo Wizard"
-                        class="create-level2-cosmo"
-                    >
-
-                    <p>
-                        Hier legen wir fest, wie viele Zeilen und Spalten
-                        eine SQL-Abfrage maximal anzeigen darf. Außerdem
-                        bestimmst du die passenden Meldungen, falls zu viele
-                        Ergebnisse angezeigt werden.
-                    </p>
-                </aside>
-
-                <section
-                    class="col-12 col-md-8 create-level2-fields"
-                    aria-label="SQL-Anzeigebegrenzung"
-                >
-
-                    <div class="mb-5">
-                        {% include "editor/components/chatbox/chatbox.html" with title="Anzahl der Spalten, welche angezeigt werden sollen" input_id="max_columns" input_name="max_columns" placeholder_text="Schreibe eine Nummer hinein" game_wizard_input=form_values.max_columns is_editable=True %}
-                    </div>
-
-                    <div class="mb-5">
-                        {% include "editor/components/chatbox/chatbox.html" with title="Anzahl der Zeilen, welche angezeigt werden sollen" input_id="max_rows" input_name="max_rows" placeholder_text="Schreibe eine Nummer hinein" game_wizard_input=form_values.max_rows is_editable=True %}
-                    </div>
-
-                    <div class="mb-4">
-                        {% include "editor/components/chatbox/chatbox.html" with title="Meldung bei zu vielen Zeilen" input_id="too_many_rows_message" input_name="too_many_rows_message" placeholder_text="Schreibe hinein" game_wizard_input=form_values.too_many_rows_message is_editable=True %}
-                    </div>
-
-                    <div class="mb-4">
-                        {% include "editor/components/chatbox/chatbox.html" with title="Meldung bei zu vielen Spalten" input_id="too_many_columns_message" input_name="too_many_columns_message" placeholder_text="Schreibe hinein" game_wizard_input=form_values.too_many_columns_message is_editable=True %}
-                    </div>
-
-                    <div class="mb-5">
-                        {% include "editor/components/chatbox/chatbox.html" with title="Meldung bei zu vielen Zeilen und Spalten" input_id="too_many_rows_columns_message" input_name="too_many_rows_columns_message" placeholder_text="Schreibe hinein" game_wizard_input=form_values.too_many_rows_columns_message is_editable=True %}
-                    </div>
-
-                </section>
-            </div>
-
-            <section
-                class="create-level2-navigation"
-                aria-label="Seitennavigation"
+          <section
+            class="col-12 col-md-8"
+            aria-labelledby="sql-limit-title"
+          >
+            <h1
+              id="sql-limit-title"
+              class="h3 fw-semibold mb-4"
             >
-                <a
-                    class="btn btn-lg rounded-pill create-level-submit-button"
-                    href="{% url 'create_level1' %}"
-                >
-                    Zurück
-                </a>
-                <button
-                    type="submit"
-                    class="btn btn-lg rounded-pill create-level-submit-button"
-                >
-                    Weiter
-                </button>
-            </section>
-        </form>
+              SQL-Anzeigebegrenzung
+            </h1>
 
-    </div>
+            <div class="d-flex flex-column gap-4">
+
+              <section class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                  <div class="d-flex align-items-start gap-3 mb-4">
+                    <div
+                      class="d-inline-flex align-items-center justify-content-center
+                             rounded-circle bg-primary-subtle text-primary flex-shrink-0"
+                      style="width: 44px; height: 44px;"
+                      aria-hidden="true"
+                    >
+                      <i class="bi bi-table"></i>
+                    </div>
+
+                    <div>
+                      <h2 class="h5 fw-semibold mb-1">
+                        Maximale Ergebnisgröße
+                      </h2>
+
+                      <p class="text-body-secondary mb-0">
+                        Lege fest, wie groß das Ergebnis einer SQL-Abfrage
+                        höchstens sein darf.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="row g-4">
+                    <div class="col-12 col-sm-6">
+                      <label
+                        for="max_columns"
+                        class="form-label fw-semibold"
+                      >
+                        Maximale Spaltenanzahl
+                      </label>
+
+                      <div class="input-group input-group-lg">
+                        <span
+                          class="input-group-text"
+                          aria-hidden="true"
+                        >
+                          <i class="bi bi-layout-three-columns"></i>
+                        </span>
+
+                        <input
+                          type="number"
+                          id="max_columns"
+                          name="max_columns"
+                          class="form-control"
+                          min="1"
+                          placeholder="Zum Beispiel 5"
+                          value="{{ form_values.max_columns|default:'' }}"
+                          required
+                        >
+                      </div>
+
+                      <div class="form-text">
+                        So viele Spalten dürfen maximal angezeigt werden.
+                      </div>
+                    </div>
+
+                    <div class="col-12 col-sm-6">
+                      <label
+                        for="max_rows"
+                        class="form-label fw-semibold"
+                      >
+                        Maximale Zeilenanzahl
+                      </label>
+
+                      <div class="input-group input-group-lg">
+                        <span
+                          class="input-group-text"
+                          aria-hidden="true"
+                        >
+                          <i class="bi bi-list-ol"></i>
+                        </span>
+
+                        <input
+                          type="number"
+                          id="max_rows"
+                          name="max_rows"
+                          class="form-control"
+                          min="1"
+                          placeholder="Zum Beispiel 10"
+                          value="{{ form_values.max_rows|default:'' }}"
+                          required
+                        >
+                      </div>
+
+                      <div class="form-text">
+                        So viele Zeilen dürfen maximal angezeigt werden.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                  <div class="d-flex align-items-start gap-3 mb-4">
+                    <div
+                      class="d-inline-flex align-items-center justify-content-center
+                             rounded-circle bg-primary-subtle text-primary flex-shrink-0"
+                      style="width: 44px; height: 44px;"
+                      aria-hidden="true"
+                    >
+                      <i class="bi bi-chat-left-text"></i>
+                    </div>
+
+                    <div>
+                      <h2 class="h5 fw-semibold mb-1">
+                        Rückmeldungen an den Spieler
+                      </h2>
+
+                      <p class="text-body-secondary mb-0">
+                        Diese Texte erscheinen, wenn das Abfrageergebnis
+                        die erlaubte Größe überschreitet.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="d-flex flex-column gap-4">
+
+                    <div>
+                      <label
+                        for="too_many_rows_message"
+                        class="form-label fw-semibold"
+                      >
+                        Zu viele Zeilen
+                      </label>
+
+                      <textarea
+                        id="too_many_rows_message"
+                        name="too_many_rows_message"
+                        class="form-control"
+                        rows="3"
+                        placeholder="Meldung für ein Ergebnis mit zu vielen Zeilen"
+                        required
+                      >{{ form_values.too_many_rows_message|default:'' }}</textarea>
+                    </div>
+
+                    <div>
+                      <label
+                        for="too_many_columns_message"
+                        class="form-label fw-semibold"
+                      >
+                        Zu viele Spalten
+                      </label>
+
+                      <textarea
+                        id="too_many_columns_message"
+                        name="too_many_columns_message"
+                        class="form-control"
+                        rows="3"
+                        placeholder="Meldung für ein Ergebnis mit zu vielen Spalten"
+                        required
+                      >{{ form_values.too_many_columns_message|default:'' }}</textarea>
+                    </div>
+
+                    <div>
+                      <label
+                        for="too_many_rows_columns_message"
+                        class="form-label fw-semibold"
+                      >
+                        Zu viele Zeilen und Spalten
+                      </label>
+
+                      <textarea
+                        id="too_many_rows_columns_message"
+                        name="too_many_rows_columns_message"
+                        class="form-control"
+                        rows="3"
+                        placeholder="Meldung, wenn beide Grenzen überschritten wurden"
+                        required
+                      >{{ form_values.too_many_rows_columns_message|default:'' }}</textarea>
+                    </div>
+
+                  </div>
+                </div>
+              </section>
+
+            </div>
+          </section>
+
+        </div>
+      </section>
+
+      <nav
+        class="create-page__navigation"
+        aria-label="Navigation der Levelerstellung"
+      >
+        <a
+          href="{% url 'create_level1' %}"
+          class="btn btn-outline-primary btn-lg px-4"
+        >
+          <i
+            class="bi bi-arrow-left me-2"
+            aria-hidden="true"
+          ></i>
+          Zurück
+        </a>
+
+        <button
+          type="submit"
+          class="btn btn-primary btn-lg px-4"
+        >
+          Weiter
+          <i
+            class="bi bi-arrow-right ms-2"
+            aria-hidden="true"
+          ></i>
+        </button>
+      </nav>
+
+    </form>
+
+  </div>
 </main>
-
 {% endblock %}

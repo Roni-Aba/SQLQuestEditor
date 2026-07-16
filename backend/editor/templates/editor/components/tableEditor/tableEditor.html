@@ -1,0 +1,171 @@
+<div class="table-editor">
+  <p class="form-label fw-semibold mb-2">
+    Aus welchen Spalten besteht die Tabelle?
+  </p>
+
+  <p class="form-text mb-4">
+    Die Tabelle wird automatisch nach deinem Gegenstand benannt:
+    <strong class="text-primary">
+      {{ form_values.table_name }}
+    </strong>
+  </p>
+
+  <div
+    id="column-rows"
+    class="table-editor__rows"
+    data-type-options-id="data-type-options"
+  >
+    {% if form_values.columns %}
+
+      {% for column in form_values.columns %}
+        <div class="table-editor__row">
+
+          <div>
+            <label
+              for="column-id-{{ forloop.counter }}"
+              class="visually-hidden"
+            >
+              Spalten-ID
+            </label>
+
+            <input
+              id="column-id-{{ forloop.counter }}"
+              type="text"
+              name="column_ids[]"
+              class="form-control"
+              placeholder="Spalten-ID"
+              value="{{ column.id }}"
+              required
+            >
+          </div>
+
+          <div>
+            <label
+              for="column-type-{{ forloop.counter }}"
+              class="visually-hidden"
+            >
+              Datentyp
+            </label>
+
+            <select
+              id="column-type-{{ forloop.counter }}"
+              name="column_types[]"
+              class="form-select"
+              required
+            >
+              <option value="">
+                Datentyp auswählen
+              </option>
+
+              {% for option in data_type_options %}
+                <option
+                  value="{{ option.value }}"
+                  {% if column.type == option.value %}
+                    selected
+                  {% endif %}
+                >
+                  {{ option.label }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="table-editor__remove-column">
+            {% if not forloop.first %}
+              <button
+                type="button"
+                class="btn btn-outline-danger table-editor__remove-button"
+                aria-label="Spalte entfernen"
+              >
+                <i
+                  class="bi bi-x-lg"
+                  aria-hidden="true"
+                ></i>
+              </button>
+            {% endif %}
+          </div>
+
+        </div>
+      {% endfor %}
+
+    {% else %}
+
+      <div class="table-editor__row">
+
+        <div>
+          <label
+            for="column-id-1"
+            class="visually-hidden"
+          >
+            Spalten-ID
+          </label>
+
+          <input
+            id="column-id-1"
+            type="text"
+            name="column_ids[]"
+            class="form-control"
+            placeholder="Spalten-ID"
+            required
+          >
+        </div>
+
+        <div>
+          <label
+            for="column-type-1"
+            class="visually-hidden"
+          >
+            Datentyp
+          </label>
+
+          <select
+            id="column-type-1"
+            name="column_types[]"
+            class="form-select"
+            required
+          >
+            <option value="">
+              Datentyp auswählen
+            </option>
+
+            {% for option in data_type_options %}
+              <option value="{{ option.value }}">
+                {{ option.label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="table-editor__remove-column"></div>
+
+      </div>
+
+    {% endif %}
+  </div>
+
+  <button
+    type="button"
+    id="add-column-row"
+    class="btn btn-outline-primary mt-4"
+  >
+    <i
+      class="bi bi-plus-lg me-2"
+      aria-hidden="true"
+    ></i>
+    Weitere Spalte hinzufügen
+  </button>
+
+  <script
+    id="data-type-options"
+    type="application/json"
+  >
+    [
+      {% for option in data_type_options %}
+        {
+          "value": "{{ option.value|escapejs }}",
+          "label": "{{ option.label|escapejs }}"
+        }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ]
+  </script>
+</div>
