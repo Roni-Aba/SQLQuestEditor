@@ -9,7 +9,6 @@ Hinweis-Gegenstand | SQL Spell Quest Editor
 <link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
 <link rel="stylesheet" href="{% static 'editor/components/helper/helper.css' %}">
 <link rel="stylesheet" href="{% static 'editor/components/dropdown/dropdown.css' %}">
-<link rel="stylesheet" href="{% static 'editor/components/chatBox/chatBox.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -49,52 +48,97 @@ Hinweis-Gegenstand | SQL Spell Quest Editor
               Hinweis-Gegenstand
             </h1>
 
-            <div class="d-flex flex-column gap-4">
+            <section class="card border-0 shadow-sm">
+              <div class="card-body p-4">
 
-              <div>
-                {% include "editor/components/dropdown/dropdown.html" with id="hint-type" name="hint_type" label="Wie soll der Spieler informiert werden?" placeholder="Hinweisart auswählen" options=hint_options selected_value=form_values.hint_type required=True %}
+                <div class="d-flex align-items-start gap-3 mb-4">
+                  <div
+                    class="d-inline-flex align-items-center justify-content-center
+                           rounded-circle bg-primary-subtle text-primary flex-shrink-0"
+                    style="width: 44px; height: 44px;"
+                    aria-hidden="true"
+                  >
+                    <i class="bi bi-lightbulb"></i>
+                  </div>
+
+                  <div>
+                    <h2 class="h5 fw-semibold mb-1">
+                      Inhalt des Hinweises
+                    </h2>
+
+                    <p class="text-body-secondary mb-0">
+                      Wähle die Hinweisart und ergänze anschließend die
+                      passenden Inhalte.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="d-flex flex-column gap-4">
+
+                  <div>
+                    {% include "editor/components/dropdown/dropdown.html" with id="hint-type" name="hint_type" label="Wie soll der Spieler informiert werden?" placeholder="Hinweisart auswählen" options=hint_options selected_value=form_values.hint_type required=True %}
+                  </div>
+
+                  <div
+                    id="hint-text-area"
+                    class="d-none"
+                  >
+                    <label
+                      for="hint-text"
+                      class="form-label fw-semibold"
+                    >
+                      Welchen Hinweistext soll der Spieler bekommen?
+                    </label>
+
+                    <textarea
+                      id="hint-text"
+                      name="hint_text"
+                      class="form-control"
+                      rows="4"
+                      placeholder="Schreibe deinen Hinweis hinein"
+                    >{{ form_values.hint_text|default:'' }}</textarea>
+
+                    <div class="form-text">
+                      Formuliere den Hinweis so, dass er hilft, ohne die
+                      Lösung direkt zu verraten.
+                    </div>
+                  </div>
+
+                  <div
+                    id="hint-image-area"
+                    class="d-none"
+                  >
+                    <label
+                      for="hint-image"
+                      class="form-label fw-semibold"
+                    >
+                      Welches Bild soll angezeigt werden?
+                    </label>
+
+                    <input
+                      id="hint-image"
+                      name="hint_image"
+                      type="file"
+                      accept="image/*"
+                      class="form-control form-control-lg"
+                    >
+
+                    <p
+                      id="hint-image-name"
+                      class="form-text mt-2 mb-0"
+                      aria-live="polite"
+                    >
+                      {% if form_values.hint_image %}
+                        Bereits ausgewählt: {{ form_values.hint_image }}
+                      {% else %}
+                        Noch kein Bild ausgewählt
+                      {% endif %}
+                    </p>
+                  </div>
+
+                </div>
               </div>
-
-              <div
-                id="hint-text-area"
-                class="d-none"
-              >
-                {% include "editor/components/chatBox/chatBox.html" with title="Welchen Hinweistext soll der Spieler bekommen?" input_id="hint-text" input_name="hint_text" placeholder_text="Schreibe deinen Hinweis hinein" game_wizard_input=form_values.hint_text is_editable=True %}
-              </div>
-
-              <div
-                id="hint-image-area"
-                class="d-none"
-              >
-                <label
-                  for="hint-image"
-                  class="form-label fw-semibold"
-                >
-                  Welches Bild soll angezeigt werden?
-                </label>
-
-                <input
-                  id="hint-image"
-                  name="hint_image"
-                  type="file"
-                  accept="image/*"
-                  class="form-control"
-                >
-
-                <p
-                  id="hint-image-name"
-                  class="form-text mt-2 mb-0"
-                  aria-live="polite"
-                >
-                  {% if form_values.hint_image %}
-                    Bereits ausgewählt: {{ form_values.hint_image }}
-                  {% else %}
-                    Noch kein Bild ausgewählt
-                  {% endif %}
-                </p>
-              </div>
-
-            </div>
+            </section>
           </section>
 
         </div>
@@ -108,7 +152,10 @@ Hinweis-Gegenstand | SQL Spell Quest Editor
           href="{% url 'create_level61' %}"
           class="btn btn-outline-primary btn-lg px-4"
         >
-          <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>
+          <i
+            class="bi bi-arrow-left me-2"
+            aria-hidden="true"
+          ></i>
           Zurück
         </a>
 
@@ -117,7 +164,10 @@ Hinweis-Gegenstand | SQL Spell Quest Editor
           class="btn btn-primary btn-lg px-4"
         >
           Weiter
-          <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i>
+          <i
+            class="bi bi-arrow-right ms-2"
+            aria-hidden="true"
+          ></i>
         </button>
       </nav>
 
@@ -172,6 +222,18 @@ Hinweis-Gegenstand | SQL Spell Quest Editor
         "d-none",
         !showImage
       );
+
+      const hintTextInput =
+        document.getElementById("hint-text");
+
+      if (hintTextInput) {
+        hintTextInput.required = showText;
+      }
+
+      hintImageInput.required =
+        showImage && !hintImageName.textContent.includes(
+          "Bereits ausgewählt:"
+        );
     };
 
     hintImageInput.addEventListener("change", () => {
@@ -181,6 +243,8 @@ Hinweis-Gegenstand | SQL Spell Quest Editor
       hintImageName.textContent = selectedFile
         ? `Neu ausgewählt: ${selectedFile.name}`
         : "Noch kein Bild ausgewählt";
+
+      updateHintFields();
     });
 
     hintTypeSelect.addEventListener(

@@ -8,7 +8,6 @@ Passworteinstellungen | SQL Spell Quest Editor
 {% block additional_css %}
 <link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
 <link rel="stylesheet" href="{% static 'editor/components/helper/helper.css' %}">
-<link rel="stylesheet" href="{% static 'editor/components/chatBox/chatBox.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -49,62 +48,202 @@ Passworteinstellungen | SQL Spell Quest Editor
 
             <div class="d-flex flex-column gap-4">
 
-              {% include "editor/components/chatBox/chatBox.html" with title="Was für eine Frage möchtest du stellen?" input_id="password_hint" input_name="password_hint" placeholder_text="Den bekommst du erst, wenn du mir sagst, wie viele Dinge zu deiner Ausrüstung gehören." game_wizard_input=form_values.password_hint is_editable=True %}
+              <section class="card border-0 shadow-sm">
+                <div class="card-body p-4">
 
-              {% include "editor/components/chatBox/chatBox.html" with title="Wähle ein oder mehrere Passwörter, um das Item freizuschalten. Trenne die Passwörter mit einem Komma." input_id="item_passwords" input_name="item_passwords" placeholder_text="Tippe ein Passwort hinein" game_wizard_input=form_values.item_passwords is_editable=True %}
+                  <div class="d-flex align-items-start gap-3 mb-4">
+                    <div
+                      class="d-inline-flex align-items-center justify-content-center
+                             rounded-circle bg-primary-subtle text-primary flex-shrink-0"
+                      style="width: 44px; height: 44px;"
+                      aria-hidden="true"
+                    >
+                      <i class="bi bi-key"></i>
+                    </div>
 
-              {% include "editor/components/chatBox/chatBox.html" with title="Wie gratulieren wir dem Spieler, nachdem er das Item entdeckt hat?" input_id="success_message" input_name="success_message" placeholder_text="Schreibe einen tollen Text" game_wizard_input=form_values.success_message is_editable=True %}
+                    <div>
+                      <h2 class="h5 fw-semibold mb-1">
+                        Passwort und Frage
+                      </h2>
 
-              <div>
-                <p class="form-label fw-semibold mb-2">
-                  Möchtest du, dass der Nutzer bei mehreren falschen
-                  Passwortversuchen Tipps bekommt?
-                </p>
+                      <p class="text-body-secondary mb-0">
+                        Lege fest, welche Frage gestellt wird und welche
+                        Antworten den Gegenstand freischalten.
+                      </p>
+                    </div>
+                  </div>
 
-                <div
-                  class="btn-group"
-                  role="radiogroup"
-                  aria-label="Tipps bei falschen Passwortversuchen"
-                >
-                  <input
-                    type="radio"
-                    class="btn-check"
-                    name="show_hints"
-                    id="show-hints-yes"
-                    value="true"
-                    autocomplete="off"
-                    {% if form_values.show_hints == "true" %}
-                      checked
-                    {% endif %}
-                  >
+                  <div class="d-flex flex-column gap-4">
 
-                  <label
-                    class="btn btn-outline-primary"
-                    for="show-hints-yes"
-                  >
-                    Ja
-                  </label>
+                    <div>
+                      <label
+                        for="password_hint"
+                        class="form-label fw-semibold"
+                      >
+                        Welche Frage möchtest du stellen?
+                      </label>
 
-                  <input
-                    type="radio"
-                    class="btn-check"
-                    name="show_hints"
-                    id="show-hints-no"
-                    value="false"
-                    autocomplete="off"
-                    {% if form_values.show_hints != "true" %}
-                      checked
-                    {% endif %}
-                  >
+                      <textarea
+                        id="password_hint"
+                        name="password_hint"
+                        class="form-control"
+                        rows="3"
+                        placeholder="Den bekommst du erst, wenn du mir sagst, wie viele Dinge zu deiner Ausrüstung gehören."
+                        required
+                      >{{ form_values.password_hint|default:'' }}</textarea>
 
-                  <label
-                    class="btn btn-outline-primary"
-                    for="show-hints-no"
-                  >
-                    Nein
-                  </label>
+                      <div class="form-text">
+                        Die Frage wird dem Spieler vor der Passworteingabe angezeigt.
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        for="item_passwords"
+                        class="form-label fw-semibold"
+                      >
+                        Gültige Passwörter
+                      </label>
+
+                      <div class="input-group input-group-lg">
+                        <span
+                          class="input-group-text"
+                          aria-hidden="true"
+                        >
+                          <i class="bi bi-shield-lock"></i>
+                        </span>
+
+                        <input
+                          id="item_passwords"
+                          name="item_passwords"
+                          type="text"
+                          class="form-control"
+                          placeholder="Zum Beispiel: rot, Rubin, Feuerstein"
+                          value="{{ form_values.item_passwords|default:'' }}"
+                          required
+                        >
+                      </div>
+
+                      <div class="form-text">
+                        Mehrere Passwörter mit einem Komma trennen.
+                      </div>
+                    </div>
+
+                  </div>
                 </div>
-              </div>
+              </section>
+
+              <section class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+
+                  <div class="d-flex align-items-start gap-3 mb-4">
+                    <div
+                      class="d-inline-flex align-items-center justify-content-center
+                             rounded-circle bg-primary-subtle text-primary flex-shrink-0"
+                      style="width: 44px; height: 44px;"
+                      aria-hidden="true"
+                    >
+                      <i class="bi bi-chat-heart"></i>
+                    </div>
+
+                    <div>
+                      <h2 class="h5 fw-semibold mb-1">
+                        Rückmeldung an den Spieler
+                      </h2>
+
+                      <p class="text-body-secondary mb-0">
+                        Bestimme die Erfolgsmeldung und ob zusätzliche Tipps
+                        nach mehreren Fehlversuchen angezeigt werden.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="d-flex flex-column gap-4">
+
+                    <div>
+                      <label
+                        for="success_message"
+                        class="form-label fw-semibold"
+                      >
+                        Nachricht nach erfolgreicher Freischaltung
+                      </label>
+
+                      <textarea
+                        id="success_message"
+                        name="success_message"
+                        class="form-control"
+                        rows="3"
+                        placeholder="Schreibe eine motivierende Erfolgsmeldung"
+                        required
+                      >{{ form_values.success_message|default:'' }}</textarea>
+                    </div>
+
+                    <fieldset>
+                      <legend class="form-label fw-semibold mb-2">
+                        Tipps nach mehreren falschen Passwortversuchen
+                      </legend>
+
+                      <p class="text-body-secondary mb-3">
+                        Sollen dem Spieler nach wiederholten Fehlversuchen
+                        zusätzliche Hinweise angezeigt werden?
+                      </p>
+
+                      <div
+                        class="btn-group"
+                        role="radiogroup"
+                        aria-label="Tipps bei falschen Passwortversuchen"
+                      >
+                        <input
+                          type="radio"
+                          class="btn-check"
+                          name="show_hints"
+                          id="show-hints-yes"
+                          value="true"
+                          autocomplete="off"
+                          {% if form_values.show_hints == "true" %}
+                            checked
+                          {% endif %}
+                        >
+
+                        <label
+                          class="btn btn-outline-primary px-4"
+                          for="show-hints-yes"
+                        >
+                          <i
+                            class="bi bi-check-lg me-2"
+                            aria-hidden="true"
+                          ></i>
+                          Ja
+                        </label>
+
+                        <input
+                          type="radio"
+                          class="btn-check"
+                          name="show_hints"
+                          id="show-hints-no"
+                          value="false"
+                          autocomplete="off"
+                          {% if form_values.show_hints != "true" %}
+                            checked
+                          {% endif %}
+                        >
+
+                        <label
+                          class="btn btn-outline-primary px-4"
+                          for="show-hints-no"
+                        >
+                          <i
+                            class="bi bi-x-lg me-2"
+                            aria-hidden="true"
+                          ></i>
+                          Nein
+                        </label>
+                      </div>
+                    </fieldset>
+
+                  </div>
+                </div>
+              </section>
 
             </div>
           </section>
@@ -120,7 +259,10 @@ Passworteinstellungen | SQL Spell Quest Editor
           href="{% url 'create_level4' %}"
           class="btn btn-outline-primary btn-lg px-4"
         >
-          <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>
+          <i
+            class="bi bi-arrow-left me-2"
+            aria-hidden="true"
+          ></i>
           Zurück
         </a>
 
@@ -129,7 +271,10 @@ Passworteinstellungen | SQL Spell Quest Editor
           class="btn btn-primary btn-lg px-4"
         >
           Weiter
-          <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i>
+          <i
+            class="bi bi-arrow-right ms-2"
+            aria-hidden="true"
+          ></i>
         </button>
       </nav>
 
