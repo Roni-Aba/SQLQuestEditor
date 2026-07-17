@@ -6,8 +6,14 @@ Levelgrunddaten | SQL Spell Quest Editor
 {% endblock %}
 
 {% block additional_css %}
-<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
-<link rel="stylesheet" href="{% static 'editor/components/helper/helper.css' %}">
+<link
+  rel="stylesheet"
+  href="{% static 'editor/components/statusBar/statusBar.css' %}"
+>
+<link
+  rel="stylesheet"
+  href="{% static 'editor/components/helper/helper.css' %}"
+>
 {% endblock %}
 
 {% block content %}
@@ -21,186 +27,11 @@ Levelgrunddaten | SQL Spell Quest Editor
       {% include "editor/components/statusBar/statusBar.html" with steps=steps %}
     </section>
 
-    <form
-      action="{% url 'create_level1' %}"
-      method="post"
-      enctype="multipart/form-data"
-      class="d-flex flex-column flex-grow-1"
-    >
-      {% csrf_token %}
+    {% url 'create_level1' as create_level1_url %}
+    {% url 'create_level' as create_level_url %}
 
-      <section class="create-page__main">
-        <div class="row create-page__row align-items-start g-4 g-lg-5">
+    {% include "editor/partials/levelGrunddatenForm.html" with form_action=create_level1_url back_url=create_level_url helper_text="Hier legen wir die Grundsteine unseres Levels fest. Gib dem Level einen Namen, wähle ein Hintergrundbild aus und lege fest, wie der Nutzer begrüßt werden soll." submit_label="Weiter" submit_icon="bi-arrow-right" submit_button_id="continue-button" require_picture=True %}
 
-          <div class="col-12 col-md-4">
-            {% include "editor/components/helper/helper.html" with helper_image="editor/img/cat1.png" helper_text="Hier legen wir die Grundsteine unseres Levels fest. Gib dem Level einen Namen, wähle ein Hintergrundbild aus und lege fest, wie der Nutzer begrüßt werden soll." %}
-          </div>
-
-          <section
-            class="col-12 col-md-8"
-            aria-labelledby="level-basics-title"
-          >
-            <h1
-              id="level-basics-title"
-              class="h3 fw-semibold mb-4"
-            >
-              Levelgrunddaten
-            </h1>
-
-            <div class="d-flex flex-column gap-4">
-
-              <div>
-                <label
-                  for="level-name"
-                  class="form-label fw-semibold"
-                >
-                  Verrate mir doch bitte, wie das Level heißen soll
-                </label>
-
-                <input
-                  id="level-name"
-                  name="level_name"
-                  type="text"
-                  class="form-control"
-                  placeholder="Schreibe hinein"
-                  value="{{ form_values.level_name|default:'' }}"
-                  required
-                >
-              </div>
-
-              <div>
-                <label
-                  for="level-picture-input"
-                  class="form-label fw-semibold"
-                >
-                  Welches Hintergrundbild soll das Level verwenden?
-                </label>
-
-                <div class="d-flex flex-column align-items-start gap-2">
-                  <label
-                    for="level-picture-input"
-                    class="btn btn-outline-primary btn-sm"
-                  >
-                    <i class="bi bi-image me-2" aria-hidden="true"></i>
-                    Eigenes Bild auswählen
-                  </label>
-
-                  <input
-                    type="file"
-                    id="level-picture-input"
-                    name="levelPicture"
-                    accept="image/*"
-                    class="visually-hidden"
-                  >
-
-                  <span
-                    id="level-picture-feedback"
-                    class="form-text"
-                    aria-live="polite"
-                  >
-                    {% if form_values.level_picture %}
-                      Bereits ausgewählt:
-                      {{ form_values.level_picture }}
-                    {% else %}
-                      Noch kein Bild ausgewählt
-                    {% endif %}
-                  </span>
-                </div>
-
-                <p class="form-text mb-0">
-                  Das Hintergrundbild muss eine Auflösung von
-                  1536 × 1024 Pixeln besitzen.
-                </p>
-              </div>
-
-              <div>
-                <label
-                  for="level-greeting"
-                  class="form-label fw-semibold"
-                >
-                  Wie soll der Nutzer des Levels begrüßt werden?
-                </label>
-
-                <input
-                  id="level-greeting"
-                  name="level_greeting"
-                  type="text"
-                  class="form-control"
-                  placeholder="Schreibe hinein"
-                  value="{{ form_values.level_greeting|default:'' }}"
-                  required
-                >
-              </div>
-
-            </div>
-          </section>
-
-        </div>
-      </section>
-
-      <nav
-        class="create-page__navigation"
-        aria-label="Navigation der Levelerstellung"
-      >
-        <a
-          href="{% url 'create_level' %}"
-          class="btn btn-outline-primary btn-lg px-4"
-        >
-          <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>
-          Zurück
-        </a>
-
-        <button
-          id="continue-button"
-          type="submit"
-          class="btn btn-primary btn-lg px-4"
-          {% if not form_values.level_picture %}disabled{% endif %}
-        >
-          Weiter
-          <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i>
-        </button>
-      </nav>
-    </form>
   </div>
 </main>
-
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const pictureInput = document.getElementById("level-picture-input");
-    const pictureFeedback = document.getElementById("level-picture-feedback");
-    const continueButton = document.getElementById("continue-button");
-
-    if (!pictureInput || !pictureFeedback || !continueButton) {
-      return;
-    }
-    const hasExistingPicture =
-      {% if form_values.level_picture %}true{% else %}false{% endif %};
-
-    const existingPictureText = pictureFeedback.textContent.trim();
-
-    const updateContinueButton = (hasPicture) => {
-      continueButton.disabled = !hasPicture;
-    };
-
-    const updatePictureFeedback = (selectedFile) => {
-      if (selectedFile) {
-        pictureFeedback.textContent =
-          `Neu ausgewählt: ${selectedFile.name}`;
-
-        updateContinueButton(true);
-        return;
-      }
-      pictureFeedback.textContent = hasExistingPicture
-        ? existingPictureText
-        : "Noch kein Bild ausgewählt";
-
-      updateContinueButton(hasExistingPicture);
-    };
-    updateContinueButton(hasExistingPicture);
-    pictureInput.addEventListener("change", () => {
-      const selectedFile = pictureInput.files[0] ?? null;
-      updatePictureFeedback(selectedFile);
-    });
-  });
-</script>
 {% endblock %}

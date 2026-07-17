@@ -773,3 +773,75 @@ def export_game_view(request):
     response["Content-Disposition"] = 'attachment; filename="SQLSpellQuest_export.zip"'
     return response
 
+def level_grunddaten_view(request):
+    saved_level = request.session.get("new_level", {})
+
+    if request.method == "POST":
+        level_name = request.POST.get(
+            "level_name",
+            "",
+        ).strip()
+
+        level_greeting = request.POST.get(
+            "level_greeting",
+            "",
+        ).strip()
+
+        uploaded_picture = request.FILES.get(
+            "levelPicture"
+        )
+
+        if uploaded_picture:
+            upload_dir = (
+                Path(settings.BASE_DIR)
+                / "editor"
+                / "static"
+                / "editor"
+                / "img"
+                / "levels"
+            )
+
+            upload_dir.mkdir(
+                parents=True,
+                exist_ok=True,
+            )
+
+            storage = FileSystemStorage(
+                location=upload_dir
+            )
+
+            level_picture_name = storage.save(
+                uploaded_picture.name,
+                uploaded_picture,
+            )
+
+            saved_level["levelPicture"] = (
+                level_picture_name
+            )
+
+        saved_level["id"] = level_name
+        saved_level["startDialog"] = level_greeting
+
+        request.session["new_level"] = saved_level
+        request.session.modified = True
+
+        return redirect("auswahl")
+
+    form_values = {
+        "level_name": saved_level.get("id", ""),
+        "level_picture": saved_level.get(
+            "levelPicture",
+            "",
+        ),
+        "level_greeting": saved_level.get(
+            "startDialog",
+            "",
+        ),
+    }
+    return render(
+        request,
+        "editor/levelGrunddaten.html",
+        {
+            "form_values": form_values,
+        },
+    )
