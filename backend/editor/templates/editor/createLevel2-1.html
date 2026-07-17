@@ -1,0 +1,80 @@
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Level erstellen | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link
+    rel="stylesheet"
+    href="{% static 'editor/components/statusBar/statusBar.css' %}"
+>
+<link
+    rel="stylesheet"
+    href="{% static 'editor/components/helper/helper.css' %}"
+>
+{% endblock %}
+
+{% block content %}
+<main class="create-page">
+    <div class="create-page__content">
+
+        <section
+            class="create-page__status"
+            aria-label="Fortschritt der Levelerstellung"
+        >
+            {% include "editor/components/statusBar/statusBar.html" with steps=steps %}
+        </section>
+
+        <form
+            action="{% url 'create_level21' %}"
+            method="post"
+            class="d-flex flex-column flex-grow-1"
+        >
+            {% csrf_token %}
+
+            <section class="create-page__main">
+                <div class="row create-page__row align-items-start g-4 g-lg-5">
+
+                    <div class="col-12 col-md-4">
+                        {% include "editor/components/helper/helper.html" with helper_image="editor/img/cat2.png" helper_text="Hier kannst du die allgemeinen Rückmeldungen deines Levels festlegen. Diese Nachrichten werden beispielsweise bei falschen Passwörtern, ungültigen Tabellen oder fehlerhaften SQL-Abfragen angezeigt. Der Platzhalter %s wird automatisch durch den jeweiligen Tabellen- oder Gegenstandsnamen ersetzt." %}
+                    </div>
+
+                    {% include "editor/partials/messagesForm.html" %}
+
+                </div>
+            </section>
+
+            <nav
+                class="create-page__navigation"
+                aria-label="Navigation der Levelerstellung"
+            >
+                <a
+                    href="{% url 'create_level2' %}"
+                    class="btn btn-outline-primary btn-lg px-4"
+                >
+                    <i
+                        class="bi bi-arrow-left me-2"
+                        aria-hidden="true"
+                    ></i>
+                    Zurück
+                </a>
+
+                <button
+                    type="submit"
+                    class="btn btn-primary btn-lg px-4"
+                >
+                    Weiter
+                    <i
+                        class="bi bi-arrow-right ms-2"
+                        aria-hidden="true"
+                    ></i>
+                </button>
+            </nav>
+
+        </form>
+
+    </div>
+</main>
+{% endblock %}

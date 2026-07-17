@@ -338,12 +338,63 @@ def create_level2_view(request):
         request.session.modified = True
         print("createLevel2 gespeichert:")
         print(json.dumps(saved_level,ensure_ascii=False,indent=2))
-        return redirect("create_level3")
+        return redirect("create_level21")
     return render(request, "editor/createLevel2.html", {
         "steps": steps,
         "saved_level": saved_level,
         "form_values": form_values,
     })
+
+def create_level21_view(request):
+    steps = get_steps(active_step=2)
+
+    saved_level = request.session.get(
+        "new_level",
+        {},
+    )
+
+    saved_messages = saved_level.get(
+        "messages",
+        {},
+    )
+
+    form_values = {
+        key: saved_messages.get(
+            key,
+            default_message,
+        )
+        for key, default_message in DEFAULT_MESSAGES.items()
+    }
+
+    if request.method == "POST":
+        messages = {}
+
+        for key, default_message in DEFAULT_MESSAGES.items():
+            submitted_message = request.POST.get(key, "").strip()
+
+            messages[key] = (
+                submitted_message
+                if submitted_message
+                else default_message
+            )
+        saved_level["messages"] = messages
+        request.session["new_level"] = saved_level
+        game_json = request.session.get("game_json", {})
+        game_json["messages"] = messages
+        request.session["game_json"] = game_json
+
+        request.session.modified = True
+        print(json.dumps(saved_messages,ensure_ascii=False,indent=2))
+        return redirect("create_level3")
+
+    return render(
+        request,
+        "editor/createLevel2-1.html",
+        {
+            "steps": steps,
+            "form_values": form_values,
+        },
+    )
 
 def create_level3_view(request):
     steps = get_steps(active_step=3)
@@ -1865,4 +1916,110 @@ def cancel_item_edit_view(request):
     request.session.modified = True
     return redirect(
         "gegenstandVerwaltung"
+    )
+DEFAULT_MESSAGES = {
+    "wrong_password": (
+        "Das Passwort ist nicht korrekt. "
+        "Versuche es bitte erneut."
+    ),
+    "wrong_password_new_hint": (
+        "Das Passwort ist nicht korrekt. "
+        "Ein neuer Hinweis wurde freigeschaltet."
+    ),
+    "not_a_table": (
+        "Auf %s kann keine SQL-Abfrage ausgeführt werden, "
+        "da es sich nicht um eine Tabelle handelt."
+    ),
+    "unknown_table": (
+        "Die Tabelle ist nicht bekannt. "
+        "Checke bitte den Tabellennamen."
+    ),
+    "locked_table": (
+        "Die Tabelle ist noch nicht freigeschaltet."
+    ),
+    "sql_error": (
+        "Die SQL-Abfrage konnte nicht gecallt werden. "
+        "Check bitte die Syntax und versuche es erneut."
+    ),
+    "no_result": (
+        "Die SQL-Abfrage hat kein Ergebnis geliefert."
+    ),
+    "row_restriction": (
+        "Die Abfrage liefert zu viele Zeilen. "
+        "Limitiere das Ergebnis bitte auf die notwendigen Zeilen ein."
+    ),
+    "col_restriction": (
+        "Die Abfrage liefert zu viele Spalten. "
+        "Choose bitte nur die benötigten Spalten aus."
+    ),
+    "row_and_col_restriction": (
+        "Die Abfrage liefert zu viele Zeilen und Spalten. "
+        "Limitiere das Ergebnis bitte auf die benötigten Zeilen "
+        "und Spalten ein."
+    ),
+}
+def messages_grunddaten_view(request):
+
+
+    saved_level = request.session.get(
+        "new_level",
+        {},
+    )
+
+    saved_messages = saved_level.get(
+        "messages",
+        {},
+    )
+
+    form_values = {
+        key: saved_messages.get(
+            key,
+            default_value,
+        )
+        for key, default_value
+        in DEFAULT_MESSAGES.items()
+    }
+    if request.method == "POST":
+        messages = {}
+        for key, default_value in DEFAULT_MESSAGES.items():
+            value = request.POST.get(
+                key,
+                "",
+            ).strip()
+            messages[key] = (
+                value
+                if value
+                else default_value
+            )
+        saved_level["messages"] = messages
+        save_new_level_session(
+            request,
+            saved_level,
+        )
+        game_json = request.session.get(
+            "game_json",
+            {},
+        )
+        game_json["messages"] = messages
+        request.session["game_json"] = game_json
+        request.session.modified = True
+        print("Systemnachrichten gespeichert:")
+        print(
+            json.dumps(
+                game_json,
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return redirect(
+            "auswahl_view"
+        )
+
+    return render(
+        request,
+        "editor/messagesGrunddaten.html",
+        {
+            "saved_level": saved_level,
+            "form_values": form_values,
+        },
     )
