@@ -10,6 +10,7 @@ urlpatterns = [
     path("auswahl/", views.auswahl_view, name="auswahl_view"),
     path("createLevel1/", views.create_level1_view, name="create_level1"),
     path("createLevel2/", views.create_level2_view, name="create_level2"),
+    path("createLevel21/", views.create_level21_view, name="create_level21"),
     path("createLevel3/", views.create_level3_view, name="create_level3"),
     path("createLevel4/", views.create_level4_view, name="create_level4"),
     path("createLevel4-1/", views.create_level41_view, name="create_level41"),  # ← NEW
@@ -30,4 +31,6 @@ urlpatterns = [
 
     path("gegenstandVerwaltung/<str:item_id>/bearbeiten/",views.edit_item_view,name="edit_item",),
     path("gegenstandVerwaltung/<str:item_id>/bearbeiten/<str:section>/",views.edit_item_section_view,name="edit_item_section",),
+
+    path("messagesGrunddaten/",views.messages_grunddaten_view,name="messages_grunddaten",),
 ]

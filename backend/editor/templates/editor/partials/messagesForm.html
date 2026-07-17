@@ -1,0 +1,216 @@
+<section
+    class="{{ messages_column_class|default:'col-12 col-md-8' }}"
+    aria-labelledby="messages-title"
+>
+    <h1
+        id="messages-title"
+        class="h3 fw-semibold mb-4"
+    >
+        Systemnachrichten
+    </h1>
+
+    <div class="d-flex flex-column gap-4">
+
+        <div>
+            <label
+                for="wrong-password"
+                class="form-label fw-semibold"
+            >
+                Nachricht bei falschem Passwort
+            </label>
+
+            <textarea
+                id="wrong-password"
+                name="wrong_password"
+                class="form-control"
+                rows="3"
+                placeholder="Nachricht eingeben"
+                required
+            >{{ form_values.wrong_password|default:'' }}</textarea>
+        </div>
+
+        <div>
+            <label
+                for="wrong-password-new-hint"
+                class="form-label fw-semibold"
+            >
+                Nachricht bei falschem Passwort und neuem Hinweis
+            </label>
+
+            <textarea
+                id="wrong-password-new-hint"
+                name="wrong_password_new_hint"
+                class="form-control"
+                rows="4"
+                placeholder="Nachricht eingeben"
+                required
+            >{{ form_values.wrong_password_new_hint|default:'' }}</textarea>
+        </div>
+
+        <hr class="my-2">
+
+        <div>
+            <label
+                for="not-a-table"
+                class="form-label fw-semibold"
+            >
+                Gegenstand ist keine Tabelle
+            </label>
+
+            <textarea
+                id="not-a-table"
+                name="not_a_table"
+                class="form-control"
+                rows="4"
+                placeholder="Nachricht eingeben"
+                required
+            >{{ form_values.not_a_table|default:'' }}</textarea>
+
+            <div class="form-text">
+                Verwende <strong>%s</strong> als Platzhalter für den Namen
+                des Gegenstands.
+            </div>
+        </div>
+
+        <div>
+            <label
+                for="unknown-table"
+                class="form-label fw-semibold"
+            >
+                Unbekannte Tabelle
+            </label>
+
+            <textarea
+                id="unknown-table"
+                name="unknown_table"
+                class="form-control"
+                rows="4"
+                placeholder="Nachricht eingeben"
+                required
+            >{{ form_values.unknown_table|default:'' }}</textarea>
+
+            <div class="form-text">
+                Verwende <strong>%s</strong> als Platzhalter für den
+                unbekannten Tabellennamen.
+            </div>
+        </div>
+
+        <div>
+            <label
+                for="locked-table"
+                class="form-label fw-semibold"
+            >
+                Gesperrte Tabelle
+            </label>
+
+            <textarea
+                id="locked-table"
+                name="locked_table"
+                class="form-control"
+                rows="5"
+                placeholder="Nachricht eingeben"
+                required
+            >{{ form_values.locked_table|default:'' }}</textarea>
+
+            <div class="form-text">
+                Verwende <strong>%s</strong> als Platzhalter für den Namen
+                der gesperrten Tabelle.
+            </div>
+        </div>
+
+        <hr class="my-2">
+
+        <div>
+            <label
+                for="sql-error"
+                class="form-label fw-semibold"
+            >
+                SQL-Fehler
+            </label>
+
+            <textarea
+                id="sql-error"
+                name="sql_error"
+                class="form-control"
+                rows="5"
+                placeholder="Nachricht eingeben"
+                required
+            >{{ form_values.sql_error|default:'' }}</textarea>
+        </div>
+
+        <div>
+            <label
+                for="no-result"
+                class="form-label fw-semibold"
+            >
+                Kein Ergebnis
+            </label>
+
+            <textarea
+                id="no-result"
+                name="no_result"
+                class="form-control"
+                rows="3"
+                placeholder="Nachricht eingeben"
+                required
+            >{{ form_values.no_result|default:'' }}</textarea>
+        </div>
+
+        <hr class="my-2">
+
+        <div>
+            <label
+                for="row-restriction"
+                class="form-label fw-semibold"
+            >
+                Zu viele Zeilen
+            </label>
+
+            <textarea
+                id="row-restriction"
+                name="row_restriction"
+                class="form-control"
+                rows="6"
+                placeholder="Nachricht eingeben"
+                required
+            >{{ form_values.row_restriction|default:'' }}</textarea>
+        </div>
+
+        <div>
+            <label
+                for="col-restriction"
+                class="form-label fw-semibold"
+            >
+                Zu viele Spalten
+            </label>
+
+            <textarea
+                id="col-restriction"
+                name="col_restriction"
+                class="form-control"
+                rows="6"
+                placeholder="Nachricht eingeben"
+                required
+            >{{ form_values.col_restriction|default:'' }}</textarea>
+        </div>
+
+        <div>
+            <label
+                for="row-and-col-restriction"
+                class="form-label fw-semibold"
+            >
+                Zu viele Zeilen und Spalten
+            </label>
+
+            <textarea
+                id="row-and-col-restriction"
+                name="row_and_col_restriction"
+                class="form-control"
+                rows="7"
+                placeholder="Nachricht eingeben"
+                required
+            >{{ form_values.row_and_col_restriction|default:'' }}</textarea>
+        </div>
+
+    </div>
+</section>
