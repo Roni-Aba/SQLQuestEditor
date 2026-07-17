@@ -51,7 +51,8 @@ Gegenstände | SQL Spell Quest Editor
                 aria-label="Gegenstände in diesem Level"
               >
                 {% for item in saved_level.items %}
-                  {% include "editor/components/tag/tag.html" with title=item.id show_remove=True show_list=True show_edit=True %}
+                  {% url 'edit_item' item_id=item.id as edit_item_url %}
+                  {% include "editor/components/tag/tag.html" with title=item.id show_remove=True show_list=False show_edit=True edit_url=edit_item_url %}
                 {% endfor %}
               </div>
             {% else %}

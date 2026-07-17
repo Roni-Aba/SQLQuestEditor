@@ -1,0 +1,396 @@
+<section
+  class="col-12 col-md-8"
+  aria-labelledby="item-summary-title"
+>
+  <h1
+    id="item-summary-title"
+    class="h3 fw-semibold mb-4"
+  >
+    {{ page_title|default:"Gegenstandsübersicht" }}
+  </h1>
+
+  <div class="d-flex flex-column gap-3">
+
+    <article class="card shadow-sm">
+      <div class="card-body position-relative pe-5">
+        <h2 class="h5 card-title mb-3">
+          Grunddaten
+        </h2>
+
+        <dl class="row mb-0">
+          <dt class="col-sm-4">
+            Name
+          </dt>
+
+          <dd class="col-sm-8">
+            {{ summary.item_name|default:"-" }}
+          </dd>
+
+          <dt class="col-sm-4">
+            Voraussetzungen
+          </dt>
+
+          <dd class="col-sm-8 mb-0">
+            {% if summary.required_items %}
+              {{ summary.required_items|join:", " }}
+            {% else %}
+              Keine
+            {% endif %}
+          </dd>
+        </dl>
+
+        {% if item_id %}
+          <a
+            href="{% url 'edit_item_section' item_id=item_id section='grunddaten' %}"
+            class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+            aria-label="Name und Voraussetzungen bearbeiten"
+          >
+            <i
+              class="bi bi-pencil"
+              aria-hidden="true"
+            ></i>
+          </a>
+        {% else %}
+          <a
+            href="{% url 'create_level3' %}"
+            class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+            aria-label="Name und Voraussetzungen bearbeiten"
+          >
+            <i
+              class="bi bi-pencil"
+              aria-hidden="true"
+            ></i>
+          </a>
+        {% endif %}
+      </div>
+    </article>
+
+    <article class="card shadow-sm">
+      <div class="card-body position-relative pe-5">
+        <h2 class="h5 card-title mb-3">
+          Passwort
+        </h2>
+
+        <dl class="row mb-0">
+          <dt class="col-sm-4">
+            Antwort
+          </dt>
+
+          <dd class="col-sm-8">
+            {% if summary.passwords %}
+              {{ summary.passwords|join:", " }}
+            {% else %}
+              Kein Passwort
+            {% endif %}
+          </dd>
+
+          <dt class="col-sm-4">
+            Hinweis
+          </dt>
+
+          <dd class="col-sm-8">
+            {{ summary.password_hint|default:"-" }}
+          </dd>
+
+          <dt class="col-sm-4">
+            Fehlversuchtexte
+          </dt>
+
+          <dd class="col-sm-8">
+            {% if summary.failure_hints %}
+              <ul class="mb-0 ps-3">
+                {% for hint in summary.failure_hints %}
+                  <li>
+                    Nach {{ hint.attempts }} Versuch(en):
+                    {{ hint.message }}
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              -
+            {% endif %}
+          </dd>
+
+          <dt class="col-sm-4">
+            Erfolgsmeldung
+          </dt>
+
+          <dd class="col-sm-8 mb-0">
+            {{ summary.success_message|default:"-" }}
+          </dd>
+        </dl>
+
+        {% if item_id %}
+          <a
+            href="{% url 'edit_item_section' item_id=item_id section='passwort' %}"
+            class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+            aria-label="Passworteinstellungen bearbeiten"
+          >
+            <i
+              class="bi bi-pencil"
+              aria-hidden="true"
+            ></i>
+          </a>
+        {% else %}
+          <a
+            href="{% url 'create_level4' %}"
+            class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+            aria-label="Passworteinstellungen bearbeiten"
+          >
+            <i
+              class="bi bi-pencil"
+              aria-hidden="true"
+            ></i>
+          </a>
+        {% endif %}
+      </div>
+    </article>
+
+    <article class="card shadow-sm">
+      <div class="card-body position-relative pe-5">
+        <h2 class="h5 card-title mb-3">
+          Gegenstandsposition
+        </h2>
+
+        <dl class="row mb-0">
+          <dt class="col-sm-4">
+            Bildbereich
+          </dt>
+
+          <dd class="col-sm-8">
+            X: {{ summary.bounding_box_image.x|default:0 }},
+            Y: {{ summary.bounding_box_image.y|default:0 }},
+            Breite:
+            {{ summary.bounding_box_image.width|default:0 }},
+            Höhe:
+            {{ summary.bounding_box_image.height|default:0 }}
+          </dd>
+
+          <dt class="col-sm-4">
+            Iconbereich
+          </dt>
+
+          <dd class="col-sm-8 mb-0">
+            X: {{ summary.bounding_box_icon.x|default:0 }},
+            Y: {{ summary.bounding_box_icon.y|default:0 }},
+            Breite:
+            {{ summary.bounding_box_icon.width|default:0 }},
+            Höhe:
+            {{ summary.bounding_box_icon.height|default:0 }}
+          </dd>
+        </dl>
+
+        {% if item_id %}
+          <a
+            href="{% url 'edit_item_section' item_id=item_id section='position' %}"
+            class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+            aria-label="Gegenstandsposition bearbeiten"
+          >
+            <i
+              class="bi bi-pencil"
+              aria-hidden="true"
+            ></i>
+          </a>
+        {% else %}
+          <a
+            href="{% url 'create_level51' %}"
+            class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+            aria-label="Gegenstandsposition bearbeiten"
+          >
+            <i
+              class="bi bi-pencil"
+              aria-hidden="true"
+            ></i>
+          </a>
+        {% endif %}
+      </div>
+    </article>
+
+    <article class="card shadow-sm">
+      <div class="card-body position-relative pe-5">
+        <h2 class="h5 card-title mb-3">
+          Gegenstandstyp
+        </h2>
+
+        <dl class="row mb-0">
+          <dt class="col-sm-4">
+            Typ
+          </dt>
+
+          <dd class="col-sm-8">
+            {{ summary.item_type|default:"-" }}
+          </dd>
+
+          {% if summary.item_type == "table" %}
+            <dt class="col-sm-4">
+              Tabellenname
+            </dt>
+
+            <dd class="col-sm-8">
+              {{ summary.table_name|default:"-" }}
+            </dd>
+
+            <dt class="col-sm-4">
+              Spalten
+            </dt>
+
+            <dd class="col-sm-8 mb-0">
+              {% if summary.columns %}
+                <ul class="mb-0 ps-3">
+                  {% for column in summary.columns %}
+                    <li>
+                      {{ column.id }} – {{ column.type }}
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                -
+              {% endif %}
+            </dd>
+          {% endif %}
+
+          {% if summary.item_type == "hint" %}
+            <dt class="col-sm-4">
+              Hinweistext
+            </dt>
+
+            <dd class="col-sm-8">
+              {{ summary.text|default:"-" }}
+            </dd>
+
+            <dt class="col-sm-4">
+              Bild
+            </dt>
+
+            <dd class="col-sm-8 mb-0">
+              {{ summary.image_link|default:"-" }}
+            </dd>
+          {% endif %}
+
+          {% if summary.item_type == "exit" %}
+            <dt class="col-sm-4">
+              Gratulation
+            </dt>
+
+            <dd class="col-sm-8">
+              {{ summary.exit_success_message|default:"-" }}
+            </dd>
+
+            <dt class="col-sm-4">
+              Nächstes Level
+            </dt>
+
+            <dd class="col-sm-8 mb-0">
+              {{ summary.next_level_id|default:"-" }}
+            </dd>
+          {% endif %}
+        </dl>
+
+        {% if item_id %}
+
+          {% if summary.item_type == "table" %}
+            <a
+              href="{% url 'edit_item_section' item_id=item_id section='table' %}"
+              class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+              aria-label="Tabelleninformationen bearbeiten"
+            >
+              <i
+                class="bi bi-pencil"
+                aria-hidden="true"
+              ></i>
+            </a>
+
+          {% elif summary.item_type == "hint" %}
+            <a
+              href="{% url 'edit_item_section' item_id=item_id section='hint' %}"
+              class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+              aria-label="Hinweisinformationen bearbeiten"
+            >
+              <i
+                class="bi bi-pencil"
+                aria-hidden="true"
+              ></i>
+            </a>
+
+          {% elif summary.item_type == "exit" %}
+            <a
+              href="{% url 'edit_item_section' item_id=item_id section='exit' %}"
+              class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+              aria-label="Exitinformationen bearbeiten"
+            >
+              <i
+                class="bi bi-pencil"
+                aria-hidden="true"
+              ></i>
+            </a>
+
+          {% else %}
+            <a
+              href="{% url 'edit_item_section' item_id=item_id section='typ' %}"
+              class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+              aria-label="Gegenstandstyp bearbeiten"
+            >
+              <i
+                class="bi bi-pencil"
+                aria-hidden="true"
+              ></i>
+            </a>
+          {% endif %}
+
+        {% else %}
+
+          {% if summary.item_type == "table" %}
+            <a
+              href="{% url 'create_level6table' %}"
+              class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+              aria-label="Tabelleninformationen bearbeiten"
+            >
+              <i
+                class="bi bi-pencil"
+                aria-hidden="true"
+              ></i>
+            </a>
+
+          {% elif summary.item_type == "hint" %}
+            <a
+              href="{% url 'create_level6hint' %}"
+              class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+              aria-label="Hinweisinformationen bearbeiten"
+            >
+              <i
+                class="bi bi-pencil"
+                aria-hidden="true"
+              ></i>
+            </a>
+
+          {% elif summary.item_type == "exit" %}
+            <a
+              href="{% url 'create_level6exit' %}"
+              class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+              aria-label="Exitinformationen bearbeiten"
+            >
+              <i
+                class="bi bi-pencil"
+                aria-hidden="true"
+              ></i>
+            </a>
+
+          {% else %}
+            <a
+              href="{% url 'create_level61' %}"
+              class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+              aria-label="Gegenstandstyp bearbeiten"
+            >
+              <i
+                class="bi bi-pencil"
+                aria-hidden="true"
+              ></i>
+            </a>
+          {% endif %}
+
+        {% endif %}
+      </div>
+    </article>
+
+  </div>
+</section>

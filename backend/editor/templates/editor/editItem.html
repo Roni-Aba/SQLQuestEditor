@@ -2,11 +2,10 @@
 {% load static %}
 
 {% block title %}
-Gegenstandsübersicht | SQL Spell Quest Editor
+Gegenstand bearbeiten | SQL Spell Quest Editor
 {% endblock %}
 
 {% block additional_css %}
-<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
 <link rel="stylesheet" href="{% static 'editor/components/helper/helper.css' %}">
 {% endblock %}
 
@@ -14,15 +13,8 @@ Gegenstandsübersicht | SQL Spell Quest Editor
 <main class="create-page">
   <div class="create-page__content">
 
-    <section
-      class="create-page__status"
-      aria-label="Fortschritt der Levelerstellung"
-    >
-      {% include "editor/components/statusBar/statusBar.html" with steps=steps %}
-    </section>
-
     <form
-      action="{% url 'create_level7' %}"
+      action="{% url 'edit_item' item_id=item_id %}"
       method="post"
       class="d-flex flex-column flex-grow-1"
     >
@@ -32,36 +24,36 @@ Gegenstandsübersicht | SQL Spell Quest Editor
         <div class="row create-page__row align-items-start g-4 g-lg-5">
 
           <div class="col-12 col-md-4">
-            {% include "editor/components/helper/helper.html" with helper_image="editor/img/cat9.png" helper_text="Hier ist dein Gegenstand auf einen Blick. Prüfe noch einmal alle Angaben und bearbeite einzelne Bereiche, falls du etwas ändern möchtest." %}
+            {% include "editor/components/helper/helper.html" with helper_image="editor/img/cat9.png" helper_text="Hier kannst du deinen Gegenstand schnell kontrollieren. Über die Stift-Symbole gelangst du direkt zu den einzelnen Bearbeitungsbereichen." %}
           </div>
 
-          {% include "editor/partials/itemSummary.html" with page_title="Gegenstandsübersicht" %}
+          {% include "editor/partials/itemSummary.html" with page_title="Gegenstand bearbeiten" %}
 
         </div>
       </section>
 
       <nav
         class="create-page__navigation"
-        aria-label="Navigation der Levelerstellung"
+        aria-label="Navigation der Gegenstandsbearbeitung"
       >
         <a
-          href="{% url 'create_level61' %}"
+          href="{% url 'gegenstandVerwaltung' %}"
           class="btn btn-outline-primary btn-lg px-4"
         >
           <i
             class="bi bi-arrow-left me-2"
             aria-hidden="true"
           ></i>
-          Zurück
+          Abbrechen
         </a>
 
         <button
           type="submit"
           class="btn btn-primary btn-lg px-4"
         >
-          Weiter
+          Änderungen speichern
           <i
-            class="bi bi-arrow-right ms-2"
+            class="bi bi-check-lg ms-2"
             aria-hidden="true"
           ></i>
         </button>

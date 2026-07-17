@@ -27,4 +27,7 @@ urlpatterns = [
     path("levelGrunddaten/", views.level_grunddaten_view, name="levelGrunddaten"),
     path("sqlGrunddaten/",views.sql_grunddaten_view, name="sql_grunddaten_view"),
     path("gegenstandVerwaltung/", views.gegenstand_view, name="gegenstandVerwaltung"),
+
+    path("gegenstandVerwaltung/<str:item_id>/bearbeiten/",views.edit_item_view,name="edit_item",),
+    path("gegenstandVerwaltung/<str:item_id>/bearbeiten/<str:section>/",views.edit_item_section_view,name="edit_item_section",),
 ]
