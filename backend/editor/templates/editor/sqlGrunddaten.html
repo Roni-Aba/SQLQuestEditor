@@ -1,0 +1,25 @@
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+SQL-Grunddaten | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link
+  rel="stylesheet"
+  href="{% static 'editor/components/helper/helper.css' %}"
+>
+{% endblock %}
+
+{% block content %}
+<main class="create-page">
+  <div class="create-page__content">
+
+    {% url 'auswahl_view' as auswahl_url %}
+
+    {% include "editor/partials/sqlGrunddatenForm.html" with form_action="" back_url=auswahl_url helper_text="Hier kannst du die SQL-Anzeigebegrenzungen deines Levels bearbeiten. Lege die maximale Anzahl an Zeilen und Spalten sowie die zugehörigen Rückmeldungen fest." submit_label="Änderungen speichern" submit_icon="bi-check-lg" navigation_label="Navigation der SQL-Grunddaten" %}
+
+  </div>
+</main>
+{% endblock %}

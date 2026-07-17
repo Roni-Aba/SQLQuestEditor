@@ -85,12 +85,16 @@ def create_level(request):
     })
 
 def auswahl_view(request):
-    game_json = request.session.get("game_json", {})
-    print("Aktuelle gesamte JSON in auswahl_view:")
-    print(json.dumps(game_json, ensure_ascii=False, indent=2))
-    return render(request, "editor/auswahl.html", {
-        "game_json": game_json,
-    })
+    new_level = request.session.get("new_level", {})
+    print("Aktuelles Level:")
+    print(json.dumps(new_level, ensure_ascii=False, indent=2))
+    return render(
+        request,
+        "editor/auswahl.html",
+        {
+            "game_json": new_level,
+        },
+    )
 
 def create_level1_view(request):
     steps = get_steps(active_step=1)
@@ -824,8 +828,15 @@ def level_grunddaten_view(request):
 
         request.session["new_level"] = saved_level
         request.session.modified = True
-
-        return redirect("auswahl")
+        print("Level-Grunddaten:")
+        print(
+            json.dumps(
+                saved_level,
+                ensure_ascii=False,
+                indent=2
+            )
+        )
+        return redirect("auswahl_view")
 
     form_values = {
         "level_name": saved_level.get("id", ""),
@@ -842,6 +853,148 @@ def level_grunddaten_view(request):
         request,
         "editor/levelGrunddaten.html",
         {
+            "form_values": form_values,
+        },
+    )
+
+def sql_grunddaten_view(request):
+    saved_level = request.session.get("new_level", {})
+
+    query_restriction = saved_level.get(
+        "queryRestriction",
+        {}
+    )
+
+    row_restriction = query_restriction.get(
+        "rowRestriction",
+        {}
+    )
+
+    column_restriction = query_restriction.get(
+        "columnRestriction",
+        {}
+    )
+
+    row_messages = row_restriction.get(
+        "violationMessages",
+        []
+    )
+
+    column_messages = column_restriction.get(
+        "violationMessages",
+        []
+    )
+
+    row_column_messages = query_restriction.get(
+        "colAndRowViolationMessages",
+        []
+    )
+
+    form_values = {
+        "max_columns": (
+            column_restriction.get("maxNumber")
+            if column_restriction.get("maxNumber") is not None
+            else ""
+        ),
+        "max_rows": (
+            row_restriction.get("maxNumber")
+            if row_restriction.get("maxNumber") is not None
+            else ""
+        ),
+        "too_many_rows_message": (
+            row_messages[0]
+            if row_messages
+            else ""
+        ),
+        "too_many_columns_message": (
+            column_messages[0]
+            if column_messages
+            else ""
+        ),
+        "too_many_rows_columns_message": (
+            row_column_messages[0]
+            if row_column_messages
+            else ""
+        ),
+    }
+
+    if request.method == "POST":
+        max_columns = request.POST.get(
+            "max_columns",
+            ""
+        ).strip()
+
+        max_rows = request.POST.get(
+            "max_rows",
+            ""
+        ).strip()
+
+        too_many_rows_message = request.POST.get(
+            "too_many_rows_message",
+            ""
+        ).strip()
+
+        too_many_columns_message = request.POST.get(
+            "too_many_columns_message",
+            ""
+        ).strip()
+
+        too_many_rows_columns_message = request.POST.get(
+            "too_many_rows_columns_message",
+            ""
+        ).strip()
+
+        saved_level["queryRestriction"] = {
+            "rowRestriction": {
+                "maxNumber": (
+                    int(max_rows)
+                    if max_rows.isdigit()
+                    else None
+                ),
+                "violationMessages": (
+                    [too_many_rows_message]
+                    if too_many_rows_message
+                    else []
+                ),
+            },
+            "columnRestriction": {
+                "maxNumber": (
+                    int(max_columns)
+                    if max_columns.isdigit()
+                    else None
+                ),
+                "violationMessages": (
+                    [too_many_columns_message]
+                    if too_many_columns_message
+                    else []
+                ),
+            },
+            "colAndRowViolationMessages": (
+                [too_many_rows_columns_message]
+                if too_many_rows_columns_message
+                else []
+            ),
+        }
+
+        request.session["new_level"] = saved_level
+        request.session.modified = True
+
+        print("SQL-Grunddaten gespeichert:")
+        print(
+            json.dumps(
+                saved_level,
+                ensure_ascii=False,
+                indent=2
+            )
+        )
+
+        return redirect("auswahl_view")
+
+    return render(
+        request,
+        "editor/sqlGrunddaten.html",
+        {
+            "saved_level": saved_level,
             "form_values": form_values,
         },
     )

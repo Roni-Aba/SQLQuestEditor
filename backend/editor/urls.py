@@ -25,4 +25,5 @@ urlpatterns = [
     path("createLevel8/", views.create_level8_view, name="create_level8"),
     path("export-game/", views.export_game_view, name="export_game"),
     path("levelGrunddaten/", views.level_grunddaten_view, name="levelGrunddaten"),
+    path("sqlGrunddaten/",views.sql_grunddaten_view, name="sql_grunddaten_view"),
 ]
