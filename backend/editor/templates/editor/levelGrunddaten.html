@@ -1,0 +1,22 @@
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Levelgrunddaten | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'editor/components/helper/helper.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="create-page">
+  <div class="create-page__content">
+
+    {% url 'auswahl_view' as auswahl_url %}
+
+    {% include "editor/partials/levelGrunddatenForm.html" with form_action="" back_url=auswahl_url helper_text="Hier kannst du die grundlegenden Einstellungen deines Levels bearbeiten. Ändere den Namen, das Hintergrundbild oder die Begrüßung des Spielers." submit_label="Änderungen speichern" submit_icon="bi-check-lg" submit_button_id="save-level-basics-button" require_picture=False %}
+
+  </div>
+</main>
+{% endblock %}

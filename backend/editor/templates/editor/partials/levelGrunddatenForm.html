@@ -1,0 +1,208 @@
+<form
+  action="{{ form_action }}"
+  method="post"
+  enctype="multipart/form-data"
+  class="d-flex flex-column flex-grow-1"
+>
+  {% csrf_token %}
+
+  <section class="create-page__main">
+    <div class="row create-page__row align-items-start g-4 g-lg-5">
+
+      <div class="col-12 col-md-4">
+        {% include "editor/components/helper/helper.html" with helper_image="editor/img/cat1.png" helper_text=helper_text %}
+      </div>
+
+      <section
+        class="col-12 col-md-8"
+        aria-labelledby="level-basics-title"
+      >
+        <h1
+          id="level-basics-title"
+          class="h3 fw-semibold mb-4"
+        >
+          Levelgrunddaten
+        </h1>
+
+        <div class="d-flex flex-column gap-4">
+          <div>
+            <label
+              for="level-name"
+              class="form-label fw-semibold"
+            >
+              Verrate mir doch bitte, wie das Level heißen soll
+            </label>
+
+            <input
+              id="level-name"
+              name="level_name"
+              type="text"
+              class="form-control"
+              placeholder="Schreibe hinein"
+              value="{{ form_values.level_name|default:'' }}"
+              required
+            >
+          </div>
+
+          <div>
+            <label
+              for="level-picture-input"
+              class="form-label fw-semibold"
+            >
+              Welches Hintergrundbild soll das Level verwenden?
+            </label>
+
+            <div class="d-flex flex-column align-items-start gap-2">
+              <label
+                for="level-picture-input"
+                class="btn btn-outline-primary btn-sm"
+              >
+                <i
+                  class="bi bi-image me-2"
+                  aria-hidden="true"
+                ></i>
+                Eigenes Bild auswählen
+              </label>
+
+              <input
+                type="file"
+                id="level-picture-input"
+                name="levelPicture"
+                accept="image/*"
+                class="visually-hidden"
+              >
+
+              <span
+                id="level-picture-feedback"
+                class="form-text"
+                aria-live="polite"
+              >
+                {% if form_values.level_picture %}
+                  Bereits ausgewählt:
+                  {{ form_values.level_picture }}
+                {% else %}
+                  Noch kein Bild ausgewählt
+                {% endif %}
+              </span>
+            </div>
+
+            <p class="form-text mb-0">
+              Das Hintergrundbild muss eine Auflösung von
+              1536 × 1024 Pixeln besitzen.
+            </p>
+          </div>
+
+          <div>
+            <label
+              for="level-greeting"
+              class="form-label fw-semibold"
+            >
+              Wie soll der Nutzer des Levels begrüßt werden?
+            </label>
+
+            <input
+              id="level-greeting"
+              name="level_greeting"
+              type="text"
+              class="form-control"
+              placeholder="Schreibe hinein"
+              value="{{ form_values.level_greeting|default:'' }}"
+              required
+            >
+          </div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <nav
+    class="create-page__navigation"
+    aria-label="Navigation der Levelgrunddaten"
+  >
+    <a
+      href="{{ back_url }}"
+      class="btn btn-outline-primary btn-lg px-4"
+    >
+      <i
+        class="bi bi-arrow-left me-2"
+        aria-hidden="true"
+      ></i>
+      Zurück
+    </a>
+
+    <button
+      id="{{ submit_button_id }}"
+      type="submit"
+      class="btn btn-primary btn-lg px-4"
+      {% if require_picture and not form_values.level_picture %}disabled{% endif %}
+    >
+      {{ submit_label }}
+
+      <i
+        class="bi {{ submit_icon }} ms-2"
+        aria-hidden="true"
+      ></i>
+    </button>
+  </nav>
+</form>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const pictureInput = document.getElementById(
+      "level-picture-input"
+    );
+
+    const pictureFeedback = document.getElementById(
+      "level-picture-feedback"
+    );
+
+    const submitButton = document.getElementById(
+      "{{ submit_button_id }}"
+    );
+
+    if (!pictureInput || !pictureFeedback || !submitButton) {
+      return;
+    }
+
+    const hasExistingPicture =
+      {% if form_values.level_picture %}true{% else %}false{% endif %};
+
+    const requirePicture =
+      {% if require_picture %}true{% else %}false{% endif %};
+
+    const existingPictureText =
+      pictureFeedback.textContent.trim();
+
+    const updateSubmitButton = (hasPicture) => {
+      if (!requirePicture) {
+        return;
+      }
+
+      submitButton.disabled = !hasPicture;
+    };
+
+    const updatePictureFeedback = (selectedFile) => {
+      if (selectedFile) {
+        pictureFeedback.textContent =
+          `Neu ausgewählt: ${selectedFile.name}`;
+
+        updateSubmitButton(true);
+        return;
+      }
+
+      pictureFeedback.textContent = hasExistingPicture
+        ? existingPictureText
+        : "Noch kein Bild ausgewählt";
+
+      updateSubmitButton(hasExistingPicture);
+    };
+
+    updateSubmitButton(hasExistingPicture);
+
+    pictureInput.addEventListener("change", () => {
+      const selectedFile = pictureInput.files[0] ?? null;
+
+      updatePictureFeedback(selectedFile);
+    });
+  });
+</script>

@@ -1,21 +1,83 @@
-.btn-light:hover,
-.btn-light:focus-visible {
-    background-color: var(--color-primary-soft);
-    color: var(--bs-link-hover-color);
-}
-
 .editor-button {
-    background-color: #f8f9fa;
-    color: #6f42c1;
-    font-size: 1.5rem;
-    font-weight: 600;
-    border: none;
+    --bs-btn-color: #6f42c1;
+    --bs-btn-bg: #f8f9fa;
+    --bs-btn-border-color: transparent;
+
+    --bs-btn-hover-color: #5a32a3;
+    --bs-btn-hover-bg: #e0d4ff;
+    --bs-btn-hover-border-color: transparent;
+
+    --bs-btn-focus-shadow-rgb: 111, 66, 193;
+
+    --bs-btn-active-color: #5a32a3;
+    --bs-btn-active-bg: #d8c9ff;
+    --bs-btn-active-border-color: transparent;
+
+    --bs-btn-disabled-color: #8b79b5;
+    --bs-btn-disabled-bg: #f1eef8;
+    --bs-btn-disabled-border-color: transparent;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+    min-width: 0;
+    min-height: 68px;
+
     border-radius: 1rem;
-    padding: 1rem 2.5rem;
-    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.12);
+
+    padding: 1rem 2rem;
+
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.25;
+
+    text-align: center;
+    text-decoration: none;
+
+    white-space: normal;
+    overflow-wrap: anywhere;
+
+    box-shadow:
+        0 0.25rem 0.75rem
+        rgba(0, 0, 0, 0.12);
+
+    transition:
+        color 0.15s ease-in-out,
+        background-color 0.15s ease-in-out,
+        box-shadow 0.15s ease-in-out,
+        transform 0.15s ease-in-out;
 }
 
 .editor-button:hover {
-    background-color: #e0d4ff;
-    color: #5a32a3;
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 0.5rem 1rem
+        rgba(0, 0, 0, 0.14);
+}
+
+.editor-button:focus-visible {
+    outline: 0;
+
+    box-shadow:
+        0 0 0 0.25rem
+        rgba(111, 66, 193, 0.25),
+        0 0.25rem 0.75rem
+        rgba(0, 0, 0, 0.12);
+}
+
+.editor-button:active {
+    transform: translateY(0);
+}
+
+.editor-button:disabled,
+.editor-button.disabled {
+    pointer-events: none;
+    opacity: 1;
+}
+
+.editor-button .bi {
+    flex-shrink: 0;
 }

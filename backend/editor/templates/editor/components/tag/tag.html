@@ -1,21 +1,54 @@
 <span class="tag-neutral">
-  <span class="tag-title">{{ title|default:"Ausrüstungsliste" }}</span>
+  <span class="tag-title">
+    {{ title|default:"Ausrüstungsliste" }}
+  </span>
 
   {% if show_remove|default:True %}
-    <button type="button" class="tag-btn tag-remove" aria-label="Entfernen">
+    <button
+      type="button"
+      class="tag-btn tag-remove"
+      aria-label="{{ title }} entfernen"
+    >
       ×
     </button>
   {% endif %}
 
   {% if show_list|default:True %}
-    <button type="button" class="tag-btn" aria-label="Liste">
-      <i class="bi bi-card-list"></i>
+    <button
+      type="button"
+      class="tag-btn"
+      aria-label="{{ title }} anzeigen"
+    >
+      <i
+        class="bi bi-card-list"
+        aria-hidden="true"
+      ></i>
     </button>
   {% endif %}
 
   {% if show_edit|default:True %}
-    <button type="button" class="tag-btn" aria-label="Bearbeiten">
-      <i class="bi bi-pencil"></i>
-    </button>
+    {% if edit_url %}
+      <a
+        href="{{ edit_url }}"
+        class="tag-btn"
+        aria-label="{{ title }} bearbeiten"
+      >
+        <i
+          class="bi bi-pencil"
+          aria-hidden="true"
+        ></i>
+      </a>
+    {% else %}
+      <button
+        type="button"
+        class="tag-btn"
+        aria-label="{{ title }} bearbeiten"
+      >
+        <i
+          class="bi bi-pencil"
+          aria-hidden="true"
+        ></i>
+      </button>
+    {% endif %}
   {% endif %}
 </span>

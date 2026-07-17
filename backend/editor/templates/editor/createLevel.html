@@ -35,6 +35,15 @@ Level erstellen | SQL Spell Quest Editor
       class="create-page__navigation"
       aria-label="Navigation der Levelerstellung"
     >
+
+      <a
+        href="{% url 'auswahl_view' %}"
+        class="btn btn-primary btn-lg px-5"
+      >
+        Zurück
+        <i class="bi bi-arrow-left ms-2" aria-hidden="true"></i>
+      </a>
+
       <a
         href="{% url 'create_level1' %}"
         class="btn btn-primary btn-lg px-5"
@@ -42,6 +51,8 @@ Level erstellen | SQL Spell Quest Editor
         Start
         <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i>
       </a>
+
+
     </nav>
 
   </div>

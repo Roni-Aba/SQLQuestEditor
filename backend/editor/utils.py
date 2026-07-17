@@ -140,3 +140,157 @@ def get_item_options_for_current_level(saved_level):
         })
         seen_item_ids.add(item_id)
     return item_options
+
+
+def load_item_for_editing(saved_level, item_id):
+    items = saved_level.get("items", [])
+    selected_item = next(
+        (
+            item
+            for item in items
+            if item.get("id") == item_id
+        ),
+        None,
+    )
+    if selected_item is None:
+        return None
+    unlock_hints = selected_item.get("unlockHints", [])
+    failure_hints = []
+    for hint in unlock_hints:
+        attempts = hint.get("numWrongAttempts")
+        message = hint.get("hint", "")
+        if attempts is None or not message:
+            continue
+        failure_hints.append(
+            {
+                "attempts": attempts,
+                "message": message,
+            }
+        )
+    password_data = selected_item.get("password", {})
+    next_dialog = selected_item.get("nextDialog", {})
+    item_data = {
+        "id": selected_item.get("id", ""),
+        "type": selected_item.get("type", ""),
+        "unlockedItems": selected_item.get("neededItems", []),
+    }
+    item_type = selected_item.get("type", "")
+    if item_type == "table":
+        item_data["tableName"] = selected_item.get(
+            "tableName",
+            selected_item.get("id", ""),
+        )
+
+        item_data["columns"] = parse_table_description(
+            selected_item.get("description", [])
+        )
+    elif item_type == "hint":
+        item_data["text"] = selected_item.get("text", "")
+        item_data["imageLink"] = selected_item.get(
+            "imageLink",
+            "",
+        )
+        has_text = bool(item_data["text"])
+        has_image = bool(item_data["imageLink"])
+        if has_text and has_image:
+            item_data["hintType"] = "text_image"
+        elif has_image:
+            item_data["hintType"] = "image"
+        else:
+            item_data["hintType"] = "text"
+    elif item_type == "exit":
+        item_data["exitSuccessMessage"] = next_dialog.get(
+            "afterUnlock",
+            "",
+        )
+
+        item_data["nextLevelId"] = selected_item.get(
+            "nextLevelId",
+            "",
+        )
+    saved_level["item"] = item_data
+    saved_level["unlockCondition"] = {
+        "requiredItems": selected_item.get("neededItems", []),
+        "requiresPassword": not selected_item.get(
+            "unlocked",
+            True,
+        ),
+        "passwords": password_data.get(
+            "unlockPasswords",
+            [],
+        ),
+        "passwordHint": password_data.get(
+            "passwordHint",
+            "",
+        ),
+        "successMessage": next_dialog.get(
+            "afterUnlock",
+            "",
+        ),
+        "failureHints": failure_hints,
+        "showHintsOnFailure": bool(failure_hints),
+    }
+    saved_level["position"] = {
+        "boundingBoxImage": selected_item.get(
+            "boundingBoxImage",
+            {
+                "x": 0,
+                "y": 0,
+                "width": 0,
+                "height": 0,
+            },
+        ),
+        "boundingBoxIcon": selected_item.get(
+            "boundingBoxIcon",
+            {
+                "x": 0,
+                "y": 0,
+                "width": 0,
+                "height": 0,
+            },
+        ),
+    }
+
+    return selected_item
+
+
+def parse_table_description(description):
+    type_mapping = {
+        "varchar": "text",
+        "text": "text",
+        "int": "number",
+        "integer": "number",
+        "number": "number",
+        "date": "date",
+        "bool": "boolean",
+        "boolean": "boolean",
+    }
+    columns = []
+    for entry in description:
+        entry = str(entry).strip()
+        if not entry:
+            continue
+        if "(" not in entry or not entry.endswith(")"):
+            columns.append(
+                {
+                    "id": entry,
+                    "type": "text",
+                }
+            )
+            continue
+        column_id, raw_type = entry.rsplit("(", 1)
+        column_id = column_id.strip()
+        raw_type = raw_type[:-1].strip().lower()
+        if not column_id:
+            continue
+        columns.append(
+            {
+                "id": column_id,
+                "type": type_mapping.get(
+                    raw_type,
+                    raw_type,
+                ),
+            }
+        )
+
+    return columns
