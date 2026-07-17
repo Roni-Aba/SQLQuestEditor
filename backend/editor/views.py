@@ -724,9 +724,13 @@ def save_current_item_to_level(saved_level):
 def create_level8_view(request):
     steps = get_steps(active_step=8)
     saved_level = request.session.get("new_level", {})
+
     if request.method == "POST":
         next_action = request.POST.get("next_action")
-        game_json, saved_level = utils.save_new_level_to_game_json(request)
+
+        game_json, saved_level = utils.save_new_level_to_game_json(
+            request
+        )
         if next_action == "more_items":
             saved_level.pop("item", None)
             saved_level.pop("unlockCondition", None)
@@ -734,21 +738,52 @@ def create_level8_view(request):
             request.session["new_level"] = saved_level
             request.session["game_json"] = game_json
             request.session.modified = True
-            print("Gegenstand wurde in die JSON eingefügt. Neuer Gegenstand kann erstellt werden:")
-            print(json.dumps(game_json, ensure_ascii=False, indent=2))
+
+            print(
+                "Gegenstand wurde in die JSON eingefügt. "
+                "Neuer Gegenstand kann erstellt werden:"
+            )
+            print(json.dumps(game_json,ensure_ascii=False,indent=2,))
             return redirect("create_level3")
+        if next_action == "item_management":
+            request.session["new_level"] = saved_level
+            request.session["game_json"] = game_json
+            request.session.modified = True
+            print(
+                "Gegenstand wurde in die JSON eingefügt. "
+                "Weiter zur Gegenstandsverwaltung:"
+            )
+            print(
+                json.dumps(
+                    game_json,
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
+            return redirect("gegenstandVerwaltung")
         request.session["new_level"] = saved_level
         request.session["game_json"] = game_json
         request.session.modified = True
-        print("Gegenstand wurde in die JSON eingefügt. Zurück zur Auswahl:")
-        print(json.dumps(game_json, ensure_ascii=False, indent=2))
-
+        print(
+            "Gegenstand wurde in die JSON eingefügt. "
+            "Zurück zur Auswahl:"
+        )
+        print(
+            json.dumps(
+                game_json,
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
         return redirect("auswahl_view")
-
-    return render(request, "editor/createLevel8.html", {
-        "steps": steps,
-        "saved_level": saved_level,
-    })
+    return render(
+        request,
+        "editor/createLevel8.html",
+        {
+            "steps": steps,
+            "saved_level": saved_level,
+        },
+    )
 
 def export_game_view(request):
     game_json = request.session.get("game_json", {})
@@ -996,5 +1031,20 @@ def sql_grunddaten_view(request):
         {
             "saved_level": saved_level,
             "form_values": form_values,
+        },
+    )
+
+def gegenstand_view(request):
+    saved_level = request.session.get(
+        "new_level",
+        {},
+    )
+
+    return render(
+        request,
+        "editor/gegenstandVerwaltung.html",
+        {
+            "saved_level": saved_level,
+            "steps": get_steps(active_step=1),
         },
     )

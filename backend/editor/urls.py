@@ -26,4 +26,5 @@ urlpatterns = [
     path("export-game/", views.export_game_view, name="export_game"),
     path("levelGrunddaten/", views.level_grunddaten_view, name="levelGrunddaten"),
     path("sqlGrunddaten/",views.sql_grunddaten_view, name="sql_grunddaten_view"),
+    path("gegenstandVerwaltung/", views.gegenstand_view, name="gegenstandVerwaltung"),
 ]
