@@ -1,6 +1,38 @@
-<button
-  type="{{ type|default:'button' }}"
-  class="btn btn-light text-primary fw-semibold fs-4 rounded-4 px-4 py-3 shadow-sm"
->
-  {{ title }}
-</button>
+{% if href %}
+  <a
+    href="{{ href }}"
+    class="btn editor-button w-100"
+  >
+    {% if icon %}
+      <i
+        class="bi {{ icon }} me-2"
+        aria-hidden="true"
+      ></i>
+    {% endif %}
+
+    {{ title }}
+  </a>
+{% else %}
+  <button
+    type="{{ type|default:'button' }}"
+    class="btn editor-button w-100"
+    {% if name %}
+      name="{{ name }}"
+    {% endif %}
+    {% if value %}
+      value="{{ value }}"
+    {% endif %}
+    {% if disabled %}
+      disabled
+    {% endif %}
+  >
+    {% if icon %}
+      <i
+        class="bi {{ icon }} me-2"
+        aria-hidden="true"
+      ></i>
+    {% endif %}
+
+    {{ title }}
+  </button>
+{% endif %}
