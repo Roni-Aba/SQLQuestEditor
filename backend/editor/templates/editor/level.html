@@ -6,24 +6,45 @@ Levelübersicht | SQL Spell Quest Editor
 {% endblock %}
 
 {% block additional_css %}
-<link rel="stylesheet" href="{% static 'editor/components/button/button.css' %}">
-<link rel="stylesheet" href="{% static 'editor/components/tableItem/tableItem.css' %}">
-<link rel="stylesheet" href="{% static 'editor/css/level.css' %}">
+<link
+  rel="stylesheet"
+  href="{% static 'editor/components/button/button.css' %}"
+>
+<link
+  rel="stylesheet"
+  href="{% static 'editor/components/tableItem/tableItem.css' %}"
+>
+<link
+  rel="stylesheet"
+  href="{% static 'editor/css/level.css' %}"
+>
 {% endblock %}
 
 {% block content %}
 <main class="py-5">
   <div class="container">
-    <section class="mb-5" aria-labelledby="level-list-title">
-      <h1 id="level-list-title" class="mb-4">
+
+    <section
+      class="mb-5"
+      aria-labelledby="level-list-title"
+    >
+      <h1
+        id="level-list-title"
+        class="mb-4"
+      >
         Deine Level
       </h1>
 
       <div class="d-grid gap-3">
-        {% for levelName in nameOfLevels %}
-          {% include "editor/components/tableItem/tableitem.html" with title=levelName %}
+        {% for level in levels %}
+          {% url 'edit_level' level_id=level.id as edit_level_url %}
+
+          {% include "editor/components/tableItem/tableitem.html" with title=level.id|default:"Unbenanntes Level" edit_url=edit_level_url %}
         {% empty %}
-          <div class="alert alert-info mb-0" role="status">
+          <div
+            class="alert alert-info mb-0"
+            role="status"
+          >
             Die hochgeladene JSON-Datei enthält keine Level.
           </div>
         {% endfor %}
@@ -31,10 +52,14 @@ Levelübersicht | SQL Spell Quest Editor
     </section>
 
     <section aria-label="Neues Level erstellen">
-      <a href="/auswahl/" class="text-decoration-none d-inline-block">
+      <a
+        href="{% url 'auswahl_view' %}"
+        class="text-decoration-none d-inline-block"
+      >
         {% include "editor/components/button/button.html" with title="Erstelle ein neues Level" %}
       </a>
     </section>
+
   </div>
 </main>
 {% endblock %}

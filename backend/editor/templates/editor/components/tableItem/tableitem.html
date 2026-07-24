@@ -1,23 +1,54 @@
 <div class="d-flex align-items-center justify-content-between gap-2 w-100 rounded-3 bg-primary-subtle px-3 py-2">
+
   <span class="fw-semibold">
     {{ title }}
   </span>
 
   <div class="d-flex align-items-center gap-3">
-    <button
-      type="button"
-      class="btn btn-link text-dark text-decoration-none p-0 fs-5 lh-1"
-      aria-label="{{ title }} löschen"
-    >
-      <i class="bi bi-x-lg" aria-hidden="true"></i>
-    </button>
 
-    <button
-      type="button"
-      class="btn btn-link text-dark text-decoration-none p-0 fs-5 lh-1"
-      aria-label="{{ title }} bearbeiten"
-    >
-      <i class="bi bi-pencil" aria-hidden="true"></i>
-    </button>
+    {% if delete_url %}
+      <form
+        action="{{ delete_url }}"
+        method="post"
+        class="d-inline"
+        onsubmit="return confirm('Soll das Level „{{ title|escapejs }}“ wirklich gelöscht werden?');"
+      >
+        {% csrf_token %}
+
+        <button
+          type="submit"
+          class="btn btn-link text-dark text-decoration-none p-0 fs-5 lh-1"
+          aria-label="{{ title }} löschen"
+        >
+          <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
+      </form>
+    {% else %}
+      <button
+        type="button"
+        class="btn btn-link text-dark text-decoration-none p-0 fs-5 lh-1"
+        aria-label="{{ title }} löschen"
+      >
+        <i class="bi bi-x-lg" aria-hidden="true"></i>
+      </button>
+    {% endif %}
+
+    {% if edit_url %}
+      <a
+        href="{{ edit_url }}"
+        class="btn btn-link text-dark text-decoration-none p-0 fs-5 lh-1"
+        aria-label="{{ title }} bearbeiten"
+      >
+        <i class="bi bi-pencil" aria-hidden="true"></i>
+      </a>
+    {% else %}
+      <button
+        type="button"
+        class="btn btn-link text-dark text-decoration-none p-0 fs-5 lh-1"
+        aria-label="{{ title }} bearbeiten"
+      >
+        <i class="bi bi-pencil" aria-hidden="true"></i>
+      </button>
+    {% endif %}
   </div>
 </div>

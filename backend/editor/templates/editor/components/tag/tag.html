@@ -4,27 +4,34 @@
   </span>
 
   {% if show_remove|default:True %}
-    <button
-      type="button"
-      class="tag-btn tag-remove"
-      aria-label="{{ title }} entfernen"
-    >
-      ×
-    </button>
+    {% if delete_url %}
+      <form
+        action="{{ delete_url }}"
+        method="post"
+        class="d-inline"
+        onsubmit="return confirm('Soll der Gegenstand „{{ title|escapejs }}“ wirklich entfernt werden?');"
+      >
+        {% csrf_token %}
+
+        <button
+          type="submit"
+          class="tag-btn tag-remove"
+          aria-label="{{ title }} entfernen"
+        >
+          ×
+        </button>
+      </form>
+    {% else %}
+      <button
+        type="button"
+        class="tag-btn tag-remove"
+        aria-label="{{ title }} entfernen"
+      >
+        ×
+      </button>
+    {% endif %}
   {% endif %}
 
-  {% if show_list|default:True %}
-    <button
-      type="button"
-      class="tag-btn"
-      aria-label="{{ title }} anzeigen"
-    >
-      <i
-        class="bi bi-card-list"
-        aria-hidden="true"
-      ></i>
-    </button>
-  {% endif %}
 
   {% if show_edit|default:True %}
     {% if edit_url %}

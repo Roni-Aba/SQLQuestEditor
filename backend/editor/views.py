@@ -5,6 +5,9 @@ from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
+from copy import deepcopy
+from django.views.decorators.http import require_POST
+
 def redirect_after_item_section_edit(
     request,
     default_view_name,
@@ -144,40 +147,193 @@ def start_page(request):
     return render(request, "editor/start.html")
 
 def level_view(request):
-    game_file = Path(settings.BASE_DIR) / "SQLSpellQuest.json"
-    name_of_levels = []
-    if game_file.exists():
-        with open(game_file, "r", encoding="utf-8") as file:
-            game = json.load(file)
-        for level in game.get("level", []):
-            name_of_levels.append(level.get("id", "Unbenanntes Level"))
-    return render(request, "editor/level.html", {
-        "nameOfLevels": name_of_levels
-    })
+    game_json = request.session.get(
+        "game_json",
+        {},
+    )
+    levels = game_json.get(
+        "level",
+        [],
+    )
+    if not isinstance(levels, list):
+        levels = []
+    valid_levels = []
+    for level in levels:
+        if isinstance(level, dict):
+            valid_levels.append(level)
+    return render(
+        request,
+        "editor/level.html",
+        {
+            "levels": valid_levels,
+        },
+    )
+
+def edit_level_view(request, level_id):
+    game_json = request.session.get(
+        "game_json",
+        {},
+    )
+
+    levels = game_json.get(
+        "level",
+        [],
+    )
+
+    if not isinstance(levels, list):
+        return redirect("level")
+
+    selected_level = None
+
+    for level in levels:
+        if (
+            isinstance(level, dict)
+            and level.get("id") == level_id
+        ):
+            selected_level = level
+            break
+
+    if selected_level is None:
+        return redirect("level")
+
+    request.session["new_level"] = deepcopy(
+        selected_level
+    )
+
+    request.session["editing_level_id"] = level_id
+
+    request.session.pop(
+        "editing_item_id",
+        None,
+    )
+    request.session.pop(
+        "item_edit_mode",
+        None,
+    )
+    request.session.pop(
+        "editing_item_section",
+        None,
+    )
+
+    request.session.modified = True
+
+    return redirect(
+        "auswahl_view"
+    )
 
 def upload_json_view(request):
-    if request.method == "POST":
-        uploaded_file = request.FILES.get("json_file")
-        if not uploaded_file:
-            return render(request, "editor/start.html", {
-                "error": "Keine Datei hochgeladen."
-            })
-        try:
-            file_content = uploaded_file.read().decode("utf-8")
-            game = json.loads(file_content)
-        except json.JSONDecodeError:
-            return render(request, "editor/start.html", {
-                "error": "Die Datei ist keine gültige JSON-Datei."
-            })
-        request.session["game_json"] = game
-        request.session.modified = True
-        name_of_levels = []
-        for level in game.get("level", []):
-            name_of_levels.append(level.get("id", "Unbenanntes Level"))
-        return render(request, "editor/level.html", {
-            "nameOfLevels": name_of_levels
-        })
-    return render(request, "editor/start.html")
+    if request.method != "POST":
+        return render(
+            request,
+            "editor/start.html",
+        )
+
+    uploaded_file = request.FILES.get(
+        "json_file"
+    )
+
+    if not uploaded_file:
+        return render(
+            request,
+            "editor/start.html",
+            {
+                "error": "Keine Datei hochgeladen.",
+            },
+        )
+
+    try:
+        file_content = uploaded_file.read().decode(
+            "utf-8"
+        )
+
+        game_json = json.loads(
+            file_content
+        )
+
+    except UnicodeDecodeError:
+        return render(
+            request,
+            "editor/start.html",
+            {
+                "error": (
+                    "Die Datei konnte nicht als "
+                    "UTF-8 gelesen werden."
+                ),
+            },
+        )
+
+    except json.JSONDecodeError:
+        return render(
+            request,
+            "editor/start.html",
+            {
+                "error": (
+                    "Die Datei ist keine gültige "
+                    "JSON-Datei."
+                ),
+            },
+        )
+
+    if not isinstance(game_json, dict):
+        return render(
+            request,
+            "editor/start.html",
+            {
+                "error": (
+                    "Die JSON-Datei muss ein "
+                    "JSON-Objekt enthalten."
+                ),
+            },
+        )
+
+    levels = game_json.get(
+        "level",
+        [],
+    )
+
+    if not isinstance(levels, list):
+        return render(
+            request,
+            "editor/start.html",
+            {
+                "error": (
+                    'Der Schlüssel "level" muss '
+                    "eine Liste enthalten."
+                ),
+            },
+        )
+
+    request.session["game_json"] = game_json
+
+    request.session.pop(
+        "new_level",
+        None,
+    )
+
+    request.session.pop(
+        "editing_level_id",
+        None,
+    )
+
+    request.session.pop(
+        "editing_item_id",
+        None,
+    )
+
+    request.session.pop(
+        "item_edit_mode",
+        None,
+    )
+
+    request.session.pop(
+        "editing_item_section",
+        None,
+    )
+
+    request.session.modified = True
+    return redirect(
+        "level"
+    )
 
 def component_test_view(request):
     steps = [
@@ -2023,3 +2179,180 @@ def messages_grunddaten_view(request):
             "form_values": form_values,
         },
     )
+
+def delete_item_view(request, item_id):
+    if request.method != "POST":
+        return redirect(
+            "gegenstandVerwaltung"
+        )
+
+    saved_level = request.session.get(
+        "new_level",
+        {},
+    )
+
+    level_id = saved_level.get(
+        "id",
+        "",
+    )
+
+    saved_level = utils.remove_item_from_level(
+        saved_level,
+        item_id,
+    )
+
+    save_new_level_session(
+        request,
+        saved_level,
+    )
+    game_json = request.session.get(
+        "game_json",
+        {},
+    )
+
+    levels = game_json.get(
+        "level",
+        [],
+    )
+
+    if isinstance(levels, list) and level_id:
+        updated_levels = []
+
+        for level in levels:
+            if (
+                isinstance(level, dict)
+                and level.get("id") == level_id
+            ):
+                level = utils.remove_item_from_level(
+                    level,
+                    item_id,
+                )
+
+            updated_levels.append(level)
+
+        game_json["level"] = updated_levels
+        request.session["game_json"] = game_json
+
+    if request.session.get("editing_item_id") == item_id:
+        request.session.pop(
+            "item_edit_mode",
+            None,
+        )
+
+        request.session.pop(
+            "editing_item_id",
+            None,
+        )
+
+        request.session.pop(
+            "editing_item_section",
+            None,
+        )
+
+    request.session.modified = True
+    print("Systemnachrichten gespeichert:")
+    print(
+        json.dumps(
+            game_json,
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+
+    return redirect(
+        "gegenstandVerwaltung"
+    )
+
+@require_POST
+def save_level_view(request):
+    saved_level = request.session.get(
+        "new_level",
+        {},
+    )
+
+    if not isinstance(saved_level, dict):
+        return redirect("auswahl_view")
+
+    level_id = str(
+        saved_level.get("id", "")
+    ).strip()
+
+    if not level_id:
+        return redirect("levelGrunddaten")
+
+    game_json = request.session.get(
+        "game_json",
+        {},
+    )
+
+    if not isinstance(game_json, dict):
+        game_json = {}
+
+    levels = game_json.get(
+        "level",
+        [],
+    )
+
+    if not isinstance(levels, list):
+        levels = []
+
+    editing_level_id = request.session.get(
+        "editing_level_id"
+    )
+
+    updated_levels = []
+    level_was_replaced = False
+
+    for level in levels:
+        if not isinstance(level, dict):
+            updated_levels.append(level)
+            continue
+
+        existing_level_id = level.get("id")
+
+        should_replace = (
+            editing_level_id
+            and existing_level_id == editing_level_id
+        )
+
+        if not editing_level_id:
+            should_replace = (
+                existing_level_id == level_id
+            )
+
+        if should_replace and not level_was_replaced:
+            updated_levels.append(
+                deepcopy(saved_level)
+            )
+            level_was_replaced = True
+        else:
+            updated_levels.append(level)
+
+    if not level_was_replaced:
+        updated_levels.append(
+            deepcopy(saved_level)
+        )
+
+    game_json["level"] = updated_levels
+
+    request.session["game_json"] = game_json
+
+    request.session.pop(
+        "editing_level_id",
+        None,
+    )
+    request.session.pop(
+        "editing_item_id",
+        None,
+    )
+    request.session.pop(
+        "item_edit_mode",
+        None,
+    )
+    request.session.pop(
+        "editing_item_section",
+        None,
+    )
+    request.session.modified = True
+    return redirect("level")
+

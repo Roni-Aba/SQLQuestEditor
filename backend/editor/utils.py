@@ -294,3 +294,65 @@ def parse_table_description(description):
         )
 
     return columns
+
+def remove_item_from_level(level_data, item_id):
+    if not isinstance(level_data, dict):
+        return {}
+    items = level_data.get("items", [])
+    if not isinstance(items, list):
+        items = []
+    cleaned_items = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        if item.get("id") == item_id:
+            continue
+        needed_items = item.get("neededItems", [])
+        if isinstance(needed_items, list):
+            item["neededItems"] = [
+                needed_item
+                for needed_item in needed_items
+                if needed_item != item_id
+            ]
+        unlocked_items = item.get("unlockedItems", [])
+        if isinstance(unlocked_items, list):
+            item["unlockedItems"] = [
+                unlocked_item
+                for unlocked_item in unlocked_items
+                if unlocked_item != item_id
+            ]
+        unlock_condition = item.get("unlockCondition")
+        if isinstance(unlock_condition, dict):
+            required_items = unlock_condition.get(
+                "requiredItems",
+                [],
+            )
+            if isinstance(required_items, list):
+                unlock_condition["requiredItems"] = [
+                    required_item
+                    for required_item in required_items
+                    if required_item != item_id
+                ]
+        cleaned_items.append(item)
+    level_data["items"] = cleaned_items
+    current_item = level_data.get("item")
+    if (
+        isinstance(current_item, dict)
+        and current_item.get("id") == item_id
+    ):
+        level_data.pop("item", None)
+        level_data.pop("unlockCondition", None)
+        level_data.pop("position", None)
+    unlock_condition = level_data.get("unlockCondition")
+    if isinstance(unlock_condition, dict):
+        required_items = unlock_condition.get(
+            "requiredItems",
+            [],
+        )
+        if isinstance(required_items, list):
+            unlock_condition["requiredItems"] = [
+                required_item
+                for required_item in required_items
+                if required_item != item_id
+            ]
+    return level_data

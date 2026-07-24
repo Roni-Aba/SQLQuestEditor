@@ -28,9 +28,10 @@ urlpatterns = [
     path("levelGrunddaten/", views.level_grunddaten_view, name="levelGrunddaten"),
     path("sqlGrunddaten/",views.sql_grunddaten_view, name="sql_grunddaten_view"),
     path("gegenstandVerwaltung/", views.gegenstand_view, name="gegenstandVerwaltung"),
-
-    path("gegenstandVerwaltung/<str:item_id>/bearbeiten/",views.edit_item_view,name="edit_item",),
-    path("gegenstandVerwaltung/<str:item_id>/bearbeiten/<str:section>/",views.edit_item_section_view,name="edit_item_section",),
-
-    path("messagesGrunddaten/",views.messages_grunddaten_view,name="messages_grunddaten",),
+    path("gegenstandVerwaltung/<str:item_id>/bearbeiten/",views.edit_item_view,name="edit_item"),
+    path("gegenstandVerwaltung/<str:item_id>/bearbeiten/<str:section>/",views.edit_item_section_view,name="edit_item_section"),
+    path("gegenstandVerwaltung/<str:item_id>/entfernen/",views.delete_item_view,name="delete_item"),
+    path("messagesGrunddaten/",views.messages_grunddaten_view,name="messages_grunddaten"),
+    path("level/<str:level_id>/bearbeiten/",views.edit_level_view,name="edit_level"),
+    path("level/speichern/",views.save_level_view,name="save_level"),
 ]
