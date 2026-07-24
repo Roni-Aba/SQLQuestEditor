@@ -6,9 +6,18 @@ Gegenstände | SQL Spell Quest Editor
 {% endblock %}
 
 {% block additional_css %}
-<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
-<link rel="stylesheet" href="{% static 'editor/components/helper/helper.css' %}">
-<link rel="stylesheet" href="{% static 'editor/components/tag/tag.css' %}">
+<link
+  rel="stylesheet"
+  href="{% static 'editor/components/statusBar/statusBar.css' %}"
+>
+<link
+  rel="stylesheet"
+  href="{% static 'editor/components/helper/helper.css' %}"
+>
+<link
+  rel="stylesheet"
+  href="{% static 'editor/components/tag/tag.css' %}"
+>
 {% endblock %}
 
 {% block content %}
@@ -26,7 +35,7 @@ Gegenstände | SQL Spell Quest Editor
       <div class="row create-page__row align-items-start g-4 g-lg-5">
 
         <div class="col-12 col-md-4">
-          {% include "editor/components/helper/helper.html" with helper_image="editor/img/cat3.png" helper_text="Hier findest du alle Gegenstände, die bereits in diesem Level angelegt wurden. Du kannst einen neuen Gegenstand hinzufügen oder vorhandene Gegenstände bearbeiten." %}
+          {% include "editor/components/helper/helper.html" with helper_image="editor/img/cat3.png" helper_text="Hier findest du alle Gegenstände, die bereits in diesem Level angelegt wurden. Du kannst neue Gegenstände hinzufügen, bestehende Gegenstände bearbeiten oder nicht mehr benötigte Gegenstände entfernen." %}
         </div>
 
         <section
@@ -52,7 +61,9 @@ Gegenstände | SQL Spell Quest Editor
               >
                 {% for item in saved_level.items %}
                   {% url 'edit_item' item_id=item.id as edit_item_url %}
-                  {% include "editor/components/tag/tag.html" with title=item.id show_remove=True show_list=False show_edit=True edit_url=edit_item_url %}
+                  {% url 'delete_item' item_id=item.id as delete_item_url %}
+
+                  {% include "editor/components/tag/tag.html" with title=item.id show_remove=True show_list=False show_edit=True edit_url=edit_item_url delete_url=delete_item_url %}
                 {% endfor %}
               </div>
             {% else %}
@@ -68,6 +79,7 @@ Gegenstände | SQL Spell Quest Editor
               class="btn btn-outline-primary btn-lg px-4"
             >
               Gegenstand hinzufügen
+
               <i
                 class="bi bi-plus-lg ms-2"
                 aria-hidden="true"
@@ -91,6 +103,7 @@ Gegenstände | SQL Spell Quest Editor
           class="bi bi-arrow-left me-2"
           aria-hidden="true"
         ></i>
+
         Zurück
       </a>
     </nav>

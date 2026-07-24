@@ -4,8 +4,10 @@
   aria-label="Hauptnavigation"
 >
   <div class="container-fluid px-4">
+
     <a
       class="navbar-brand fw-semibold"
+      href="{% url 'auswahl_view' %}"
     >
       SQL Spell Quest Editor
     </a>
@@ -19,20 +21,33 @@
 
     <a
       class="navbar-brand fw-semibold"
+      href="{% url 'level' %}"
+    >
+      | Levelübersicht
+    </a>
+
+    <a
+      class="navbar-brand fw-semibold"
       href="{% url 'start' %}"
     >
       | Zum Level-Upload
     </a>
 
-
     <div class="navbar-nav ms-auto flex-row gap-4">
-      <a class="nav-link" href="#">
+      <a
+        class="nav-link"
+        href="#"
+      >
         Kontakt
       </a>
 
-      <a class="nav-link" href="#">
+      <a
+        class="nav-link"
+        href="#"
+      >
         Unser Team
       </a>
     </div>
+
   </div>
 </nav>
