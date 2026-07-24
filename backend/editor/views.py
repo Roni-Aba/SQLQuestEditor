@@ -2354,5 +2354,57 @@ def save_level_view(request):
         None,
     )
     request.session.modified = True
+    print("Systemnachrichten gespeichert:")
+    print(
+        json.dumps(
+            game_json,
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
     return redirect("level")
 
+@require_POST
+
+def delete_level_view(request, level_id):
+
+    game_json = request.session.get("game_json", {})
+
+    levels = game_json.get("level", [])
+
+    if isinstance(levels, list):
+
+        game_json["level"] = [
+
+            level
+
+            for level in levels
+
+            if not (
+
+                isinstance(level, dict)
+
+                and level.get("id") == level_id
+
+            )
+
+        ]
+
+    request.session["game_json"] = game_json
+
+    if request.session.get("editing_level_id") == level_id:
+
+        request.session.pop("editing_level_id", None)
+
+        request.session.pop("new_level", None)
+
+    request.session.modified = True
+    print("Systemnachrichten gespeichert:")
+    print(
+        json.dumps(
+            game_json,
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+    return redirect("level")

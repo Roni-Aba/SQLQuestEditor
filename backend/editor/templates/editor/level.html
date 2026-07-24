@@ -38,8 +38,9 @@ Levelübersicht | SQL Spell Quest Editor
       <div class="d-grid gap-3">
         {% for level in levels %}
           {% url 'edit_level' level_id=level.id as edit_level_url %}
+          {% url 'delete_level' level_id=level.id as delete_level_url %}
 
-          {% include "editor/components/tableItem/tableitem.html" with title=level.id|default:"Unbenanntes Level" edit_url=edit_level_url %}
+          {% include "editor/components/tableItem/tableitem.html" with title=level.id|default:"Unbenanntes Level" edit_url=edit_level_url delete_url=delete_level_url %}
         {% empty %}
           <div
             class="alert alert-info mb-0"
