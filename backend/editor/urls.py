@@ -34,4 +34,5 @@ urlpatterns = [
     path("messagesGrunddaten/",views.messages_grunddaten_view,name="messages_grunddaten"),
     path("level/<str:level_id>/bearbeiten/",views.edit_level_view,name="edit_level"),
     path("level/speichern/",views.save_level_view,name="save_level"),
+    path("level/<str:level_id>/delete/",views.delete_level_view,name="delete_level"),
 ]
