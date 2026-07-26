@@ -56,21 +56,17 @@ def prepare_game_json_for_export(
             / "img"
         ),
     ]
-
     levels = export_game_json.get(
         "level",
         [],
     )
-
     if not isinstance(
         levels,
         list,
     ):
         levels = []
         export_game_json["level"] = levels
-
     used_level_names = set()
-
     for level_index, level in enumerate(
         levels
     ):
@@ -79,52 +75,52 @@ def prepare_game_json_for_export(
             dict,
         ):
             continue
-
         requested_level_id = level.get(
             "id",
             f"level{level_index}",
         )
-
         level_folder = sanitize_export_name(
             requested_level_id,
             fallback=f"level{level_index}",
         )
-
-        original_level_folder = (
-            level_folder
-        )
-
+        original_level_folder = level_folder
         counter = 2
-
         while level_folder in used_level_names:
             level_folder = (
                 f"{original_level_folder}_"
                 f"{counter}"
             )
-
             counter += 1
-
         used_level_names.add(
             level_folder
         )
-
         level_asset_names = {}
-
         level_picture = level.get(
             "levelPicture",
             "",
         )
 
         if level_picture:
+            clean_level_picture = (
+                sanitize_export_name(
+                    level_picture,
+                    fallback="level_background",
+                )
+            )
+
+            level["levelPicture"] = (
+                clean_level_picture
+            )
+
             source_path = find_export_asset(
-                level_picture,
+                clean_level_picture,
                 level_image_directories,
             )
 
             if source_path is not None:
                 exported_filename = (
                     _reserve_asset_filename(
-                        level_picture,
+                        clean_level_picture,
                         source_path,
                         level_asset_names,
                     )
@@ -138,19 +134,15 @@ def prepare_game_json_for_export(
                 asset_files[
                     archive_path
                 ] = source_path
-
-                level[
-                    "levelPicture"
-                ] = archive_path
-
-        safe_level_id = sanitize_export_name(
-            requested_level_id,
-            fallback=f"level{level_index}",
+                level["levelPicture"] = (
+                    exported_filename
+                )
+        database_filename = (
+            f"{level_folder}.db"
         )
 
         level["databaseName"] = (
-            f"{level_folder}/databases/"
-            f"{safe_level_id}.db"
+            database_filename
         )
 
         items = level.get(
@@ -163,6 +155,7 @@ def prepare_game_json_for_export(
             list,
         ):
             items = []
+            level["items"] = items
 
         for item in items:
             if not isinstance(
@@ -179,8 +172,10 @@ def prepare_game_json_for_export(
             if not image_link:
                 continue
 
+            clean_image_link = (sanitize_export_name(image_link,fallback="hint_image",))
+            item["imageLink"] = (clean_image_link)
             source_path = find_export_asset(
-                image_link,
+                clean_image_link,
                 item_image_directories,
             )
 
@@ -189,7 +184,7 @@ def prepare_game_json_for_export(
 
             exported_filename = (
                 _reserve_asset_filename(
-                    image_link,
+                    clean_image_link,
                     source_path,
                     level_asset_names,
                 )
@@ -205,7 +200,7 @@ def prepare_game_json_for_export(
             ] = source_path
 
             item["imageLink"] = (
-                archive_path
+                exported_filename
             )
 
         level["_exportFolder"] = (
@@ -216,7 +211,6 @@ def prepare_game_json_for_export(
         export_game_json,
         asset_files,
     )
-
 def sanitize_export_name(
     value,
     fallback="file",
