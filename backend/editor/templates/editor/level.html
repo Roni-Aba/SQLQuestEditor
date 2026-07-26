@@ -52,12 +52,22 @@ Levelübersicht | SQL Spell Quest Editor
       </div>
     </section>
 
-    <section aria-label="Neues Level erstellen">
+    <section
+      class="d-flex flex-column flex-md-row gap-3"
+      aria-label="Aktionen für das Spiel"
+    >
       <a
-        href="{% url 'auswahl_view' %}"
+        href="{% url 'create_level' %}"
         class="text-decoration-none d-inline-block"
       >
         {% include "editor/components/button/button.html" with title="Erstelle ein neues Level" %}
+      </a>
+
+      <a
+        href="{% url 'export_game' %}"
+        class="text-decoration-none d-inline-block"
+      >
+        {% include "editor/components/button/button.html" with title="Exportiere das Spiel" %}
       </a>
     </section>
 
