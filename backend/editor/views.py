@@ -751,11 +751,86 @@ def create_level21_view(request):
     )
 
 
-def create_level3_view(request):
-    steps = get_steps(active_step=3)
+def create_level3_view(
+    request,
+):
+    steps = get_steps(
+        active_step=3
+    )
+
     saved_level = request.session.get(
         "new_level",
         {},
+    )
+
+    if not isinstance(
+        saved_level,
+        dict,
+    ):
+        saved_level = {}
+
+    if request.method == "GET":
+        return_to = request.GET.get(
+            "return_to",
+            "",
+        )
+        if return_to == "items":
+            request.session[
+                "item_creation_return_to"
+            ] = "items"
+
+            saved_level.pop(
+                "item",
+                None,
+            )
+
+            saved_level.pop(
+                "unlockCondition",
+                None,
+            )
+
+            saved_level.pop(
+                "position",
+                None,
+            )
+
+            request.session.pop(
+                "editing_item_id",
+                None,
+            )
+
+            request.session.pop(
+                "item_edit_mode",
+                None,
+            )
+
+            request.session.pop(
+                "editing_item_section",
+                None,
+            )
+
+            request.session[
+                "new_level"
+            ] = saved_level
+
+            request.session.modified = True
+
+        elif not request.session.get(
+            "item_edit_mode",
+            False,
+        ):
+            request.session.pop(
+                "item_creation_return_to",
+                None,
+            )
+
+            request.session.modified = True
+
+    return_to_item_overview = (
+        request.session.get(
+            "item_creation_return_to"
+        )
+        == "items"
     )
 
     item = saved_level.get(
@@ -763,30 +838,44 @@ def create_level3_view(request):
         {},
     )
 
+    if not isinstance(
+        item,
+        dict,
+    ):
+        item = {}
+
+    unlocked_items = item.get(
+        "unlockedItems",
+        [],
+    )
+
+    if not isinstance(
+        unlocked_items,
+        list,
+    ):
+        unlocked_items = []
+
     form_values = {
         "item_name": item.get(
             "id",
             "",
         ),
         "unlocked_items_json": json.dumps(
-            item.get(
-                "unlockedItems",
-                [],
-            ),
+            unlocked_items,
             ensure_ascii=False,
         ),
     }
+
     item_options = (
         utils.get_item_options_for_current_level(
             saved_level
         )
     )
     if request.method == "POST":
-        item["id"] = request.POST.get(
+        item_name = request.POST.get(
             "item_name",
             "",
         ).strip()
-
         unlocked_items_raw = request.POST.get(
             "unlocked_items",
             "[]",
@@ -798,22 +887,18 @@ def create_level3_view(request):
         except json.JSONDecodeError:
             unlocked_items = []
         if not isinstance(
-                unlocked_items,
-                list,
+            unlocked_items,
+            list,
         ):
             unlocked_items = []
-        item["unlockedItems"] = [
-            str(item_id).strip()
-            for item_id in unlocked_items
-            if str(item_id).strip()
-        ]
+        item["id"] = item_name
+        item["unlockedItems"] = [str(item_id).strip() for item_id in unlocked_items if str(item_id).strip()]
         saved_level["item"] = item
-        request.session["new_level"] = (
-            saved_level
-        )
+        request.session["new_level"] = saved_level
         request.session.modified = True
         if request.session.get(
-                "item_edit_mode"
+            "item_edit_mode",
+            False,
         ):
             editing_item_id = (
                 request.session.get(
@@ -830,9 +915,7 @@ def create_level3_view(request):
                     "edit_item",
                     item_id=editing_item_id,
                 )
-        return redirect(
-            "create_level4"
-        )
+        return redirect("create_level4")
     return render(
         request,
         "editor/createLevel3.html",
@@ -852,6 +935,9 @@ def create_level3_view(request):
                     "editing_item_id",
                     "",
                 )
+            ),
+            "return_to_item_overview": (
+                return_to_item_overview
             ),
         },
     )

@@ -8,10 +8,6 @@ Gegenstände | SQL Spell Quest Editor
 {% block additional_css %}
 <link
   rel="stylesheet"
-  href="{% static 'editor/components/statusBar/statusBar.css' %}"
->
-<link
-  rel="stylesheet"
   href="{% static 'editor/components/helper/helper.css' %}"
 >
 <link
@@ -24,12 +20,6 @@ Gegenstände | SQL Spell Quest Editor
 <main class="create-page">
   <div class="create-page__content">
 
-    <section
-      class="create-page__status"
-      aria-label="Fortschritt der Levelerstellung"
-    >
-      {% include "editor/components/statusBar/statusBar.html" with steps=steps %}
-    </section>
 
     <section class="create-page__main">
       <div class="row create-page__row align-items-start g-4 g-lg-5">
@@ -75,7 +65,7 @@ Gegenstände | SQL Spell Quest Editor
 
           <div class="d-flex justify-content-center">
             <a
-              href="{% url 'create_level3' %}"
+              href="{% url 'create_level3' %}?return_to=items"
               class="btn btn-outline-primary btn-lg px-4"
             >
               Gegenstand hinzufügen

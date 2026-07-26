@@ -129,20 +129,42 @@ Gegenstände | SQL Spell Quest Editor
         class="create-page__navigation"
         aria-label="Navigation der Levelerstellung"
       >
-        <a
-          href="{% url 'create_level2' %}"
-          class="btn btn-outline-primary btn-lg px-4"
-        >
-          <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>
-          Zurück
-        </a>
+        {% if return_to_item_overview %}
+          <a
+            href="{% url 'gegenstandVerwaltung' %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+            <i
+              class="bi bi-arrow-left me-2"
+              aria-hidden="true"
+            ></i>
+
+            Zurück
+          </a>
+        {% else %}
+          <a
+            href="{% url 'create_level2' %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+            <i
+              class="bi bi-arrow-left me-2"
+              aria-hidden="true"
+            ></i>
+
+            Zurück
+          </a>
+        {% endif %}
 
         <button
           type="submit"
           class="btn btn-primary btn-lg px-4"
         >
           Weiter
-          <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i>
+
+          <i
+            class="bi bi-arrow-right ms-2"
+            aria-hidden="true"
+          ></i>
         </button>
       </nav>
 
