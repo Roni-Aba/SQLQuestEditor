@@ -8,9 +8,10 @@ from django.shortcuts import redirect, render
 from copy import deepcopy
 from django.views.decorators.http import require_POST
 
+
 def redirect_after_item_section_edit(
-    request,
-    default_view_name,
+        request,
+        default_view_name,
 ):
     if not request.session.get("item_edit_mode"):
         return redirect(default_view_name)
@@ -32,10 +33,11 @@ def redirect_after_item_section_edit(
         "edit_item",
         item_id=editing_item_id,
     )
+
 
 def redirect_after_item_password_edit(
-    request,
-    default_view_name,
+        request,
+        default_view_name,
 ):
     if not request.session.get("item_edit_mode"):
         return redirect(default_view_name)
@@ -53,6 +55,7 @@ def redirect_after_item_password_edit(
         "edit_item",
         item_id=editing_item_id,
     )
+
 
 def get_item_summary(saved_level):
     item = saved_level.get("item", {})
@@ -124,8 +127,11 @@ def get_item_summary(saved_level):
             "",
         ),
     }
+
+
 def first_or_empty(values):
     return values[0] if values else ""
+
 
 def parse_optional_int(value):
     value = str(value).strip()
@@ -133,18 +139,22 @@ def parse_optional_int(value):
         return int(value)
     return None
 
+
 def save_new_level_session(request, saved_level):
     request.session["new_level"] = saved_level
     request.session.modified = True
 
+
 def get_steps(active_step):
     steps = []
     for number in range(0, 9):
-        steps.append({"number": number,"active": number <= active_step})
+        steps.append({"number": number, "active": number <= active_step})
     return steps
+
 
 def start_page(request):
     return render(request, "editor/start.html")
+
 
 def level_view(request):
     game_json = request.session.get(
@@ -169,6 +179,7 @@ def level_view(request):
         },
     )
 
+
 def edit_level_view(request, level_id):
     game_json = request.session.get(
         "game_json",
@@ -187,8 +198,8 @@ def edit_level_view(request, level_id):
 
     for level in levels:
         if (
-            isinstance(level, dict)
-            and level.get("id") == level_id
+                isinstance(level, dict)
+                and level.get("id") == level_id
         ):
             selected_level = level
             break
@@ -220,6 +231,7 @@ def edit_level_view(request, level_id):
     return redirect(
         "auswahl_view"
     )
+
 
 def upload_json_view(request):
     if request.method != "POST":
@@ -335,6 +347,7 @@ def upload_json_view(request):
         "level"
     )
 
+
 def component_test_view(request):
     steps = [
         {"number": 1, "active": True},
@@ -350,10 +363,12 @@ def component_test_view(request):
         "steps": steps,
     })
 
+
 def create_level(request):
     return render(request, "editor/createLevel.html", {
         "steps": get_steps(active_step=0),
     })
+
 
 def auswahl_view(request):
     new_level = request.session.get("new_level", {})
@@ -366,6 +381,7 @@ def auswahl_view(request):
             "game_json": new_level,
         },
     )
+
 
 def create_level1_view(request):
     steps = get_steps(active_step=1)
@@ -382,7 +398,7 @@ def create_level1_view(request):
         saved_level["startDialog"] = start_dialog
         uploaded_picture = request.FILES.get("levelPicture")
         if uploaded_picture:
-            upload_dir = (Path(settings.BASE_DIR)/ "editor"/ "static"/ "editor"/ "img"/ "levels")
+            upload_dir = (Path(settings.BASE_DIR) / "editor" / "static" / "editor" / "img" / "levels")
             upload_dir.mkdir(parents=True, exist_ok=True)
             storage = FileSystemStorage(location=upload_dir)
             level_picture_name = storage.save(
@@ -399,6 +415,7 @@ def create_level1_view(request):
         "saved_level": saved_level,
         "form_values": form_values,
     })
+
 
 def create_level2_view(request):
     steps = get_steps(active_step=2)
@@ -489,17 +506,18 @@ def create_level2_view(request):
                     else []
                 ),
             },
-            "colAndRowViolationMessages": ([too_many_rows_columns_message] if too_many_rows_columns_message else []),}
+            "colAndRowViolationMessages": ([too_many_rows_columns_message] if too_many_rows_columns_message else []), }
         request.session["new_level"] = saved_level
         request.session.modified = True
         print("createLevel2 gespeichert:")
-        print(json.dumps(saved_level,ensure_ascii=False,indent=2))
+        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
         return redirect("create_level21")
     return render(request, "editor/createLevel2.html", {
         "steps": steps,
         "saved_level": saved_level,
         "form_values": form_values,
     })
+
 
 def create_level21_view(request):
     steps = get_steps(active_step=2)
@@ -540,7 +558,7 @@ def create_level21_view(request):
         request.session["game_json"] = game_json
 
         request.session.modified = True
-        print(json.dumps(saved_messages,ensure_ascii=False,indent=2))
+        print(json.dumps(saved_messages, ensure_ascii=False, indent=2))
         return redirect("create_level3")
 
     return render(
@@ -551,6 +569,7 @@ def create_level21_view(request):
             "form_values": form_values,
         },
     )
+
 
 def create_level3_view(request):
     steps = get_steps(active_step=3)
@@ -599,8 +618,8 @@ def create_level3_view(request):
         except json.JSONDecodeError:
             unlocked_items = []
         if not isinstance(
-            unlocked_items,
-            list,
+                unlocked_items,
+                list,
         ):
             unlocked_items = []
         item["unlockedItems"] = [
@@ -614,7 +633,7 @@ def create_level3_view(request):
         )
         request.session.modified = True
         if request.session.get(
-            "item_edit_mode"
+                "item_edit_mode"
         ):
             editing_item_id = (
                 request.session.get(
@@ -656,6 +675,8 @@ def create_level3_view(request):
             ),
         },
     )
+
+
 def create_level4_view(request):
     steps = get_steps(active_step=4)
 
@@ -698,11 +719,11 @@ def create_level4_view(request):
 
     if request.method == "POST":
         requires_password = (
-            request.POST.get(
-                "requires_password",
-                "false",
-            )
-            == "true"
+                request.POST.get(
+                    "requires_password",
+                    "false",
+                )
+                == "true"
         )
 
         selected_item = saved_level.get(
@@ -771,6 +792,7 @@ def create_level4_view(request):
             "form_values": form_values,
         },
     )
+
 
 def create_level41_view(request):
     steps = get_steps(active_step=5)
@@ -907,6 +929,7 @@ def create_level41_view(request):
         },
     )
 
+
 def create_level42_view(request):
     steps = get_steps(active_step=5)
 
@@ -926,8 +949,8 @@ def create_level42_view(request):
     )
 
     if not isinstance(
-        failure_hints,
-        list,
+            failure_hints,
+            list,
     ):
         failure_hints = []
 
@@ -947,8 +970,8 @@ def create_level42_view(request):
         failure_hints = []
 
         for attempts, text in zip(
-            hint_attempts,
-            hint_texts,
+                hint_attempts,
+                hint_texts,
         ):
             attempts = attempts.strip()
             text = text.strip()
@@ -1009,13 +1032,14 @@ def create_level42_view(request):
         },
     )
 
+
 def create_level5_view(request):
     steps = get_steps(active_step=5)
     saved_level = request.session.get("new_level", {})
-    unlock_condition = saved_level.get("unlockCondition",{})
-    required_items = unlock_condition.get("requiredItems",[])
-    requires_password = unlock_condition.get("requiresPassword",False)
-    show_hints_on_failure = unlock_condition.get("showHintsOnFailure",False)
+    unlock_condition = saved_level.get("unlockCondition", {})
+    required_items = unlock_condition.get("requiredItems", [])
+    requires_password = unlock_condition.get("requiresPassword", False)
+    show_hints_on_failure = unlock_condition.get("showHintsOnFailure", False)
     if show_hints_on_failure:
         back_url_name = "create_level42"
     elif requires_password:
@@ -1029,7 +1053,7 @@ def create_level5_view(request):
     }
     if request.method == "POST":
         print("createLevel5 gespeichert:")
-        print(json.dumps(saved_level,ensure_ascii=False,indent=2))
+        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
         return redirect("create_level51")
     return render(request, "editor/createLevel5.html", {
         "steps": steps,
@@ -1037,6 +1061,8 @@ def create_level5_view(request):
         "form_values": form_values,
         "back_url_name": back_url_name,
     })
+
+
 def create_level51_view(request):
     steps = get_steps(active_step=5)
     saved_level = request.session.get("new_level", {})
@@ -1181,6 +1207,7 @@ def create_level51_view(request):
         },
     )
 
+
 def create_level6_view(request):
     steps = get_steps(active_step=6)
     saved_level = request.session.get("new_level", {})
@@ -1200,6 +1227,8 @@ def create_level6_view(request):
         "saved_level": saved_level,
         "form_values": form_values,
     })
+
+
 def create_level61_view(request):
     steps = get_steps(active_step=6)
     saved_level = request.session.get("new_level", {})
@@ -1209,8 +1238,8 @@ def create_level61_view(request):
         {"value": "table", "label": "Table"},
         {"value": "hint", "label": "Hint"},
         {"value": "exit", "label": "Exit"},
-]
-    form_values = {"item_type": current_type,}
+    ]
+    form_values = {"item_type": current_type, }
     if request.method == "POST":
         item_type = request.POST.get("item_type", "").strip()
         if item_type not in ["table", "hint", "exit"]:
@@ -1234,6 +1263,8 @@ def create_level61_view(request):
         "form_values": form_values,
         "type_options": type_options,
     })
+
+
 def create_level6exit_view(request):
     steps = get_steps(active_step=6)
     saved_level = request.session.get("new_level", {})
@@ -1260,6 +1291,7 @@ def create_level6exit_view(request):
         "saved_level": saved_level,
         "form_values": form_values,
     })
+
 
 def create_level6hint_view(request):
     steps = get_steps(active_step=6)
@@ -1333,12 +1365,12 @@ def create_level6hint_view(request):
             item["text"] = ""
         if uploaded_image:
             upload_dir = (
-                Path(settings.BASE_DIR)
-                / "editor"
-                / "static"
-                / "editor"
-                / "img"
-                / "hints"
+                    Path(settings.BASE_DIR)
+                    / "editor"
+                    / "static"
+                    / "editor"
+                    / "img"
+                    / "hints"
             )
             upload_dir.mkdir(
                 parents=True,
@@ -1380,8 +1412,10 @@ def create_level6hint_view(request):
         },
     )
 
+
 def create_level6table_view(request):
     steps = get_steps(active_step=6)
+
     saved_level = request.session.get(
         "new_level",
         {},
@@ -1414,13 +1448,19 @@ def create_level6table_view(request):
     form_values = {
         "table_name": item.get(
             "tableName",
-            "",
+            item.get("id", ""),
         ),
         "columns": item.get(
             "columns",
             [],
         ),
+        "rows": item.get(
+            "rows",
+            [],
+        ),
     }
+
+    error_message = ""
 
     if request.method == "POST":
         column_ids = request.POST.getlist(
@@ -1434,14 +1474,43 @@ def create_level6table_view(request):
         columns = []
 
         for column_id, column_type in zip(
-            column_ids,
-            column_types,
+                column_ids,
+                column_types,
         ):
             column_id = column_id.strip()
             column_type = column_type.strip()
 
             if not column_id and not column_type:
                 continue
+
+            if not column_id:
+                error_message = (
+                    "Jede Spalte benötigt einen Namen."
+                )
+                break
+
+            if column_type not in {
+                "text",
+                "number",
+                "date",
+                "boolean",
+            }:
+                error_message = (
+                    f"Der Datentyp der Spalte "
+                    f"„{column_id}“ ist ungültig."
+                )
+                break
+
+            if any(
+                    existing_column["id"].lower()
+                    == column_id.lower()
+                    for existing_column in columns
+            ):
+                error_message = (
+                    f"Der Spaltenname "
+                    f"„{column_id}“ wurde mehrfach verwendet."
+                )
+                break
 
             columns.append(
                 {
@@ -1450,37 +1519,120 @@ def create_level6table_view(request):
                 }
             )
 
-        item = saved_level.get(
-            "item",
-            {},
+        rows = []
+
+        raw_rows_json = request.POST.get(
+            "rows_json",
+            "[]",
         )
 
-        item_name = item.get(
-            "id",
-            "",
-        )
+        if not error_message:
+            try:
+                submitted_rows = json.loads(
+                    raw_rows_json
+                )
+            except json.JSONDecodeError:
+                submitted_rows = []
+                error_message = (
+                    "Die Tabellendaten konnten nicht "
+                    "verarbeitet werden."
+                )
 
-        item["type"] = "table"
-        item["tableName"] = item_name
-        item["columns"] = columns
+        if not error_message:
+            if not isinstance(
+                    submitted_rows,
+                    list,
+            ):
+                submitted_rows = []
 
-        saved_level["item"] = item
-        request.session["new_level"] = saved_level
-        request.session.modified = True
+            for submitted_row in submitted_rows:
+                if not isinstance(
+                        submitted_row,
+                        dict,
+                ):
+                    continue
 
-        print("createLevel6table gespeichert:")
-        print(
-            json.dumps(
-                saved_level,
-                ensure_ascii=False,
-                indent=2,
+                cleaned_row = {}
+                row_has_value = False
+
+                for column in columns:
+                    column_id = column["id"]
+                    column_type = column["type"]
+
+                    raw_value = submitted_row.get(
+                        column_id,
+                        "",
+                    )
+
+                    cleaned_value = (
+                        utils.convert_table_cell_value(
+                            raw_value,
+                            column_type,
+                        )
+                    )
+
+                    if cleaned_value not in (
+                            "",
+                            None,
+                    ):
+                        row_has_value = True
+
+                    cleaned_row[column_id] = (
+                        cleaned_value
+                    )
+
+                if row_has_value:
+                    rows.append(cleaned_row)
+
+        form_values = {
+            "table_name": item.get(
+                "id",
+                "",
+            ),
+            "columns": columns,
+            "rows": rows,
+        }
+
+        if not columns and not error_message:
+            error_message = (
+                "Lege mindestens eine Tabellenspalte an."
             )
-        )
 
-        return redirect_after_item_section_edit(
-            request,
-            "create_level7",
-        )
+        if not error_message:
+            item_name = item.get(
+                "id",
+                "",
+            )
+
+            item["type"] = "table"
+            item["tableName"] = item_name
+            item["columns"] = columns
+            item["rows"] = rows
+
+            saved_level["item"] = item
+
+            request.session["new_level"] = (
+                saved_level
+            )
+
+            request.session.modified = True
+
+            print(
+                "createLevel6table gespeichert:"
+            )
+
+            print(
+                json.dumps(
+                    saved_level,
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
+
+            return redirect_after_item_section_edit(
+                request,
+                "create_level7",
+            )
 
     return render(
         request,
@@ -1489,9 +1641,13 @@ def create_level6table_view(request):
             "steps": steps,
             "saved_level": saved_level,
             "form_values": form_values,
-            "data_type_options": data_type_options,
+            "data_type_options": (
+                data_type_options
+            ),
+            "error_message": error_message,
         },
     )
+
 
 def create_level7_view(request):
     steps = get_steps(active_step=7)
@@ -1519,6 +1675,7 @@ def create_level7_view(request):
             "summary": summary,
         },
     )
+
 
 def save_current_item_to_level(saved_level):
     item = saved_level.get("item", {})
@@ -1565,7 +1722,7 @@ def create_level8_view(request):
                 "Gegenstand wurde in die JSON eingefügt. "
                 "Neuer Gegenstand kann erstellt werden:"
             )
-            print(json.dumps(game_json,ensure_ascii=False,indent=2,))
+            print(json.dumps(game_json, ensure_ascii=False, indent=2, ))
             return redirect("create_level3")
         if next_action == "item_management":
             request.session["new_level"] = saved_level
@@ -1607,6 +1764,7 @@ def create_level8_view(request):
         },
     )
 
+
 def export_game_view(request):
     game_json = request.session.get("game_json", {})
     json_string = json.dumps(game_json, ensure_ascii=False, indent=2)
@@ -1634,6 +1792,7 @@ def export_game_view(request):
     response["Content-Disposition"] = 'attachment; filename="SQLSpellQuest_export.zip"'
     return response
 
+
 def level_grunddaten_view(request):
     saved_level = request.session.get("new_level", {})
 
@@ -1654,12 +1813,12 @@ def level_grunddaten_view(request):
 
         if uploaded_picture:
             upload_dir = (
-                Path(settings.BASE_DIR)
-                / "editor"
-                / "static"
-                / "editor"
-                / "img"
-                / "levels"
+                    Path(settings.BASE_DIR)
+                    / "editor"
+                    / "static"
+                    / "editor"
+                    / "img"
+                    / "levels"
             )
 
             upload_dir.mkdir(
@@ -1713,6 +1872,7 @@ def level_grunddaten_view(request):
             "form_values": form_values,
         },
     )
+
 
 def sql_grunddaten_view(request):
     saved_level = request.session.get("new_level", {})
@@ -1856,6 +2016,7 @@ def sql_grunddaten_view(request):
         },
     )
 
+
 def gegenstand_view(request):
     saved_level = request.session.get(
         "new_level",
@@ -1872,6 +2033,7 @@ def gegenstand_view(request):
             ),
         },
     )
+
 
 def edit_item_view(request, item_id):
     saved_level = request.session.get(
@@ -1940,8 +2102,8 @@ def edit_item_view(request, item_id):
 
         for existing_item in items:
             if (
-                existing_item.get("id")
-                == old_item_id
+                    existing_item.get("id")
+                    == old_item_id
             ):
                 updated_items.append(
                     current_item
@@ -2020,10 +2182,11 @@ def edit_item_view(request, item_id):
         },
     )
 
+
 def edit_item_section_view(
-    request,
-    item_id,
-    section,
+        request,
+        item_id,
+        section,
 ):
     allowed_sections = {
         "grunddaten": "create_level3",
@@ -2056,6 +2219,7 @@ def edit_item_section_view(
         target_view
     )
 
+
 def cancel_item_edit_view(request):
     request.session.pop(
         "item_edit_mode",
@@ -2073,6 +2237,8 @@ def cancel_item_edit_view(request):
     return redirect(
         "gegenstandVerwaltung"
     )
+
+
 DEFAULT_MESSAGES = {
     "wrong_password": (
         "Das Passwort ist nicht korrekt. "
@@ -2114,9 +2280,9 @@ DEFAULT_MESSAGES = {
         "und Spalten ein."
     ),
 }
+
+
 def messages_grunddaten_view(request):
-
-
     saved_level = request.session.get(
         "new_level",
         {},
@@ -2180,6 +2346,7 @@ def messages_grunddaten_view(request):
         },
     )
 
+
 def delete_item_view(request, item_id):
     if request.method != "POST":
         return redirect(
@@ -2220,8 +2387,8 @@ def delete_item_view(request, item_id):
 
         for level in levels:
             if (
-                isinstance(level, dict)
-                and level.get("id") == level_id
+                    isinstance(level, dict)
+                    and level.get("id") == level_id
             ):
                 level = utils.remove_item_from_level(
                     level,
@@ -2262,6 +2429,7 @@ def delete_item_view(request, item_id):
     return redirect(
         "gegenstandVerwaltung"
     )
+
 
 @require_POST
 def save_level_view(request):
@@ -2311,13 +2479,13 @@ def save_level_view(request):
         existing_level_id = level.get("id")
 
         should_replace = (
-            editing_level_id
-            and existing_level_id == editing_level_id
+                editing_level_id
+                and existing_level_id == editing_level_id
         )
 
         if not editing_level_id:
             should_replace = (
-                existing_level_id == level_id
+                    existing_level_id == level_id
             )
 
         if should_replace and not level_was_replaced:
@@ -2364,16 +2532,14 @@ def save_level_view(request):
     )
     return redirect("level")
 
+
 @require_POST
-
 def delete_level_view(request, level_id):
-
     game_json = request.session.get("game_json", {})
 
     levels = game_json.get("level", [])
 
     if isinstance(levels, list):
-
         game_json["level"] = [
 
             level
@@ -2382,9 +2548,9 @@ def delete_level_view(request, level_id):
 
             if not (
 
-                isinstance(level, dict)
+                    isinstance(level, dict)
 
-                and level.get("id") == level_id
+                    and level.get("id") == level_id
 
             )
 
@@ -2393,7 +2559,6 @@ def delete_level_view(request, level_id):
     request.session["game_json"] = game_json
 
     if request.session.get("editing_level_id") == level_id:
-
         request.session.pop("editing_level_id", None)
 
         request.session.pop("new_level", None)
