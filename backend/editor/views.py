@@ -156,6 +156,10 @@ def start_page(request):
     return render(request, "editor/start.html")
 
 
+def kontakt_view(request):
+    return render(request, "editor/contact.html")
+
+
 def level_view(request):
     game_json = request.session.get(
         "game_json",
@@ -2171,54 +2175,6 @@ def export_game_view(request):
         'filename="SQLSpellQuest_export.zip"'
     )
     return response
-
-@require_POST
-def save_level_view(
-    request,
-):
-    saved_level = request.session.get(
-        "new_level",
-        {},
-    )
-
-    if not isinstance(
-        saved_level,
-        dict,
-    ):
-        return redirect(
-            "auswahl_view"
-        )
-
-    saved_level = deepcopy(
-        saved_level
-    )
-
-    saved_level.pop(
-        "item",
-        None,
-    )
-
-    saved_level.pop(
-        "unlockCondition",
-        None,
-    )
-
-    saved_level.pop(
-        "position",
-        None,
-    )
-
-    saved_level.pop(
-        "messages",
-        None,
-    )
-
-    level_id = str(
-        saved_level.get(
-            "id",
-            "",
-        )
-    ).strip()
 
 def level_grunddaten_view(request):
     saved_level = request.session.get("new_level", {})

@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path("", views.start_page, name="start"),
+    path("kontakt/", views.kontakt_view, name="kontakt"),
     path("level/", views.level_view, name="level"),
     path("upload-json/", views.upload_json_view, name="upload_json"),
     path("components/", views.component_test_view, name="component_test"),

@@ -1,0 +1,77 @@
+{% extends "editor/base.html" %}
+
+{% block title %}
+Kontakt | SQL Spell Quest Editor
+{% endblock %}
+
+{% block content %}
+<main class="min-vh-100 bg-white">
+  <div class="container min-vh-100">
+    <div class="row">
+      <section
+        class="col-12 col-lg-5 mx-auto mt-5 pt-5"
+        aria-labelledby="contact-title"
+      >
+        <div class="d-flex flex-column gap-4">
+          <h1
+            id="contact-title"
+            class="fs-5 fw-semibold lh-base text-dark mb-0"
+          >
+            Kontaktiere uns wenn du fragen hast.
+          </h1>
+
+          <div class="card border border-secondary-subtle rounded-3 bg-white">
+            <div class="card-body p-4 text-secondary">
+              <p class="lh-base mb-0">Me:</p>
+
+              <ul class="ps-4 mb-4">
+                <li>
+                  <a
+                    class="text-secondary"
+                    href="https://git.informatik.uni-kiel.de/stu235370/sql-quest-editor"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    https://git.informatik.uni-kiel.de/stu235370/sql-quest-editor
+                  </a>
+                </li>
+                <li>
+                  <a
+                    class="text-secondary text-decoration-none"
+                    href="https://github.com/Roni-Aba"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    https://github.com/Roni-Aba
+                  </a>
+                </li>
+              </ul>
+
+              <p class="lh-base mb-0">Verantwortliche:</p>
+
+              <ul class="ps-4 mb-0">
+                <li>
+                  <a
+                    class="text-secondary"
+                    href="mailto:sandro.esquivel@informatik.uni-kiel.de"
+                  >
+                    sandro.esquivel@informatik.uni-kiel.de
+                  </a>
+                </li>
+                <li>
+                  <a
+                    class="text-secondary"
+                    href="mailto:pamela.fleischmann@informatik.uni-kiel.de"
+                  >
+                    pamela.fleischmann@informatik.uni-kiel.de
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+{% endblock %}
