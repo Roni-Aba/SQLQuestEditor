@@ -1,5 +1,5 @@
 from . import utils, sqlParser
-import json, io, zipfile
+import json, io, zipfile, sqlite3, tempfile
 from pathlib import Path
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
@@ -179,51 +179,78 @@ def level_view(request):
         },
     )
 
-
-def edit_level_view(request, level_id):
+def edit_level_view(
+    request,
+    level_id,
+):
     game_json = request.session.get(
         "game_json",
         {},
     )
+
+    if not isinstance(
+        game_json,
+        dict,
+    ):
+        return redirect(
+            "level"
+        )
 
     levels = game_json.get(
         "level",
         [],
     )
 
-    if not isinstance(levels, list):
-        return redirect("level")
+    if not isinstance(
+        levels,
+        list,
+    ):
+        return redirect(
+            "level"
+        )
 
-    selected_level = None
-
-    for level in levels:
-        if (
-                isinstance(level, dict)
-                and level.get("id") == level_id
-        ):
-            selected_level = level
-            break
+    selected_level = next(
+        (
+            level
+            for level in levels
+            if (
+                isinstance(
+                    level,
+                    dict,
+                )
+                and str(
+                    level.get(
+                        "id",
+                        "",
+                    )
+                ) == str(
+                    level_id
+                )
+            )
+        ),
+        None,
+    )
 
     if selected_level is None:
-        return redirect("level")
+        return redirect(
+            "level"
+        )
 
-    request.session["new_level"] = deepcopy(
-        selected_level
+    clear_level_edit_session(
+        request
     )
 
-    request.session["editing_level_id"] = level_id
+    request.session["new_level"] = (
+        build_level_edit_session(
+            selected_level
+        )
+    )
 
-    request.session.pop(
-        "editing_item_id",
-        None,
-    )
-    request.session.pop(
-        "item_edit_mode",
-        None,
-    )
-    request.session.pop(
-        "editing_item_section",
-        None,
+    request.session[
+        "editing_level_id"
+    ] = selected_level.get(
+        "id",
+        level_id,
     )
 
     request.session.modified = True
@@ -231,6 +258,136 @@ def edit_level_view(request, level_id):
     return redirect(
         "auswahl_view"
     )
+
+def build_clean_level_session(
+    selected_level,
+):
+    if not isinstance(
+        selected_level,
+        dict,
+    ):
+        return {}
+
+    items = selected_level.get(
+        "items",
+        [],
+    )
+
+    if not isinstance(
+        items,
+        list,
+    ):
+        items = []
+
+    query_restriction = selected_level.get(
+        "queryRestriction",
+        {},
+    )
+
+    if not isinstance(
+        query_restriction,
+        dict,
+    ):
+        query_restriction = {}
+
+    clean_level = {
+        "id": selected_level.get(
+            "id",
+            "",
+        ),
+        "levelPicture": selected_level.get(
+            "levelPicture",
+            "",
+        ),
+        "databaseName": selected_level.get(
+            "databaseName",
+            "",
+        ),
+        "startDialog": selected_level.get(
+            "startDialog",
+            "",
+        ),
+        "queryRestriction": deepcopy(
+            query_restriction
+        ),
+        "items": deepcopy(
+            items
+        ),
+    }
+
+    return clean_level
+
+
+def clear_level_edit_session(request):
+    session_keys = [
+        "new_level",
+        "editing_level_id",
+        "editing_item_id",
+        "item_edit_mode",
+        "editing_item_section",
+    ]
+
+    for session_key in session_keys:
+        request.session.pop(
+            session_key,
+            None,
+        )
+
+    request.session.modified = True
+
+def build_level_edit_session(selected_level):
+    if not isinstance(
+        selected_level,
+        dict,
+    ):
+        return {}
+
+    query_restriction = selected_level.get(
+        "queryRestriction",
+        {},
+    )
+
+    if not isinstance(
+        query_restriction,
+        dict,
+    ):
+        query_restriction = {}
+
+    items = selected_level.get(
+        "items",
+        [],
+    )
+
+    if not isinstance(
+        items,
+        list,
+    ):
+        items = []
+
+    return {
+        "id": selected_level.get(
+            "id",
+            "",
+        ),
+        "levelPicture": selected_level.get(
+            "levelPicture",
+            "",
+        ),
+        "databaseName": selected_level.get(
+            "databaseName",
+            "",
+        ),
+        "startDialog": selected_level.get(
+            "startDialog",
+            "",
+        ),
+        "queryRestriction": deepcopy(
+            query_restriction
+        ),
+        "items": deepcopy(
+            items
+        ),
+    }
 
 
 def upload_json_view(request):
@@ -364,10 +521,33 @@ def component_test_view(request):
     })
 
 
-def create_level(request):
-    return render(request, "editor/createLevel.html", {
-        "steps": get_steps(active_step=0),
-    })
+def create_level(
+    request,
+):
+    clear_level_edit_session(
+        request
+    )
+
+    request.session["new_level"] = {
+        "id": "",
+        "levelPicture": "",
+        "databaseName": "",
+        "startDialog": "",
+        "queryRestriction": {},
+        "items": [],
+    }
+
+    request.session.modified = True
+
+    return render(
+        request,
+        "editor/createLevel.html",
+        {
+            "steps": get_steps(
+                active_step=0
+            ),
+        },
+    )
 
 
 def auswahl_view(request):
@@ -1766,32 +1946,193 @@ def create_level8_view(request):
 
 
 def export_game_view(request):
-    game_json = request.session.get("game_json", {})
-    json_string = json.dumps(game_json, ensure_ascii=False, indent=2)
+    game_json = request.session.get(
+        "game_json",
+        {},
+    )
+    if not isinstance(
+        game_json,
+        dict,
+    ):
+        game_json = {}
+
+    (
+        export_game_json,
+        asset_files,
+    ) = utils.prepare_game_json_for_export(
+        game_json,
+        settings.BASE_DIR,
+    )
+
     zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-        zip_file.writestr(
-            "SQLSpellQuest_export.json",
-            json_string
+
+    with tempfile.TemporaryDirectory() as temp_directory:
+        temp_directory = Path(
+            temp_directory
         )
-        for level in game_json.get("level", []):
-            level_id = level.get("id", "level")
-            level_sql = sqlParser.build_level_sql(level)
-            if not level_sql.strip():
-                continue
-            sql_filename = f"{level_id}.sql"
-            zip_file.writestr(
-                sql_filename,
-                level_sql
+        with zipfile.ZipFile(
+            zip_buffer,
+            "w",
+            zipfile.ZIP_DEFLATED,
+        ) as zip_file:
+            levels = export_game_json.get(
+                "level",
+                [],
             )
+            if not isinstance(
+                levels,
+                list,
+            ):
+                levels = []
+
+            for level_index, level in enumerate(
+                levels
+            ):
+                if not isinstance(
+                    level,
+                    dict,
+                ):
+                    continue
+                level_id = level.get(
+                    "id",
+                    f"level{level_index}",
+                )
+                level_folder = level.pop(
+                    "_exportFolder",
+                    utils.sanitize_export_name(
+                        level_id,
+                        fallback=(
+                            f"level{level_index}"
+                        ),
+                    ),
+                )
+                safe_level_id = (
+                    utils.sanitize_export_name(
+                        level_id,
+                        fallback=(
+                            f"level{level_index}"
+                        ),
+                    )
+                )
+                level_sql = (
+                    sqlParser.build_level_sql(
+                        level
+                    )
+                )
+                sql_archive_path = (
+                    f"{level_folder}/databases/"
+                    f"create_{safe_level_id}.sql"
+                )
+                database_archive_path = (
+                    f"{level_folder}/databases/"
+                    f"{safe_level_id}.db"
+                )
+                zip_file.writestr(
+                    sql_archive_path,
+                    level_sql,
+                )
+                database_path = (
+                    temp_directory
+                    / (
+                        f"{safe_level_id}_"
+                        f"{level_index}.db"
+                    )
+                )
+                connection = sqlite3.connect(
+                    database_path
+                )
+                try:
+                    if level_sql.strip():
+                        connection.executescript(
+                            level_sql
+                        )
+
+                    connection.commit()
+
+                finally:
+                    connection.close()
+
+                zip_file.write(
+                    database_path,
+                    database_archive_path,
+                )
+            json_string = json.dumps(
+                export_game_json,
+                ensure_ascii=False,
+                indent=2,
+            )
+            zip_file.writestr(
+                "SQLSpellQuest.json",
+                json_string,
+            )
+            for (
+                archive_path,
+                source_path,
+            ) in asset_files.items():
+                zip_file.write(
+                    source_path,
+                    archive_path,
+                )
     zip_buffer.seek(0)
     response = HttpResponse(
         zip_buffer.getvalue(),
-        content_type="application/zip"
+        content_type="application/zip",
     )
-    response["Content-Disposition"] = 'attachment; filename="SQLSpellQuest_export.zip"'
+    response[
+        "Content-Disposition"
+    ] = (
+        'attachment; '
+        'filename="SQLSpellQuest_export.zip"'
+    )
     return response
 
+@require_POST
+def save_level_view(
+    request,
+):
+    saved_level = request.session.get(
+        "new_level",
+        {},
+    )
+
+    if not isinstance(
+        saved_level,
+        dict,
+    ):
+        return redirect(
+            "auswahl_view"
+        )
+
+    saved_level = deepcopy(
+        saved_level
+    )
+
+    saved_level.pop(
+        "item",
+        None,
+    )
+
+    saved_level.pop(
+        "unlockCondition",
+        None,
+    )
+
+    saved_level.pop(
+        "position",
+        None,
+    )
+
+    saved_level.pop(
+        "messages",
+        None,
+    )
+
+    level_id = str(
+        saved_level.get(
+            "id",
+            "",
+        )
+    ).strip()
 
 def level_grunddaten_view(request):
     saved_level = request.session.get("new_level", {})
@@ -2017,17 +2358,43 @@ def sql_grunddaten_view(request):
     )
 
 
-def gegenstand_view(request):
+def gegenstand_view(
+    request,
+):
     saved_level = request.session.get(
         "new_level",
         {},
     )
 
+    if not isinstance(
+        saved_level,
+        dict,
+    ):
+        saved_level = {}
+
+    items = saved_level.get(
+        "items",
+        [],
+    )
+
+    if not isinstance(
+        items,
+        list,
+    ):
+        items = []
+
+    clean_saved_level = {
+        **saved_level,
+        "items": deepcopy(
+            items
+        ),
+    }
+
     return render(
         request,
         "editor/gegenstandVerwaltung.html",
         {
-            "saved_level": saved_level,
+            "saved_level": clean_saved_level,
             "steps": get_steps(
                 active_step=1
             ),

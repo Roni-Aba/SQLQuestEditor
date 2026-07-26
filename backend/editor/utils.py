@@ -1,3 +1,322 @@
+from pathlib import Path
+from copy import deepcopy
+def prepare_game_json_for_export(
+    game_json,
+    base_dir,
+):
+    if not isinstance(
+        game_json,
+        dict,
+    ):
+        game_json = {}
+
+    export_game_json = deepcopy(
+        game_json
+    )
+
+    asset_files = {}
+
+    base_dir = Path(
+        base_dir
+    )
+
+    level_image_directories = [
+        (
+            base_dir
+            / "editor"
+            / "static"
+            / "editor"
+            / "img"
+            / "levels"
+        ),
+    ]
+
+    item_image_directories = [
+        (
+            base_dir
+            / "editor"
+            / "static"
+            / "editor"
+            / "img"
+            / "hints"
+        ),
+        (
+            base_dir
+            / "editor"
+            / "static"
+            / "editor"
+            / "img"
+            / "items"
+        ),
+        (
+            base_dir
+            / "editor"
+            / "static"
+            / "editor"
+            / "img"
+        ),
+    ]
+
+    levels = export_game_json.get(
+        "level",
+        [],
+    )
+
+    if not isinstance(
+        levels,
+        list,
+    ):
+        levels = []
+        export_game_json["level"] = levels
+
+    used_level_names = set()
+
+    for level_index, level in enumerate(
+        levels
+    ):
+        if not isinstance(
+            level,
+            dict,
+        ):
+            continue
+
+        requested_level_id = level.get(
+            "id",
+            f"level{level_index}",
+        )
+
+        level_folder = sanitize_export_name(
+            requested_level_id,
+            fallback=f"level{level_index}",
+        )
+
+        original_level_folder = (
+            level_folder
+        )
+
+        counter = 2
+
+        while level_folder in used_level_names:
+            level_folder = (
+                f"{original_level_folder}_"
+                f"{counter}"
+            )
+
+            counter += 1
+
+        used_level_names.add(
+            level_folder
+        )
+
+        level_asset_names = {}
+
+        level_picture = level.get(
+            "levelPicture",
+            "",
+        )
+
+        if level_picture:
+            source_path = find_export_asset(
+                level_picture,
+                level_image_directories,
+            )
+
+            if source_path is not None:
+                exported_filename = (
+                    _reserve_asset_filename(
+                        level_picture,
+                        source_path,
+                        level_asset_names,
+                    )
+                )
+
+                archive_path = (
+                    f"{level_folder}/assets/"
+                    f"{exported_filename}"
+                )
+
+                asset_files[
+                    archive_path
+                ] = source_path
+
+                level[
+                    "levelPicture"
+                ] = archive_path
+
+        safe_level_id = sanitize_export_name(
+            requested_level_id,
+            fallback=f"level{level_index}",
+        )
+
+        level["databaseName"] = (
+            f"{level_folder}/databases/"
+            f"{safe_level_id}.db"
+        )
+
+        items = level.get(
+            "items",
+            [],
+        )
+
+        if not isinstance(
+            items,
+            list,
+        ):
+            items = []
+
+        for item in items:
+            if not isinstance(
+                item,
+                dict,
+            ):
+                continue
+
+            image_link = item.get(
+                "imageLink",
+                "",
+            )
+
+            if not image_link:
+                continue
+
+            source_path = find_export_asset(
+                image_link,
+                item_image_directories,
+            )
+
+            if source_path is None:
+                continue
+
+            exported_filename = (
+                _reserve_asset_filename(
+                    image_link,
+                    source_path,
+                    level_asset_names,
+                )
+            )
+
+            archive_path = (
+                f"{level_folder}/assets/"
+                f"{exported_filename}"
+            )
+
+            asset_files[
+                archive_path
+            ] = source_path
+
+            item["imageLink"] = (
+                archive_path
+            )
+
+        level["_exportFolder"] = (
+            level_folder
+        )
+
+    return (
+        export_game_json,
+        asset_files,
+    )
+
+def sanitize_export_name(
+    value,
+    fallback="file",
+):
+    from pathlib import Path
+
+    clean_name = Path(
+        str(value or "")
+    ).name.strip()
+
+    if not clean_name:
+        clean_name = fallback
+
+    invalid_characters = (
+        '<>:"/\\|?*'
+    )
+
+    for character in invalid_characters:
+        clean_name = clean_name.replace(
+            character,
+            "_",
+        )
+
+    return clean_name
+
+def find_export_asset(
+    filename,
+    possible_directories,
+):
+    from pathlib import Path
+    if not filename:
+        return None
+    clean_filename = Path(
+        str(filename)
+    ).name
+    for directory in possible_directories:
+        candidate = (
+            Path(directory)
+            / clean_filename
+        )
+        if candidate.is_file():
+            return candidate
+    return None
+def _reserve_asset_filename(
+    requested_filename,
+    source_path,
+    level_asset_names,
+):
+
+    requested_filename = sanitize_export_name(
+        requested_filename,
+        fallback="asset",
+    )
+
+    current_source = level_asset_names.get(
+        requested_filename
+    )
+
+    if (
+        current_source is None
+        or current_source == source_path
+    ):
+        level_asset_names[
+            requested_filename
+        ] = source_path
+
+        return requested_filename
+
+    requested_path = Path(
+        requested_filename
+    )
+
+    stem = (
+        requested_path.stem
+        or "asset"
+    )
+
+    suffix = requested_path.suffix
+    counter = 2
+
+    while True:
+        candidate = (
+            f"{stem}_{counter}{suffix}"
+        )
+
+        if candidate not in level_asset_names:
+            level_asset_names[
+                candidate
+            ] = source_path
+
+            return candidate
+
+        if (
+            level_asset_names[candidate]
+            == source_path
+        ):
+            return candidate
+
+        counter += 1
+
 def convert_table_cell_value(
     raw_value,
     column_type,
