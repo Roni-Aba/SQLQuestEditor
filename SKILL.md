@@ -1,3 +1,8 @@
+---
+name: sql-quest-editor
+description: Verbindlicher Projektkontext für Arbeiten am SQL Spell Quest Editor. Verwenden bei Figma-MCP-Umsetzungen sowie bei Änderungen an Django-Templates, Bootstrap-Frontend, Formularen, Komponenten, JavaScript-Hooks oder geschützten Backend-Verträgen in diesem Repository.
+---
+
 # Codex-Arbeitskontext für SQL Spell Quest Editor
 
 Stand: 2026-07-26, nach lokaler Projektanalyse.

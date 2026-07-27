@@ -13,11 +13,24 @@ Der SQL Spell Quest Editor soll visuell möglichst nah an den Figma-Mockups blei
 Prioritäten:
 
 1. Bestehende Funktionalität erhalten.
-2. Figma-Design in vorhandene Django-Templates und Komponenten übertragen.
+2. Für jedes Figma-Design eine neue Django-Seite anlegen; bestehende HTML-Dateien niemals verändern.
 3. Bootstrap 5 für Layout, Spacing, Typografie, Formulare, Buttons, Cards, Alerts, Tabellen und Responsive-Verhalten verwenden.
 4. Eigene Komponenten beibehalten und wiederverwenden, wenn sie Django-Logik, Wiederverwendung oder projektspezifisches Verhalten kapseln.
 5. Frontend ausschließlich mit Bootstrap-Klassen umsetzen. Keine neuen CSS-Dateien erstellen und keine bestehenden CSS-Dateien für eine Designänderung bearbeiten.
 6. Projektstruktur beibehalten.
+
+### Verbindliche Neuanlage bei jedem Figma-Prompt
+
+Bei jedem Prompt, der ein Figma-Design implementieren, übertragen oder nachbauen lässt, gilt ausnahmslos:
+
+1. Keine bestehende `.html`-Datei ändern. Sämtliche vorhandenen Templates und Partials sind für Figma-Aufgaben schreibgeschützt, auch wenn bereits eine fachlich oder visuell ähnliche Seite existiert.
+2. Immer eine neue, eindeutig benannte `.html`-Datei direkt unter `backend/editor/templates/editor/` anlegen.
+3. In `backend/editor/views.py` immer eine neue View-Funktion ergänzen, die ausschließlich das neue Template rendert. Bestehende View-Funktionen nicht verändern.
+4. In `backend/editor/urls.py` immer genau eine neue `path(...)`-Zeile mit einem neuen, eindeutigen URL-Namen für diese View ergänzen. Bestehende Routen nicht verändern.
+5. Vorhandene Template-Komponenten dürfen im neuen Template unverändert per `{% include %}` wiederverwendet werden. Ihre `.html`-Dateien dürfen dafür nicht angepasst werden.
+6. Benötigt das Design neue Fachlogik, Session-Daten, Persistenz oder Formularverarbeitung, diese nicht in die neue reine Render-View hineininterpretieren. Dafür zuerst einen ausdrücklichen Backend-Auftrag des Nutzers einholen.
+
+Diese Regel hat bei Figma-Prompts Vorrang vor allen allgemeinen Empfehlungen zur Wiederverwendung oder Erweiterung bestehender Templates.
 
 Fertige Komponenten und fertige Layouts sind geschützt. Ihr Styling, ihre Abstände, Größen, Farben, Typografie, Responsive-Regeln und visuelle DOM-Struktur dürfen nicht verändert werden. Sie werden bei neuen Seiten ausschließlich unverändert wiederverwendet.
 
@@ -211,7 +224,7 @@ Nicht verändern:
 - Responsive-Verhalten und Breakpoints
 - vorhandene CSS-Dateien oder CSS-Abhängigkeiten
 
-Bei einem neuen Figma-Request wird der fertige Bestand zuerst unverändert eingebunden. Die neue Seite oder der neue Bereich wird darum herum mit Bootstrap-Markup aufgebaut. Wenn Figma eine Abweichung zu einer fertigen Komponente zeigt, bleibt die bestehende Komponente unverändert; die Abweichung wird dokumentiert.
+Bei einem neuen Figma-Request wird immer ein neues Seitentemplate angelegt. Der fertige Bestand darf darin ausschließlich unverändert eingebunden werden. Die neue Seite wird mit Bootstrap-Markup aufgebaut. Wenn Figma eine Abweichung zu einer fertigen Komponente zeigt, bleibt die bestehende Komponente unverändert; die Abweichung wird dokumentiert.
 
 Eine bestehende Komponente oder ein bestehendes Layout darf nur geändert werden, wenn der Nutzer ausdrücklich genau diese Komponente oder dieses Layout zur Überarbeitung beauftragt.
 
@@ -238,22 +251,24 @@ Für neue Komponenten wird ausschließlich ein Django-Template angelegt und Boot
 
 ### Verbindliche Korrekturregel für Figma-MCP-Prompts
 
-Ein Figma-MCP-Prompt darf niemals dazu führen, dass bestehendes CSS angepasst oder neues CSS angelegt wird. Das gilt auch dann, wenn die Figma-Referenz dadurch nur näherungsweise umgesetzt werden kann. Bestehende fertige Templates, Komponenten, Layouts und ihre CSS-Abhängigkeiten bleiben unverändert und werden ausschließlich wiederverwendet.
+Ein Figma-MCP-Prompt darf niemals dazu führen, dass eine bestehende HTML- oder CSS-Datei angepasst oder neues CSS angelegt wird. Das gilt auch dann, wenn die Figma-Referenz dadurch nur näherungsweise umgesetzt werden kann. Bestehende Templates, Komponenten, Layouts und ihre CSS-Abhängigkeiten bleiben unverändert und werden ausschließlich wiederverwendet.
 
-Für die Umsetzung sind ausschließlich Bootstrap-Klassen in neuen oder ausdrücklich beauftragten Templates zu verwenden. View- und URL-Erweiterungen sowie fachlich notwendige JavaScript-Anpassungen sind erlaubt, solange bestehende Verträge erhalten bleiben. Wenn das Design ohne CSS-Datei oder Änderung an fertigem Bestand nicht sinnvoll abbildbar ist, muss die Abweichung benannt und vor einer solchen Änderung beim Nutzer nachgefragt werden.
+Für die Umsetzung sind ausschließlich Bootstrap-Klassen im neuen Template zu verwenden. Zu jedem Figma-Prompt müssen eine neue Render-View in `views.py` und genau eine neue Route in `urls.py` ergänzt werden. Bestehende Views, Routen, HTML-Dateien und Verträge bleiben unverändert. Wenn das Design ohne CSS-Datei oder Änderung an fertigem Bestand nicht sinnvoll abbildbar ist, muss die Abweichung benannt und vor einer solchen Änderung beim Nutzer nachgefragt werden.
 
 Bei jedem Figma-Request in dieser Reihenfolge arbeiten:
 
 1. Diese Datei lesen.
 2. `git status --short` prüfen und fremde/unrelated Änderungen schützen.
-3. Betroffene Django-Templates, vorhandene CSS-Dateien nur zur Orientierung, Includes und JavaScript-Hooks lokal analysieren.
+3. Bestehende Django-Templates, vorhandene CSS-Dateien, Includes und JavaScript-Hooks ausschließlich lesend zur Orientierung analysieren.
 4. Figma-Node per MCP laden und als Designreferenz auswerten.
 5. Figma-Elemente auf vorhandene Django-Komponenten und Bootstrap-Klassen mappen; fertige Komponenten unverändert übernehmen.
-6. Nur neue bzw. ausdrücklich beauftragte Templates und bei fachlichem Bedarf JavaScript-Dateien ändern. Keine fertigen Komponenten- oder Layout-Templates optisch anpassen. Keine CSS-Datei erstellen, ändern oder löschen.
-7. Backend-Verträge, Formulare, URL-Namen und Session-/JSON-Strukturen unverändert lassen.
-8. Änderung mit Django-Check und sinnvoller manueller/visueller Prüfung validieren.
+6. Ein neues Seitentemplate unter `backend/editor/templates/editor/` anlegen. Keine bestehende `.html`-Datei ändern.
+7. Eine neue, reine Render-Funktion in `views.py` ergänzen, ohne vorhandene View-Funktionen anzupassen.
+8. Genau eine neue `path(...)`-Zeile mit eindeutigem Namen in `urls.py` ergänzen, ohne vorhandene Routen anzupassen.
+9. Backend-Verträge, bestehende Formulare, bestehende URL-Namen und Session-/JSON-Strukturen unverändert lassen.
+10. Änderung mit Django-Check und sinnvoller manueller/visueller Prüfung validieren.
 
-Figma ist die visuelle Quelle, aber nicht automatisch die technische Struktur. Wenn ein Frame in Figma zum Beispiel wie ein neuer Screen aussieht, zuerst prüfen, ob im Projekt bereits ein entsprechendes Template existiert. Bestehende Templates erweitern statt Parallelstrukturen aufzubauen.
+Figma ist die visuelle Quelle, aber nicht automatisch die technische Struktur. Ein vorhandenes ähnliches Template darf als lesende Referenz dienen, darf jedoch niemals für den Figma-Prompt verändert werden. Jeder Figma-Prompt erzeugt bewusst eine neue Seite mit eigener Render-View und eigener Route.
 
 Wenn der Figma-Entwurf neue Daten, neue Backend-Abläufe oder neue Persistenz verlangt, nicht heimlich implementieren. Dann die Frontend-Abweichung benennen und beim Nutzer Rückfrage halten oder die fehlende Backend-Erweiterung als separaten Punkt dokumentieren.
 
@@ -286,8 +301,6 @@ Wenn Bootstrap einen Figma-Wert nicht exakt abbilden kann, die nächstliegende B
 Bei Design-/Frontend-Aufgaben nicht ändern:
 
 ```text
-backend/editor/views.py
-backend/editor/urls.py
 backend/editor/models.py
 backend/editor/utils.py
 backend/editor/sqlParser.py
@@ -297,7 +310,12 @@ backend/editor/migrations/**
 backend/config/**
 ```
 
-Ausnahme: Der Nutzer beauftragt ausdrücklich eine Backend-Änderung. Dann trotzdem zuerst die bestehende Daten- und Sessionstruktur analysieren.
+`backend/editor/views.py` und `backend/editor/urls.py` sind ebenfalls geschützt. Bei einem Figma-Prompt ist ausschließlich folgende additive Änderung erlaubt und vorgeschrieben:
+
+- in `views.py` eine neue reine Render-Funktion ergänzen,
+- in `urls.py` genau eine neue `path(...)`-Zeile ergänzen.
+
+Vorhandene Funktionen, Imports, Routen und deren Verhalten nicht ändern. Weitere Backend-Änderungen benötigen einen ausdrücklichen Auftrag des Nutzers.
 
 Nicht beiläufig verändern:
 
@@ -589,13 +607,16 @@ rg "additional_css|include|static 'editor/|<script|name=|id=" backend/editor/tem
 
 Dann:
 
-1. Betroffenes Template und alle Includes lesen.
+1. Ähnliche bestehende Templates und passende Includes ausschließlich lesend analysieren.
 2. Vorhandene CSS-Dateien bei Bedarf nur lesen; sie dürfen nicht geändert werden.
 3. JavaScript-Hooks identifizieren.
 4. Figma-Node laden und Zielbild erfassen.
 5. Mapping notieren: Figma-Element -> vorhandenes Template/Komponente/Bootstrap.
-6. Kleine, zusammenhängende Änderung umsetzen.
-7. Keine fremden Dateien oder unbezogene Änderungen anfassen.
+6. Ein neues Seitentemplate anlegen.
+7. Eine neue Render-View ergänzen.
+8. Genau eine neue URL-Route ergänzen.
+9. Prüfen, dass keine bestehende `.html`-Datei verändert wurde.
+10. Keine fremden Dateien oder unbezogene Änderungen anfassen.
 
 Nach der Änderung:
 
@@ -622,6 +643,10 @@ Wenn visuelle Änderungen aus Figma umgesetzt wurden, relevante Ansichten mindes
 Eine Figma-Umsetzung ist fertig, wenn:
 
 - das betroffene Figma-Zielbild erkennbar umgesetzt ist,
+- ein neues Seitentemplate angelegt wurde,
+- keine bereits vorhandene `.html`-Datei verändert wurde,
+- eine neue reine Render-Funktion in `views.py` ergänzt wurde,
+- genau eine neue, eindeutig benannte `path(...)`-Zeile in `urls.py` ergänzt wurde,
 - vorhandene Django-Struktur und Komponenten weiterverwendet wurden,
 - fertige Komponenten und Layouts unverändert wiederverwendet wurden,
 - Bootstrap Layout, Spacing, Typografie, Formulare, Komponenten und Responsive-Verhalten trägt,
