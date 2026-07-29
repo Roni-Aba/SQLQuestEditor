@@ -1532,6 +1532,10 @@ def create_level61_view(request):
         "saved_level": saved_level,
         "form_values": form_values,
         "type_options": type_options,
+        "is_item_edit": request.session.get(
+            "item_edit_mode",
+            False,
+        ),
     })
 
 
@@ -1555,7 +1559,10 @@ def create_level6exit_view(request):
         request.session.modified = True
         print("createLevel6exit gespeichert:")
         print(json.dumps(saved_level, ensure_ascii=False, indent=2))
-        return redirect("create_level7")
+        return redirect_after_item_section_edit(
+            request,
+            "create_level7",
+        )
     return render(request, "editor/createLevel6exit.html", {
         "steps": steps,
         "saved_level": saved_level,
