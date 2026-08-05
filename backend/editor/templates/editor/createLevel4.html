@@ -13,7 +13,7 @@ Gegenstandstyp | SQL Spell Quest Editor
 {% block content %}
 <main class="create-page">
   <div class="create-page__content">
-    <section class="create-page__status" aria-label="Fortschritt der Levelerstellung">
+    <section class="create-page__status{% if not request.session.guided_level_creation %} d-none{% endif %}" aria-label="Fortschritt der Levelerstellung">
       {% include "editor/components/statusBar/statusBar.html" with steps=steps %}
     </section>
 
