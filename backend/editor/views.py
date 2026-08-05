@@ -561,22 +561,42 @@ def create_level(
     request,
 ):
     set_guided_level_creation(request, True)
-    clear_level_edit_session(
-        request
-    )
+    for session_key in [
+        "editing_level_id",
+        "editing_item_id",
+        "item_edit_mode",
+        "editing_item_section",
+    ]:
+        request.session.pop(
+            session_key,
+            None,
+        )
+
     request.session.pop(
         "item_creation_return_to",
         None,
     )
 
-    request.session["new_level"] = {
-        "id": "",
-        "levelPicture": "",
-        "databaseName": "",
-        "startDialog": "",
-        "queryRestriction": {},
-        "items": [],
-    }
+    saved_level = request.session.get(
+        "new_level",
+    )
+
+    if not isinstance(
+        saved_level,
+        dict,
+    ):
+        request.session["new_level"] = {
+            "id": "",
+            "levelPicture": "",
+            "databaseName": "",
+            "startDialog": "",
+            "queryRestriction": {},
+            "items": [],
+        }
+
+    request.session[
+        "reset_item_draft_on_create_level3"
+    ] = True
 
     request.session.modified = True
 
@@ -816,6 +836,10 @@ def create_level3_view(
             "return_to",
             "",
         )
+        reset_item_draft = request.session.pop(
+            "reset_item_draft_on_create_level3",
+            False,
+        )
         if return_to == "items":
             request.session[
                 "item_creation_return_to"
@@ -859,6 +883,34 @@ def create_level3_view(
 
         elif return_to == "summary":
             request.session["item_creation_return_to"] = "summary"
+            request.session.modified = True
+
+        elif (
+                reset_item_draft
+                and not request.session.get(
+                    "item_edit_mode",
+                    False,
+                )
+        ):
+            saved_level.pop(
+                "item",
+                None,
+            )
+
+            saved_level.pop(
+                "unlockCondition",
+                None,
+            )
+
+            saved_level.pop(
+                "position",
+                None,
+            )
+
+            request.session[
+                "new_level"
+            ] = saved_level
+
             request.session.modified = True
 
         elif (
