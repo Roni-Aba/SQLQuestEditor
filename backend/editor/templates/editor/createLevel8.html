@@ -16,7 +16,7 @@ Gegenstand fertig | SQL Spell Quest Editor
     <div class="create-page__content">
 
         <section
-            class="create-page__status"
+            class="create-page__status{% if not request.session.guided_level_creation %} d-none{% endif %}"
             aria-label="Fortschritt der Levelerstellung"
         >
             {% include "editor/components/statusBar/statusBar.html" with steps=steps %}
