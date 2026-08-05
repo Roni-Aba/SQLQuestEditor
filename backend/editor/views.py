@@ -1357,10 +1357,6 @@ def create_level51_view(request):
         level_picture_path = (
             f"editor/img/levels/{level_picture}"
         )
-    else:
-        level_picture_path = (
-            "editor/img/magie1.png"
-        )
 
     form_values = {
         "level_picture_path": level_picture_path,

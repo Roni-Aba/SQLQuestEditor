@@ -1,6 +1,6 @@
 # Codex-Arbeitskontext für SQL Spell Quest Editor
 
-Stand: 2026-07-26, nach lokaler Projektanalyse.
+Stand: 2026-07-27, nach vollständiger Analyse aller Django-Templates, Komponenten, Partials und Frontend-Hooks.
 
 Diese Datei ist der verbindliche Projektkontext für Codex in diesem Repository. Bei jedem neuen Figma-MCP-Request zuerst diese Datei lesen, danach den betroffenen Projektbereich und erst dann das Figma-Design auswerten.
 
@@ -24,13 +24,38 @@ Prioritäten:
 Bei jedem Prompt, der ein Figma-Design implementieren, übertragen oder nachbauen lässt, gilt ausnahmslos:
 
 1. Keine bestehende `.html`-Datei ändern. Sämtliche vorhandenen Templates und Partials sind für Figma-Aufgaben schreibgeschützt, auch wenn bereits eine fachlich oder visuell ähnliche Seite existiert.
-2. Immer eine neue, eindeutig benannte `.html`-Datei direkt unter `backend/editor/templates/editor/` anlegen.
-3. In `backend/editor/views.py` immer eine neue View-Funktion ergänzen, die ausschließlich das neue Template rendert. Bestehende View-Funktionen nicht verändern.
+2. Immer eine neue, eindeutig benannte `.html`-Datei direkt unter `backend/editor/templates/editor/` anlegen. Auch bei einem späteren Prompt zum selben Figma-Node eine weitere neue Seite erzeugen, statt die zuvor erzeugte Seite zu ändern.
+3. In `backend/editor/views.py` immer eine neue View-Funktion ergänzen, die ausschließlich das neue Template rendert. Darstellungsdaten dürfen als neuer lokaler Kontext übergeben werden; die View darf keine Session-, Upload-, Persistenz- oder POST-Logik erhalten. Bestehende View-Funktionen nicht verändern.
 4. In `backend/editor/urls.py` immer genau eine neue `path(...)`-Zeile mit einem neuen, eindeutigen URL-Namen für diese View ergänzen. Bestehende Routen nicht verändern.
 5. Vorhandene Template-Komponenten dürfen im neuen Template unverändert per `{% include %}` wiederverwendet werden. Ihre `.html`-Dateien dürfen dafür nicht angepasst werden.
 6. Benötigt das Design neue Fachlogik, Session-Daten, Persistenz oder Formularverarbeitung, diese nicht in die neue reine Render-View hineininterpretieren. Dafür zuerst einen ausdrücklichen Backend-Auftrag des Nutzers einholen.
 
 Diese Regel hat bei Figma-Prompts Vorrang vor allen allgemeinen Empfehlungen zur Wiederverwendung oder Erweiterung bestehender Templates.
+
+Neue Figma-Seiten nachvollziehbar und kollisionsfrei benennen. Den semantischen Seitennamen und die Figma-Node-ID verwenden:
+
+```text
+Template: figma_<seitenname>_<node-a>_<node-b>.html
+View:     figma_<seitenname>_<node-a>_<node-b>_view
+Route:    figma/<seitenname>-<node-a>-<node-b>/
+URL-Name: figma_<seitenname>_<node-a>_<node-b>
+```
+
+Beispiel für Node `78:725`:
+
+```python
+def figma_levelgrunddaten_78_725_view(request):
+    return render(
+        request,
+        "editor/figma_levelgrunddaten_78_725.html",
+    )
+```
+
+Die zugehörige Route muss als genau eine neue Zeile ergänzt werden:
+
+```python
+path("figma/levelgrunddaten-78-725/", views.figma_levelgrunddaten_78_725_view, name="figma_levelgrunddaten_78_725"),
+```
 
 Fertige Komponenten und fertige Layouts sind geschützt. Ihr Styling, ihre Abstände, Größen, Farben, Typografie, Responsive-Regeln und visuelle DOM-Struktur dürfen nicht verändert werden. Sie werden bei neuen Seiten ausschließlich unverändert wiederverwendet.
 
@@ -92,11 +117,14 @@ Hinweis: Es sind derzeit keine aussagekräftigen Tests vorhanden. `manage.py tes
 
 Aktueller Stand:
 
-- 41 HTML-Templates unter `backend/editor/templates/editor/`
+- 40 HTML-Templates mit insgesamt 5.776 Zeilen unter `backend/editor/templates/editor/`
+- 28 Root-Templates direkt unter `templates/editor/`, einschließlich `base.html`
+- 8 Komponenten unter `templates/editor/components/`
+- 4 Partials unter `templates/editor/partials/`
 - 15 CSS-Dateien unter `backend/editor/static/editor/`; diese sind Legacy-Bestand und werden nicht weiter ausgebaut
-- 661 Zeilen vorhandenes CSS
+- 604 Zeilen vorhandenes CSS
 - 1 externe JS-Datei unter `backend/editor/static/editor/components/tableEditor/tableEditor.js`
-- zusätzliche Inline-Skripte in mehreren Templates
+- 6 Templates mit ausführbarem Inline-JavaScript
 - 9 Cosmo-Bilder unter `backend/editor/static/editor/img/cat1.png` bis `cat9.png`
 
 Globale Basis:
@@ -114,10 +142,11 @@ editor/css/tokens.css
 editor/css/base.css
 editor/css/layout.css
 editor/css/forms.css
-editor/components/navbar/navbar.css
 ```
 
-`{% block additional_css %}` bleibt aus Kompatibilitätsgründen bestehen, darf für neue Seiten aber nicht zum Einbinden neuer oder geänderter CSS-Dateien verwendet werden.
+`base.html` inkludiert `components/navbar/navbar.html` automatisch. Die vorhandene Datei `components/navbar/navbar.css` wird von `base.html` nicht geladen; ihre `.navbar-custom`-Selektoren werden im aktuellen Navbar-Markup nicht verwendet.
+
+`{% block additional_css %}` bleibt aus Kompatibilitätsgründen bestehen. In neuen Seiten darf er nur unveränderte, bereits vorhandene Komponenten-CSS für tatsächlich inkludierte Bestandskomponenten laden; nie neue, geänderte oder seitenspezifische CSS-Dateien.
 
 ## 4. Template-Inventar
 
@@ -212,6 +241,7 @@ Die folgenden Bereiche gelten als fertiger Bestand und dürfen bei einer neuen F
 - `components/dropdown/dropdown.html`
 - `components/helper/helper.html`
 - `components/statusBar/statusBar.html`
+- `components/tableEditor/tableEditor.html`
 - `components/tableItem/tableitem.html`
 - `components/tag/tag.html`
 - bereits umgesetzte Seitenlayouts und deren Bootstrap-Klassen
@@ -228,16 +258,40 @@ Bei einem neuen Figma-Request wird immer ein neues Seitentemplate angelegt. Der 
 
 Eine bestehende Komponente oder ein bestehendes Layout darf nur geändert werden, wenn der Nutzer ausdrücklich genau diese Komponente oder dieses Layout zur Überarbeitung beauftragt.
 
-Bestehende Komponenten:
+### Verbindliche Komponentenverträge
 
-- `button`: einheitlicher Editor-Button als `<a>` oder `<button>`, mit Bootstrap-Button-Basis und optionalem Bootstrap Icon.
-- `dropdown`: eigenes Select-Markup mit Label, Fehlertext und vorhandener CSS-Abhängigkeit. Bei Designanpassungen Bootstrap `form-select` verwenden, aber `id`, `name`, `required`, Optionen und selected state erhalten. Keine neue CSS-Datei ergänzen.
-- `helper`: Cosmo-Hilfebereich mit Bild und Text. Bestehende `helper_image`- und `helper_text`-Parameter erhalten.
-- `navbar`: Bootstrap-Navbar. URL-Namen und Navigation nicht beiläufig ändern.
-- `statusBar`: Schrittanzeige für den Level-Assistenten. `steps`-Kontext und `step.active`/`step.number` erhalten.
-- `tag`: Tag-/Chip-Komponente für Gegenstände und Aktionen. Confirm-Logik und Links erhalten.
-- `tableItem`: Listenelement für Level mit Edit-/Delete-Aktionen.
-- `tableEditor`: Template/CSS/JS-Komponente ist vorhanden, wird aktuell aber nicht sichtbar von Root-Templates inkludiert. `createLevel6table.html` nutzt derzeit eine eigene Inline-Tabellenlogik. Vor Wiederverwendung erst tatsächliche Hooks und Verhalten prüfen; vorhandenes CSS nicht erweitern.
+| Komponente | Parameter und Verhalten | Vorhandene Abhängigkeit |
+|---|---|---|
+| `button/button.html` | `title`; optional `href`, `icon`, `type`, `name`, `value`, `disabled`. Mit `href` entsteht ein `<a>`, sonst ein `<button>`. Nicht in ein weiteres `<a>` einwickeln; für Navigation `href` direkt übergeben. | `button/button.css` |
+| `dropdown/dropdown.html` | `id` und `name`; optional `label`, `placeholder`, `options` mit `value`/`label`, `selected_value`, `required`, `error`. | `dropdown/dropdown.css` |
+| `helper/helper.html` | `helper_image` und `helper_text`; optional `aria_label`, `image_alt`. Lädt das Bild selbst über `{% static %}`. | `helper/helper.css` und globale `.cosmo-image`-Regeln |
+| `navbar/navbar.html` | Keine Parameter. Enthält feste Links auf `auswahl_view`, `level`, `start` und `kontakt` und wird von `base.html` automatisch inkludiert. | aktuelles Markup nutzt Bootstrap; `navbar.css` wird nicht geladen |
+| `statusBar/statusBar.html` | `steps`: Liste aus Objekten mit `number` und `active`. `get_steps()` markiert aktuell alle abgeschlossenen und den aktuellen Schritt als `active`. | `statusBar/statusBar.css` |
+| `tableEditor/tableEditor.html` | `form_values.table_name`, `form_values.columns`, `data_type_options`; Felder `column_ids[]` und `column_types[]`. | `tableEditor.css` und explizit zu ladendes `tableEditor.js` |
+| `tableItem/tableitem.html` | `title`; optional `edit_url`, `delete_url`. Löschen ist ein POST-Formular mit CSRF und Confirm-Dialog. | aktuelles Markup ist Bootstrap-basiert; die Klassen aus `tableItem.css` kommen darin nicht vor |
+| `tag/tag.html` | `title`; beabsichtigte Optionen `show_remove`, `show_edit`, `edit_url`, `delete_url`. Löschen ist ein POST-Formular mit CSRF und Confirm-Dialog. | `tag/tag.css` |
+
+Zusätzliche Regeln:
+
+- Der teilweise übergebene Parameter `show_list` wird von `tag.html` nicht ausgewertet.
+- Wegen `show_remove|default:True` und `show_edit|default:True` werden explizite `False`-Werte derzeit wieder zu `True`. Die Komponente kann die beiden Aktionen daher nicht zuverlässig ausblenden. In neuen Seiten nicht für einen Nur-Anzeige-Tag verwenden und die geschützte Komponente nicht reparieren.
+- `tableEditor.html` wird aktuell von keinem Seitentemplate inkludiert und `tableEditor.js` wird nirgends geladen. `createLevel6table.html` ist ein separater Editor mit eigener Inline-Logik. Diese beiden Implementierungen nicht vermischen.
+- Eine Komponente höchstens einmal pro Seite einbinden, wenn sie feste IDs oder globale DOM-Abfragen besitzt. Das betrifft insbesondere `tableEditor`.
+- Beim unveränderten Wiederverwenden einer Komponente darf ihre bereits vorhandene CSS-Datei im `additional_css`-Block der neuen Seite verlinkt werden. Dies ist die einzige zulässige neue CSS-Abhängigkeit. Die CSS-Datei selbst bleibt unverändert.
+- Wenn eine vorhandene Komponente das Figma-Ziel nicht passend ausdrückt, im neuen Seitentemplate direkt Bootstrap-Markup verwenden. Die bestehende Komponente nicht anpassen.
+
+### Verbindliche Partial-Verträge
+
+Partials sind ebenfalls bestehende HTML-Dateien und bei Figma-Aufgaben schreibgeschützt:
+
+| Partial | Verwendet von | Vertrag |
+|---|---|---|
+| `partials/levelGrunddatenForm.html` | `createLevel1.html`, `levelGrunddaten.html` | Enthält ein vollständiges Multipart-POST-Formular und Inline-JS. Erwartet `form_action`, `back_url`, `helper_text`, `submit_label`, `submit_icon`, `submit_button_id`, `require_picture`, `form_values`. Felder: `level_name`, `levelPicture`, `level_greeting`. |
+| `partials/sqlGrunddatenForm.html` | `createLevel2.html`, `sqlGrunddaten.html` | Enthält ein vollständiges POST-Formular. Erwartet `form_action`, `back_url`, `helper_text`, `submit_label`, `submit_icon`, `navigation_label`, `form_values`. Felder: `max_columns`, `max_rows` und drei Überschreitungsnachrichten. |
+| `partials/messagesForm.html` | `createLevel2-1.html`, `messagesGrunddaten.html` | Ist nur eine Formularsektion und muss innerhalb eines POST-Formulars stehen. Erwartet `form_values`; optional `messages_column_class`. Enthält zehn Nachrichtenfelder. |
+| `partials/itemSummary.html` | `createLevel7.html`, `editItem.html` | Erwartet `summary`; optional `page_title`, `item_id`. Mit `item_id` verlinkt es auf `edit_item_section`, sonst auf die geführten Create-Routen. |
+
+Ein Partial, das bereits ein `<form>` enthält, niemals in ein weiteres Formular verschachteln. Partials nur inkludieren, wenn der neue View-Kontext ihren Vertrag vollständig erfüllt; sonst neues Bootstrap-Markup ausschließlich im neuen Seitentemplate schreiben.
 
 Neue Komponenten nur anlegen, wenn sie wiederverwendbar sind oder eine klare Django-Template-Logik kapseln. Struktur dann analog halten:
 
@@ -271,6 +325,17 @@ Bei jedem Figma-Request in dieser Reihenfolge arbeiten:
 Figma ist die visuelle Quelle, aber nicht automatisch die technische Struktur. Ein vorhandenes ähnliches Template darf als lesende Referenz dienen, darf jedoch niemals für den Figma-Prompt verändert werden. Jeder Figma-Prompt erzeugt bewusst eine neue Seite mit eigener Render-View und eigener Route.
 
 Wenn der Figma-Entwurf neue Daten, neue Backend-Abläufe oder neue Persistenz verlangt, nicht heimlich implementieren. Dann die Frontend-Abweichung benennen und beim Nutzer Rückfrage halten oder die fehlende Backend-Erweiterung als separaten Punkt dokumentieren.
+
+### Mindeststruktur einer neuen Figma-Seite
+
+- Immer `{% extends "editor/base.html" %}` verwenden; Navbar, Bootstrap und globale Styles nicht erneut einbauen.
+- `{% load static %}` nur verwenden, wenn die Seite statische Assets oder vorhandene Komponenten-CSS lädt.
+- `title`- und `content`-Block setzen.
+- `additional_css` nur für die unveränderten CSS-Dateien tatsächlich inkludierter Bestandskomponenten verwenden.
+- Semantische Elemente, eindeutige Überschriftenhierarchie, Labels, `aria-*` und sinnvolle Button-Typen verwenden.
+- Keine Form-Action auf eine bestehende Fach-View erfinden. Ohne ausdrücklich beauftragte Backend-Logik nur darstellende oder lokale UI-Interaktion im neuen Template implementieren.
+- Für nötiges JavaScript nur das neue Template oder eine ausdrücklich neu angelegte JS-Datei verwenden; bestehende JS-Dateien nicht ändern.
+- Figma-Bilder und -Icons als exakte exportierte Assets dauerhaft unter `backend/editor/static/editor/img/figma/` speichern. Temporäre MCP-URLs nicht committen und keine Ersatzgrafiken selbst zeichnen.
 
 ## 7. Design-Übertragung aus Figma
 
@@ -336,6 +401,7 @@ Diese URL-Namen sind Django-Verträge und dürfen in Templates nicht ohne Backen
 
 ```text
 start
+kontakt
 level
 upload_json
 component_test
@@ -464,51 +530,17 @@ Externe JS-Datei:
 backend/editor/static/editor/components/tableEditor/tableEditor.js
 ```
 
-Wichtige Hooks:
+### Konkrete JavaScript-Verträge
 
-```text
-level-picture-input
-level-picture-feedback
-continue-button
-item-select
-selected-tags
-selected-tags-empty
-unlocked-items-input
-hint-rows
-add-hint-row
-image-area
-level-background-image
-selection-box
-start-image-selection
-start-icon-selection
-image-x
-image-y
-image-width
-image-height
-icon-x
-icon-y
-icon-width
-icon-height
-hint-type
-hint-text-area
-hint-image-area
-hint-image
-hint-image-name
-table-item-form
-rows-json
-columns-container
-add-column-button
-add-row-button
-empty-table-message
-table-wrapper
-data-table-head
-data-table-body
-column-rows
-add-column-row
-data-type-options
-```
+- `levelGrunddatenForm.html`: `level-picture-input`, `level-picture-feedback` und die variable `submit_button_id`. Der Upload aktiviert bei `require_picture=True` erst den Submit-Button.
+- `createLevel3.html`: `item-select`, `selected-tags`, `selected-tags-empty`, `unlocked-items-input`. Der Hidden Input enthält ein JSON-Array; dynamische Tags verwenden die Klassen aus `tag.css`.
+- `createLevel4-2.html`: `hint-rows`, `add-hint-row`, `.hint-row`, `.remove-hint-row`; dynamische Felder müssen weiterhin `hint_attempts[]` und `hint_texts[]` heißen.
+- `createLevel51.html`: Formular-Action `create_level51`, `image-area`, `level-background-image`, `selection-box`, `start-image-selection`, `start-icon-selection`, `continue-button` sowie alle `image-*`- und `icon-*`-Koordinatenfelder. Die Logik rechnet von der angezeigten Bildgröße in natürliche Bildkoordinaten um, mutiert Inline-Styles der Selection-Box und unterstützt aktuell Mausereignisse.
+- `createLevel6hint.html`: `hint-type`, `hint-text-area`, `hint-image-area`, `hint-text`, `hint-image`, `hint-image-name`. Zulässige Steuerwerte sind `text`, `image` und `text_image`; daraus werden Sichtbarkeit und `required` dynamisch abgeleitet.
+- `createLevel6table.html`: `table-item-form`, `rows-json`, `columns-container`, `add-column-button`, `add-row-button`, `empty-table-message`, `table-wrapper`, `data-table-head`, `data-table-body`. Zusätzlich sind die von `json_script` erzeugten IDs `saved-table-columns`, `saved-table-rows` und `table-type-options` verbindlich. Spaltenfelder heißen `column_ids[]` und `column_types[]`; beim Submit wird `rows_json` serialisiert.
+- `tableEditor.js`: `column-rows`, `add-column-row`, `data-type-options`, `.table-editor__row` und `.table-editor__remove-button`. Dieses Script gehört nur zur derzeit ungenutzten `tableEditor.html`-Komponente.
 
-IDs, Klassen und DOM-Struktur, die von JS verwendet werden, nur ändern, wenn alle betroffenen Skripte im selben Schritt angepasst und getestet werden.
+IDs, Array-Feldnamen, `data-*`-Attribute, JSON-Script-IDs, steuernde Select-Werte und die von JavaScript erwartete DOM-Hierarchie sind funktionale Verträge. In Figma-Aufgaben werden diese bestehenden Dateien ohnehin nicht verändert. Bei ausdrücklich beauftragten Nicht-Figma-Änderungen alle betroffenen Skripte und Serververträge gemeinsam prüfen.
 
 ## 12. Bootstrap-only-Frontend
 
@@ -521,11 +553,13 @@ Strikte Verbote bei jeder Figma-/Frontend-Aufgabe:
 - Keine `<style>`-Blöcke und keine `style="..."`-Attribute in Templates schreiben.
 - Keine CSS-Variablen in `tokens.css` oder einer anderen Datei ergänzen oder ändern.
 - Keine eigenen Utility-Klassen wie `.contact-page`, `.flex-center` oder `.mt-20` anlegen.
-- Keine CSS-Abhängigkeit über `{% block additional_css %}` für neue Seiten einführen.
+- Über `{% block additional_css %}` ausschließlich bereits vorhandene Komponenten-CSS laden, wenn die zugehörige Komponente im neuen Template unverändert inkludiert wird. Keine Seiten-CSS oder unbenutzte Abhängigkeit ergänzen.
 - Keine Bootstrap-Klassen in fertigen Komponenten oder Layouts ändern, nur um ein neues Figma-Mockup anzupassen.
 - Keine fertigen Komponenten oder Layouts aus optischen Gründen duplizieren, umbauen oder überschreiben.
 
 Wenn eine Figma-Ansicht bereits durch vorhandenes projektspezifisches CSS oder eine fertige Komponente funktioniert, dieses Styling nur unangetastet wiederverwenden. Neue Anpassungen erfolgen ausschließlich in neuem HTML-Markup durch Bootstrap-Klassen.
+
+Einige geschützte Legacy-Templates besitzen bereits `style="..."`-Attribute (`sqlGrunddatenForm`, `createLevel4-1`, `createLevel6exit`, `createLevel6hint`, `createLevel8`). Das ist Bestand und keine Vorlage für neue Seiten.
 
 Direkt mit Bootstrap lösen:
 
@@ -559,10 +593,9 @@ Aktuelle Basis:
 --color-text: #212529
 --color-text-muted: #68717a
 --color-border: #d9d9d9
---navbar-background: #8540f5
---navbar-text-color: #f8f9fa
+--color-background: #ffffff
 --content-max-width: 980px
---navbar-height: 44px
+--navbar-height: 56px
 ```
 
 Bootstrap-Variablen werden dort bereits angepasst:
@@ -584,11 +617,56 @@ Wenn Figma neue Farben oder Abstände vorgibt, auf die vorhandenen Bootstrap-Uti
 
 ## 14. Seitenspezifische Hinweise
 
-`createLevel51.html` und die dazugehörige vorhandene CSS-Datei sind besonders sensibel. Diese Seite enthält die Bounding-Box-Auswahl für Bild- und Iconbereiche. `image-area`, `selection-box`, Positionsinputs und Maus-/Touchlogik nicht verändern, sofern die Aufgabe nicht ausdrücklich fachlich darauf zielt. Neue CSS-Regeln sind verboten.
+### Tatsächlicher Seiten- und Assistentenfluss
+
+```text
+start.html
+  -> JSON-Upload
+
+createLevel.html
+  -> createLevel1.html
+  -> createLevel2.html
+  -> createLevel2-1.html
+  -> createLevel3.html
+  -> createLevel4.html
+     -> ohne Passwort: createLevel5.html
+     -> mit Passwort: createLevel4-1.html
+        -> ohne Fehlversuchhinweise: createLevel5.html
+        -> mit Fehlversuchhinweisen: createLevel4-2.html
+  -> createLevel5.html
+  -> createLevel51.html
+  -> createLevel6.html
+  -> createLevel61.html
+     -> createLevel6table.html | createLevel6hint.html | createLevel6exit.html
+  -> createLevel7.html
+  -> createLevel8.html
+```
+
+Verwaltungsseiten:
+
+```text
+auswahl.html
+level.html
+levelGrunddaten.html
+sqlGrunddaten.html
+messagesGrunddaten.html
+gegenstandVerwaltung.html
+editItem.html
+contact.html
+test.html
+```
+
+Die übrigen 27 Root-Templates erweitern `base.html`. Komponenten und Partials erweitern `base.html` nicht selbst.
+
+`createLevel51.html` und die dazugehörige vorhandene CSS-Datei sind besonders sensibel. Diese Seite enthält die Bounding-Box-Auswahl für Bild- und Iconbereiche. `image-area`, `selection-box`, Positionsinputs und Mauslogik nicht verändern, sofern die Aufgabe nicht ausdrücklich fachlich darauf zielt. Die aktuelle Auswahl unterstützt `mousedown`, `mousemove` und `mouseup`, aber keine Touch- oder Pointer-Events. Neue CSS-Regeln sind verboten.
 
 `createLevel6table.html` enthält eine umfangreiche Inline-Tabellenlogik mit dynamischen Spalten, Zeilen, JSON-Skripten und Hidden Input `rows_json`. Hier sind DOM-Hooks wichtiger als optische Klassen.
 
+`components/tableEditor/tableEditor.html` ist nicht die Implementierung von `createLevel6table.html`. Die Komponente ist derzeit ungenutzt; ihr externes Script wird von keiner Seite geladen.
+
 `partials/levelGrunddatenForm.html`, `partials/sqlGrunddatenForm.html` und `partials/messagesForm.html` werden mehrfach verwendet. Änderungen daran wirken auf geführte Erstellung und Bearbeitungsseiten.
+
+`partials/itemSummary.html` wird sowohl in `createLevel7.html` als auch in `editItem.html` verwendet und wechselt seine Ziele abhängig von `item_id`.
 
 `auswahl.html`, `level.html`, `gegenstandVerwaltung.html` und `editItem.html` sind Navigations- und Verwaltungsseiten. Links, Formulare und Delete/Save-Flows erhalten.
 
@@ -600,7 +678,7 @@ Vor der Änderung:
 
 ```bash
 git status --short
-rg --files backend/editor/templates/editor
+rg --files backend/editor/templates/editor -g '*.html'
 rg --files backend/editor/static/editor
 rg "additional_css|include|static 'editor/|<script|name=|id=" backend/editor/templates/editor -n
 ```
@@ -616,7 +694,8 @@ Dann:
 7. Eine neue Render-View ergänzen.
 8. Genau eine neue URL-Route ergänzen.
 9. Prüfen, dass keine bestehende `.html`-Datei verändert wurde.
-10. Keine fremden Dateien oder unbezogene Änderungen anfassen.
+10. Prüfen, dass keine CSS-Datei verändert oder angelegt wurde.
+11. Keine fremden Dateien oder unbezogene Änderungen anfassen.
 
 Nach der Änderung:
 
@@ -629,12 +708,29 @@ cd backend
 python manage.py check
 ```
 
-Bei größeren Template-/Python-Änderungen zusätzlich:
+Alle Templates syntaktisch laden:
+
+```bash
+cd backend
+python manage.py shell -c "from pathlib import Path; from django.template.loader import get_template; root = Path('editor/templates'); [get_template(str(path.relative_to(root))) for path in root.rglob('*.html')]; print('Templates: OK')"
+```
+
+Tests:
 
 ```bash
 cd backend
 python manage.py test
 ```
+
+Bei Figma-Aufgaben zusätzlich im Diff prüfen:
+
+- Unter den bereits vorhandenen `.html`-Dateien gibt es keine Änderung.
+- Genau ein neues Seitentemplate wurde angelegt.
+- `views.py` enthält nur die neue additive Render-Funktion.
+- `urls.py` enthält nur eine neue einzeilige `path(...)`-Definition.
+- Keine `.css`-Datei ist neu, geändert, gelöscht oder umbenannt.
+- Das neue Template enthält weder `<style>` noch `style="..."`.
+- Der neue URL-Name lässt sich mit Django `reverse()` auflösen.
 
 Wenn visuelle Änderungen aus Figma umgesetzt wurden, relevante Ansichten mindestens in Desktop- und Mobilbreite prüfen. Wenn ein Devserver nötig ist, lokal über `python manage.py runserver` starten.
 
