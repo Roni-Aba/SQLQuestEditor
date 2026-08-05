@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}
-Gegenstandstyp | SQL Spell Quest Editor
+Freischaltbedingungen | SQL Spell Quest Editor
 {% endblock %}
 
 {% block additional_css %}
@@ -33,92 +33,96 @@ Gegenstandstyp | SQL Spell Quest Editor
         <div class="row create-page__row align-items-start g-4 g-lg-5">
 
           <div class="col-12 col-md-4">
-            {% include "editor/components/helper/helper.html" with helper_image="editor/img/cat9.png" helper_text="Nun überlegen wir uns noch, welchen Typ unser Gegenstand haben soll." %}
+            {% include "editor/components/helper/helper.html" with helper_image="editor/img/cat4.png" helper_text="Du darfst jetzt entscheiden, ob wir es dem Spieler einfach oder schwer machen." %}
           </div>
 
           <section
             class="col-12 col-md-8"
-            aria-labelledby="item-type-title"
+            aria-labelledby="unlock-title"
           >
             <h1
-              id="item-type-title"
+              id="unlock-title"
               class="h3 fw-semibold mb-4"
             >
-              Zusammenfassung und Typauswahl
+              Freischaltbedingungen
             </h1>
 
             <div class="d-flex flex-column gap-5">
 
               <div>
-                <p class="form-label fw-semibold mb-3">
+                <label class="form-label fw-semibold">
                   Folgende Gegenstände müssen freigeschaltet sein
-                </p>
+                </label>
 
                 <div class="d-flex flex-wrap gap-3">
+
                   {% for item in form_values.required_items %}
                     {% include "editor/components/tag/tag.html" with title=item show_remove=False %}
                   {% empty %}
-                    <p class="text-body-secondary mb-0">
+                    <p class="text-muted mb-0">
                       Noch keine Gegenstände ausgewählt.
                     </p>
                   {% endfor %}
+
                 </div>
               </div>
 
               <div>
-                <p class="form-label fw-semibold mb-3">
-                  Brauchen wir ein Passwort, um diesen Gegenstand
-                  freizuschalten?
-                </p>
 
-                {% if form_values.requires_password %}
-                  <span class="badge rounded-pill text-bg-success fs-6 px-4 py-2">
-                    <i class="bi bi-check-lg me-2" aria-hidden="true"></i>
+                <label class="form-label fw-semibold">
+                  Brauchen wir ein Passwort, um diesen Gegenstand freizuschalten?
+                </label>
+
+                <div
+                  class="btn-group"
+                  role="radiogroup"
+                  aria-label="Passwort erforderlich"
+                >
+
+                  <input
+                    type="radio"
+                    class="btn-check"
+                    name="requires_password"
+                    id="requires-password-yes"
+                    value="true"
+                    autocomplete="off"
+                    {% if form_values.requires_password == "true" %}
+                      checked
+                    {% endif %}
+                  >
+
+                  <label
+                    class="btn btn-outline-primary"
+                    for="requires-password-yes"
+                  >
                     Ja
-                  </span>
-                {% else %}
-                  <span class="badge rounded-pill text-bg-secondary fs-6 px-4 py-2">
-                    <i class="bi bi-check-lg me-2" aria-hidden="true"></i>
+                  </label>
+
+                  <input
+                    type="radio"
+                    class="btn-check"
+                    name="requires_password"
+                    id="requires-password-no"
+                    value="false"
+                    autocomplete="off"
+                    {% if form_values.requires_password == "false" %}
+                      checked
+                    {% endif %}
+                  >
+
+                  <label
+                    class="btn btn-outline-primary"
+                    for="requires-password-no"
+                  >
                     Nein
-                  </span>
-                {% endif %}
-              </div>
+                  </label>
 
-              <div>
-                <p class="form-label fw-semibold mb-3">
-                  Wo befindet sich der Gegenstand im Hintergrund?
-                </p>
+                </div>
 
-                <a
-                  href="{% url 'create_level51' %}"
-                  class="btn btn-outline-success btn-lg"
-                >
-                  <i
-                    class="bi bi-check-circle me-2"
-                    aria-hidden="true"
-                  ></i>
-                  Position angepasst
-                </a>
-              </div>
-
-              <div>
-                <p class="form-label fw-semibold mb-3">
-                  Welchen Typ soll der Gegenstand haben?
-                </p>
-
-                <a
-                  href="{% url 'create_level61' %}"
-                  class="btn btn-outline-primary btn-lg"
-                >
-                  <i
-                    class="bi bi-ui-checks-grid me-2"
-                    aria-hidden="true"
-                  ></i>
-                  Typart auswählen
-                </a>
               </div>
 
             </div>
+
           </section>
 
         </div>
@@ -128,27 +132,40 @@ Gegenstandstyp | SQL Spell Quest Editor
         class="create-page__navigation"
         aria-label="Navigation der Levelerstellung"
       >
-        <a
-          href="{% url 'create_level51' %}"
-          class="btn btn-outline-primary btn-lg px-4"
-        >
-          <i
-            class="bi bi-arrow-left me-2"
-            aria-hidden="true"
-          ></i>
-          Zurück
-        </a>
+        {% if is_item_edit %}
+          <a
+            href="{% url 'edit_item' item_id=editing_item_id %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+            <i class="bi bi-arrow-left me-2"></i>
+            Zurück
+          </a>
+        {% elif return_to_item_summary %}
+          <a
+            href="{% url 'create_level7' %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+            <i class="bi bi-arrow-left me-2"></i>
+            Zurück
+          </a>
+        {% else %}
+          <a
+            href="{% url 'create_level51' %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+            <i class="bi bi-arrow-left me-2"></i>
+            Zurück
+          </a>
+        {% endif %}
 
         <button
           type="submit"
           class="btn btn-primary btn-lg px-4"
         >
           Weiter
-          <i
-            class="bi bi-arrow-right ms-2"
-            aria-hidden="true"
-          ></i>
+          <i class="bi bi-arrow-right ms-2"></i>
         </button>
+
       </nav>
 
     </form>
