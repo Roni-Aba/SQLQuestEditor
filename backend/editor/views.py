@@ -156,6 +156,10 @@ def start_page(request):
     return render(request, "editor/start.html")
 
 
+def kontakt_view(request):
+    return render(request, "editor/contact.html")
+
+
 def level_view(request):
     game_json = request.session.get(
         "game_json",
@@ -1353,10 +1357,6 @@ def create_level51_view(request):
         level_picture_path = (
             f"editor/img/levels/{level_picture}"
         )
-    else:
-        level_picture_path = (
-            "editor/img/magie1.png"
-        )
 
     form_values = {
         "level_picture_path": level_picture_path,
@@ -1528,6 +1528,10 @@ def create_level61_view(request):
         "saved_level": saved_level,
         "form_values": form_values,
         "type_options": type_options,
+        "is_item_edit": request.session.get(
+            "item_edit_mode",
+            False,
+        ),
     })
 
 
@@ -1551,7 +1555,10 @@ def create_level6exit_view(request):
         request.session.modified = True
         print("createLevel6exit gespeichert:")
         print(json.dumps(saved_level, ensure_ascii=False, indent=2))
-        return redirect("create_level7")
+        return redirect_after_item_section_edit(
+            request,
+            "create_level7",
+        )
     return render(request, "editor/createLevel6exit.html", {
         "steps": steps,
         "saved_level": saved_level,
@@ -2171,54 +2178,6 @@ def export_game_view(request):
         'filename="SQLSpellQuest_export.zip"'
     )
     return response
-
-@require_POST
-def save_level_view(
-    request,
-):
-    saved_level = request.session.get(
-        "new_level",
-        {},
-    )
-
-    if not isinstance(
-        saved_level,
-        dict,
-    ):
-        return redirect(
-            "auswahl_view"
-        )
-
-    saved_level = deepcopy(
-        saved_level
-    )
-
-    saved_level.pop(
-        "item",
-        None,
-    )
-
-    saved_level.pop(
-        "unlockCondition",
-        None,
-    )
-
-    saved_level.pop(
-        "position",
-        None,
-    )
-
-    saved_level.pop(
-        "messages",
-        None,
-    )
-
-    level_id = str(
-        saved_level.get(
-            "id",
-            "",
-        )
-    ).strip()
 
 def level_grunddaten_view(request):
     saved_level = request.session.get("new_level", {})
