@@ -52,7 +52,7 @@
           </a>
         {% else %}
           <a
-            href="{% url 'create_level3' %}"
+            href="{% url 'create_level3' %}?return_to=summary"
             class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
             aria-label="Name und Voraussetzungen bearbeiten"
           >
@@ -65,148 +65,7 @@
       </div>
     </article>
 
-    <article class="card shadow-sm">
-      <div class="card-body position-relative pe-5">
-        <h2 class="h5 card-title mb-3">
-          Passwort
-        </h2>
-
-        <dl class="row mb-0">
-          <dt class="col-sm-4">
-            Antwort
-          </dt>
-
-          <dd class="col-sm-8">
-            {% if summary.passwords %}
-              {{ summary.passwords|join:", " }}
-            {% else %}
-              Kein Passwort
-            {% endif %}
-          </dd>
-
-          <dt class="col-sm-4">
-            Hinweis
-          </dt>
-
-          <dd class="col-sm-8">
-            {{ summary.password_hint|default:"-" }}
-          </dd>
-
-          <dt class="col-sm-4">
-            Fehlversuchtexte
-          </dt>
-
-          <dd class="col-sm-8">
-            {% if summary.failure_hints %}
-              <ul class="mb-0 ps-3">
-                {% for hint in summary.failure_hints %}
-                  <li>
-                    Nach {{ hint.attempts }} Versuch(en):
-                    {{ hint.message }}
-                  </li>
-                {% endfor %}
-              </ul>
-            {% else %}
-              -
-            {% endif %}
-          </dd>
-
-          <dt class="col-sm-4">
-            Erfolgsmeldung
-          </dt>
-
-          <dd class="col-sm-8 mb-0">
-            {{ summary.success_message|default:"-" }}
-          </dd>
-        </dl>
-
-        {% if item_id %}
-          <a
-            href="{% url 'edit_item_section' item_id=item_id section='passwort' %}"
-            class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
-            aria-label="Passworteinstellungen bearbeiten"
-          >
-            <i
-              class="bi bi-pencil"
-              aria-hidden="true"
-            ></i>
-          </a>
-        {% else %}
-          <a
-            href="{% url 'create_level4' %}"
-            class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
-            aria-label="Passworteinstellungen bearbeiten"
-          >
-            <i
-              class="bi bi-pencil"
-              aria-hidden="true"
-            ></i>
-          </a>
-        {% endif %}
-      </div>
-    </article>
-
-    <article class="card shadow-sm">
-      <div class="card-body position-relative pe-5">
-        <h2 class="h5 card-title mb-3">
-          Gegenstandsposition
-        </h2>
-
-        <dl class="row mb-0">
-          <dt class="col-sm-4">
-            Bildbereich
-          </dt>
-
-          <dd class="col-sm-8">
-            X: {{ summary.bounding_box_image.x|default:0 }},
-            Y: {{ summary.bounding_box_image.y|default:0 }},
-            Breite:
-            {{ summary.bounding_box_image.width|default:0 }},
-            Höhe:
-            {{ summary.bounding_box_image.height|default:0 }}
-          </dd>
-
-          <dt class="col-sm-4">
-            Iconbereich
-          </dt>
-
-          <dd class="col-sm-8 mb-0">
-            X: {{ summary.bounding_box_icon.x|default:0 }},
-            Y: {{ summary.bounding_box_icon.y|default:0 }},
-            Breite:
-            {{ summary.bounding_box_icon.width|default:0 }},
-            Höhe:
-            {{ summary.bounding_box_icon.height|default:0 }}
-          </dd>
-        </dl>
-
-        {% if item_id %}
-          <a
-            href="{% url 'edit_item_section' item_id=item_id section='position' %}"
-            class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
-            aria-label="Gegenstandsposition bearbeiten"
-          >
-            <i
-              class="bi bi-pencil"
-              aria-hidden="true"
-            ></i>
-          </a>
-        {% else %}
-          <a
-            href="{% url 'create_level51' %}"
-            class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
-            aria-label="Gegenstandsposition bearbeiten"
-          >
-            <i
-              class="bi bi-pencil"
-              aria-hidden="true"
-            ></i>
-          </a>
-        {% endif %}
-      </div>
-    </article>
-
-    <article class="card shadow-sm">
+        <article class="card shadow-sm">
       <div class="card-body position-relative pe-5">
         <h2 class="h5 card-title mb-3">
           Gegenstandstyp
@@ -341,7 +200,7 @@
 
           {% if summary.item_type == "table" %}
             <a
-              href="{% url 'create_level6table' %}"
+              href="{% url 'create_level4table' %}?return_to=summary"
               class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
               aria-label="Tabelleninformationen bearbeiten"
             >
@@ -353,7 +212,7 @@
 
           {% elif summary.item_type == "hint" %}
             <a
-              href="{% url 'create_level6hint' %}"
+              href="{% url 'create_level4hint' %}?return_to=summary"
               class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
               aria-label="Hinweisinformationen bearbeiten"
             >
@@ -365,7 +224,7 @@
 
           {% elif summary.item_type == "exit" %}
             <a
-              href="{% url 'create_level6exit' %}"
+              href="{% url 'create_level4exit' %}?return_to=summary"
               class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
               aria-label="Exitinformationen bearbeiten"
             >
@@ -377,7 +236,7 @@
 
           {% else %}
             <a
-              href="{% url 'create_level61' %}"
+              href="{% url 'create_level41' %}?return_to=summary"
               class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
               aria-label="Gegenstandstyp bearbeiten"
             >
@@ -388,6 +247,147 @@
             </a>
           {% endif %}
 
+        {% endif %}
+      </div>
+    </article>
+
+    <article class="card shadow-sm">
+      <div class="card-body position-relative pe-5">
+        <h2 class="h5 card-title mb-3">
+          Gegenstandsposition
+        </h2>
+
+        <dl class="row mb-0">
+          <dt class="col-sm-4">
+            Bildbereich
+          </dt>
+
+          <dd class="col-sm-8">
+            X: {{ summary.bounding_box_image.x|default:0 }},
+            Y: {{ summary.bounding_box_image.y|default:0 }},
+            Breite:
+            {{ summary.bounding_box_image.width|default:0 }},
+            Höhe:
+            {{ summary.bounding_box_image.height|default:0 }}
+          </dd>
+
+          <dt class="col-sm-4">
+            Iconbereich
+          </dt>
+
+          <dd class="col-sm-8 mb-0">
+            X: {{ summary.bounding_box_icon.x|default:0 }},
+            Y: {{ summary.bounding_box_icon.y|default:0 }},
+            Breite:
+            {{ summary.bounding_box_icon.width|default:0 }},
+            Höhe:
+            {{ summary.bounding_box_icon.height|default:0 }}
+          </dd>
+        </dl>
+
+        {% if item_id %}
+          <a
+            href="{% url 'edit_item_section' item_id=item_id section='position' %}"
+            class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+            aria-label="Gegenstandsposition bearbeiten"
+          >
+            <i
+              class="bi bi-pencil"
+              aria-hidden="true"
+            ></i>
+          </a>
+        {% else %}
+          <a
+            href="{% url 'create_level51' %}?return_to=summary"
+            class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+            aria-label="Gegenstandsposition bearbeiten"
+          >
+            <i
+              class="bi bi-pencil"
+              aria-hidden="true"
+            ></i>
+          </a>
+        {% endif %}
+      </div>
+    </article>
+
+    <article class="card shadow-sm">
+      <div class="card-body position-relative pe-5">
+        <h2 class="h5 card-title mb-3">
+          Passwort
+        </h2>
+
+        <dl class="row mb-0">
+          <dt class="col-sm-4">
+            Antwort
+          </dt>
+
+          <dd class="col-sm-8">
+            {% if summary.passwords %}
+              {{ summary.passwords|join:", " }}
+            {% else %}
+              Kein Passwort
+            {% endif %}
+          </dd>
+
+          <dt class="col-sm-4">
+            Hinweis
+          </dt>
+
+          <dd class="col-sm-8">
+            {{ summary.password_hint|default:"-" }}
+          </dd>
+
+          <dt class="col-sm-4">
+            Fehlversuchtexte
+          </dt>
+
+          <dd class="col-sm-8">
+            {% if summary.failure_hints %}
+              <ul class="mb-0 ps-3">
+                {% for hint in summary.failure_hints %}
+                  <li>
+                    Nach {{ hint.attempts }} Versuch(en):
+                    {{ hint.message }}
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              -
+            {% endif %}
+          </dd>
+
+          <dt class="col-sm-4">
+            Erfolgsmeldung
+          </dt>
+
+          <dd class="col-sm-8 mb-0">
+            {{ summary.success_message|default:"-" }}
+          </dd>
+        </dl>
+
+        {% if item_id %}
+          <a
+            href="{% url 'edit_item_section' item_id=item_id section='passwort' %}"
+            class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+            aria-label="Passworteinstellungen bearbeiten"
+          >
+            <i
+              class="bi bi-pencil"
+              aria-hidden="true"
+            ></i>
+          </a>
+        {% else %}
+          <a
+            href="{% url 'create_level6' %}?return_to=summary"
+            class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 mt-3 me-3"
+            aria-label="Passworteinstellungen bearbeiten"
+          >
+            <i
+              class="bi bi-pencil"
+              aria-hidden="true"
+            ></i>
+          </a>
         {% endif %}
       </div>
     </article>

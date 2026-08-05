@@ -297,16 +297,40 @@ Position anpassen | SQL Spell Quest Editor
         class="d-flex flex-wrap justify-content-end gap-3 mt-5 pt-4"
         aria-label="Navigation der Levelerstellung"
       >
-        <a
-          href="{% url 'create_level5' %}"
-          class="btn btn-outline-primary btn-lg px-4"
-        >
-          <i
-            class="bi bi-arrow-left me-2"
-            aria-hidden="true"
-          ></i>
-          Zurück
-        </a>
+        {% if is_item_edit %}
+          <a
+            href="{% url 'edit_item' item_id=editing_item_id %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+            <i
+              class="bi bi-arrow-left me-2"
+              aria-hidden="true"
+            ></i>
+            Zurück
+          </a>
+        {% elif return_to_item_summary %}
+          <a
+            href="{% url 'create_level7' %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+            <i
+              class="bi bi-arrow-left me-2"
+              aria-hidden="true"
+            ></i>
+            Zurück
+          </a>
+        {% else %}
+          <a
+            href="{% url 'create_level5' %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+            <i
+              class="bi bi-arrow-left me-2"
+              aria-hidden="true"
+            ></i>
+            Zurück
+          </a>
+        {% endif %}
 
         <button
           type="submit"

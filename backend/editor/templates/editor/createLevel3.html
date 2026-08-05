@@ -141,6 +141,18 @@ Gegenstände | SQL Spell Quest Editor
 
             Zurück
           </a>
+        {% elif return_to_item_summary %}
+          <a
+            href="{% url 'create_level7' %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+            <i
+              class="bi bi-arrow-left me-2"
+              aria-hidden="true"
+            ></i>
+
+            Zurück
+          </a>
         {% else %}
           <a
             href="{% url 'create_level2' %}"
