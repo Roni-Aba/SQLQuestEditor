@@ -23,6 +23,14 @@ def remember_item_summary_return(request):
     )
 
 
+def set_guided_level_creation(request, active):
+    if active:
+        request.session["guided_level_creation"] = True
+    else:
+        request.session.pop("guided_level_creation", None)
+    request.session.modified = True
+
+
 def redirect_after_item_section_edit(
         request,
         default_view_name,
@@ -175,6 +183,7 @@ def get_steps(active_step):
 
 
 def start_page(request):
+    set_guided_level_creation(request, False)
     return render(request, "editor/start.html")
 
 
@@ -183,6 +192,7 @@ def kontakt_view(request):
 
 
 def level_view(request):
+    set_guided_level_creation(request, False)
     game_json = request.session.get(
         "game_json",
         {},
@@ -550,6 +560,7 @@ def component_test_view(request):
 def create_level(
     request,
 ):
+    set_guided_level_creation(request, True)
     clear_level_edit_session(
         request
     )
@@ -581,6 +592,7 @@ def create_level(
 
 
 def auswahl_view(request):
+    set_guided_level_creation(request, False)
     new_level = request.session.get("new_level", {})
     print("Aktuelles Level:")
     print(json.dumps(new_level, ensure_ascii=False, indent=2))
@@ -2083,6 +2095,7 @@ def export_game_view(request):
     return response
 
 def level_grunddaten_view(request):
+    set_guided_level_creation(request, False)
     saved_level = request.session.get("new_level", {})
 
     if request.method == "POST":
@@ -2164,6 +2177,7 @@ def level_grunddaten_view(request):
 
 
 def sql_grunddaten_view(request):
+    set_guided_level_creation(request, False)
     saved_level = request.session.get("new_level", {})
 
     query_restriction = saved_level.get(
@@ -2309,6 +2323,7 @@ def sql_grunddaten_view(request):
 def gegenstand_view(
     request,
 ):
+    set_guided_level_creation(request, False)
     saved_level = request.session.get(
         "new_level",
         {},
@@ -2351,6 +2366,7 @@ def gegenstand_view(
 
 
 def edit_item_view(request, item_id):
+    set_guided_level_creation(request, False)
     saved_level = request.session.get(
         "new_level",
         {},
@@ -2503,6 +2519,7 @@ def edit_item_section_view(
         item_id,
         section,
 ):
+    set_guided_level_creation(request, False)
     allowed_sections = {
         "grunddaten": "create_level3",
         "passwort": "create_level6",
@@ -2520,6 +2537,10 @@ def edit_item_section_view(
             "edit_item",
             item_id=item_id,
         )
+    request.session.pop(
+        "item_creation_return_to",
+        None,
+    )
     request.session[
         "item_edit_mode"
     ] = True
@@ -2598,6 +2619,7 @@ DEFAULT_MESSAGES = {
 
 
 def messages_grunddaten_view(request):
+    set_guided_level_creation(request, False)
     saved_level = request.session.get(
         "new_level",
         {},
