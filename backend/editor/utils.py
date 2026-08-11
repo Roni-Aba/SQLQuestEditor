@@ -460,13 +460,20 @@ def build_item_for_json(saved_level):
     }
 
     if item["type"] == "table":
-        item["tableName"] = item_data.get(
-            "tableName",
+        table_name = str(
             item_data.get(
-                "id",
+                "tableName",
                 "",
-            ),
-        )
+            )
+        ).strip()
+        if not table_name:
+            table_name = str(
+                item_data.get(
+                    "id",
+                    "",
+                )
+            ).strip()
+        item["tableName"] = table_name
 
         type_mapping = {
             "text": "varchar",
@@ -972,15 +979,20 @@ def load_item_for_editing(
     )
 
     if item_type == "table":
-        item_data["tableName"] = (
+        table_name = str(
             selected_item.get(
                 "tableName",
+                "",
+            )
+        ).strip()
+        if not table_name:
+            table_name = str(
                 selected_item.get(
                     "id",
                     "",
-                ),
-            )
-        )
+                )
+            ).strip()
+        item_data["tableName"] = table_name
 
         item_data["columns"] = (
             parse_table_description(

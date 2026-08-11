@@ -145,10 +145,22 @@ Hinweise bei falschen Passwortversuchen | SQL Spell Quest Editor
         aria-label="Navigation der Levelerstellung"
       >
 
-        <a
-          href="{% url 'create_level61' %}"
-          class="btn btn-outline-primary btn-lg px-4"
-        >
+        {% if is_item_edit %}
+          <a
+            href="{% url 'edit_item' item_id=editing_item_id %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+        {% elif return_to_item_summary %}
+          <a
+            href="{% url 'create_level7' %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+        {% else %}
+          <a
+            href="{% url 'create_level61' %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+        {% endif %}
           <i class="bi bi-arrow-left me-2"></i>
           Zurück
         </a>

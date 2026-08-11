@@ -22,7 +22,7 @@ Exit-Gegenstand | SQL Spell Quest Editor
     </section>
 
     <form
-      action="{% url 'create_level4exit' %}"
+      action="{% url 'create_level3exit' %}"
       method="post"
       class="d-flex flex-column flex-grow-1"
     >
@@ -94,40 +94,6 @@ Exit-Gegenstand | SQL Spell Quest Editor
                       des Levels angezeigt.
                     </div>
                   </div>
-
-                  <div>
-                    <label
-                      for="next-level-id"
-                      class="form-label fw-semibold"
-                    >
-                      ID des nächsten Levels
-                    </label>
-
-                    <div class="input-group input-group-lg">
-                      <span
-                        class="input-group-text"
-                        aria-hidden="true"
-                      >
-                        <i class="bi bi-arrow-right-circle"></i>
-                      </span>
-
-                      <input
-                        id="next-level-id"
-                        name="next_level_id"
-                        type="text"
-                        class="form-control"
-                        placeholder="Zum Beispiel: level_2"
-                        value="{{ form_values.next_level_id|default:'' }}"
-                        required
-                      >
-                    </div>
-
-                    <div class="form-text">
-                      Nach dem Abschluss wird der Spieler zu diesem Level
-                      weitergeleitet.
-                    </div>
-                  </div>
-
                 </div>
               </div>
             </section>
@@ -140,10 +106,27 @@ Exit-Gegenstand | SQL Spell Quest Editor
         class="create-page__navigation"
         aria-label="Navigation der Levelerstellung"
       >
-        <a
-          href="{% url 'create_level41' %}"
-          class="btn btn-outline-primary btn-lg px-4"
-        >
+        {% if is_item_edit %}
+          <a
+            href="{% url 'edit_item' item_id=editing_item_id %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+        {% elif return_to_item_overview %}
+          <a
+            href="{% url 'gegenstandVerwaltung' %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+        {% elif return_to_item_summary %}
+          <a
+            href="{% url 'create_level7' %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+        {% else %}
+          <a
+            href="{% url 'create_level31' %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+        {% endif %}
           <i
             class="bi bi-arrow-left me-2"
             aria-hidden="true"
