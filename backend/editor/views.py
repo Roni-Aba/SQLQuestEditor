@@ -609,22 +609,14 @@ def create_level(
         None,
     )
 
-    saved_level = request.session.get(
-        "new_level",
-    )
-
-    if not isinstance(
-        saved_level,
-        dict,
-    ):
-        request.session["new_level"] = {
-            "id": "",
-            "levelPicture": "",
-            "databaseName": "",
-            "startDialog": "",
-            "queryRestriction": {},
-            "items": [],
-        }
+    request.session["new_level"] = {
+        "id": "",
+        "levelPicture": "",
+        "databaseName": "",
+        "startDialog": "",
+        "queryRestriction": {},
+        "items": [],
+    }
 
     request.session[
         "reset_item_draft_on_create_level3"
@@ -2972,6 +2964,10 @@ def save_level_view(request):
     )
     request.session.pop(
         "editing_item_section",
+        None,
+    )
+    request.session.pop(
+        "new_level",
         None,
     )
     request.session.modified = True
