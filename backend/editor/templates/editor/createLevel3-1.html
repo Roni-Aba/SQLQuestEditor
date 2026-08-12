@@ -23,7 +23,7 @@ Typart wählen | SQL Spell Quest Editor
     </section>
 
     <form
-      action="{% url 'create_level41' %}"
+      action="{% url 'create_level31' %}"
       method="post"
       class="d-flex flex-column flex-grow-1"
     >
@@ -111,6 +111,17 @@ Typart wählen | SQL Spell Quest Editor
             ></i>
             Zurück
           </a>
+        {% elif return_to_item_overview %}
+          <a
+            href="{% url 'gegenstandVerwaltung' %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+            <i
+              class="bi bi-arrow-left me-2"
+              aria-hidden="true"
+            ></i>
+            Zurück
+          </a>
         {% elif return_to_item_summary %}
           <a
             href="{% url 'create_level7' %}"
@@ -124,7 +135,7 @@ Typart wählen | SQL Spell Quest Editor
           </a>
         {% else %}
           <a
-            href="{% url 'create_level4' %}"
+            href="{% url 'create_level3' %}"
             class="btn btn-outline-primary btn-lg px-4"
           >
             <i

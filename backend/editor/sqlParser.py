@@ -64,13 +64,19 @@ def parse_description_column(
 def build_create_table_sql(
     table_item,
 ):
-    table_name = table_item.get(
-        "tableName",
+    table_name = str(
         table_item.get(
-            "id",
+            "tableName",
             "",
-        ),
-    )
+        )
+    ).strip()
+    if not table_name:
+        table_name = str(
+            table_item.get(
+                "id",
+                "",
+            )
+        ).strip()
 
     description = table_item.get(
         "description",
@@ -249,13 +255,19 @@ def format_sql_value(
 def build_insert_sql(
     table_item,
 ):
-    table_name = table_item.get(
-        "tableName",
+    table_name = str(
         table_item.get(
-            "id",
+            "tableName",
             "",
-        ),
-    )
+        )
+    ).strip()
+    if not table_name:
+        table_name = str(
+            table_item.get(
+                "id",
+                "",
+            )
+        ).strip()
 
     description = table_item.get(
         "description",

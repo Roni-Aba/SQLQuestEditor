@@ -2,59 +2,312 @@
 {% load static %}
 
 {% block title %}
-Gegenstandstyp | SQL Spell Quest Editor
+Gegenstände | SQL Spell Quest Editor
 {% endblock %}
 
 {% block additional_css %}
 <link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
 <link rel="stylesheet" href="{% static 'editor/components/helper/helper.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/tag/tag.css' %}">
 {% endblock %}
 
 {% block content %}
 <main class="create-page">
   <div class="create-page__content">
-    <section class="create-page__status{% if not request.session.guided_level_creation %} d-none{% endif %}" aria-label="Fortschritt der Levelerstellung">
+
+    <section
+      class="create-page__status{% if not request.session.guided_level_creation %} d-none{% endif %}"
+      aria-label="Fortschritt der Levelerstellung"
+    >
       {% include "editor/components/statusBar/statusBar.html" with steps=steps %}
     </section>
 
-    <form action="{% url 'create_level4' %}" method="post" class="d-flex flex-column flex-grow-1">
+    <form
+      action="{% url 'create_level4' %}"
+      method="post"
+      class="d-flex flex-column flex-grow-1"
+    >
       {% csrf_token %}
 
       <section class="create-page__main">
         <div class="row create-page__row align-items-start g-4 g-lg-5">
+
           <div class="col-12 col-md-4">
-            {% include "editor/components/helper/helper.html" with helper_image="editor/img/cat9.png" helper_text="Als Nächstes legst du fest, welche Rolle dein Gegenstand im Level spielt." %}
+            {% include "editor/components/helper/helper.html" with helper_image="editor/img/cat3.png" helper_text="Erzähle mir gerne, was du dir gerade so vorstellst. Lege einen Gegenstand an und wähle aus, welche bereits vorhandenen Gegenstände dadurch freigeschaltet werden sollen." %}
           </div>
 
-          <section class="col-12 col-md-8" aria-labelledby="item-type-title">
-            <h1 id="item-type-title" class="h3 fw-semibold mb-4">
-              Gegenstandstyp
+          <section
+            class="col-12 col-md-8"
+            aria-labelledby="items-title"
+          >
+            <h1
+              id="items-title"
+              class="h3 fw-semibold mb-4"
+            >
+              Gegenstände
             </h1>
 
-            <div class="alert alert-light border mb-0">
-              <h2 class="h5 fw-semibold mb-3">Typ auswählen</h2>
-              <p class="mb-0">
-                Dein Gegenstand kann eine SQL-Tabelle, einen Hinweis oder den
-                Ausgang des Levels darstellen. Anschließend ergänzt du die
-                passenden Details.
-              </p>
+            <div class="d-flex flex-column gap-4">
+
+              <div>
+                <label
+                  for="item-name"
+                  class="form-label fw-semibold"
+                >
+                  Wie soll der Gegenstand heißen?
+                </label>
+
+                <input
+                  id="item-name"
+                  name="item_name"
+                  type="text"
+                  class="form-control"
+                  placeholder="Schreibe hinein"
+                  value="{{ form_values.item_name|default:'' }}"
+                  required
+                >
+              </div>
+
+              <div>
+                <label
+                  for="item-select"
+                  class="form-label fw-semibold"
+                >
+                  Wähle Gegenstände aus, die freigeschaltet sein sollen
+                </label>
+
+                <select
+                  id="item-select"
+                  class="form-select"
+                >
+                  <option value="">
+                    Gegenstand auswählen
+                  </option>
+
+                  {% for item_option in item_options %}
+                    <option value="{{ item_option.value }}">
+                      {{ item_option.label }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div>
+                <p class="form-label fw-semibold mb-2">
+                  Ausgewählte Gegenstände
+                </p>
+
+                <div
+                  id="selected-tags"
+                  class="d-flex flex-wrap gap-3"
+                  aria-label="Ausgewählte Gegenstände"
+                  aria-live="polite"
+                ></div>
+
+                <p
+                  id="selected-tags-empty"
+                  class="form-text mb-0"
+                >
+                  Noch keine Gegenstände ausgewählt.
+                </p>
+              </div>
+
+              <input
+                type="hidden"
+                id="unlocked-items-input"
+                name="unlocked_items"
+                value="{{ form_values.unlocked_items_json|default:'[]' }}"
+              >
+
             </div>
           </section>
+
         </div>
       </section>
 
-      <nav class="create-page__navigation" aria-label="Navigation der Levelerstellung">
-        <a href="{% if return_to_item_summary %}{% url 'create_level7' %}{% else %}{% url 'create_level3' %}{% endif %}" class="btn btn-outline-primary btn-lg px-4">
-          <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>
-          Zurück
-        </a>
+      <nav
+        class="create-page__navigation"
+        aria-label="Navigation der Levelerstellung"
+      >
+        {% if is_item_edit %}
+          <a
+            href="{% url 'edit_item' item_id=editing_item_id %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+            <i
+              class="bi bi-arrow-left me-2"
+              aria-hidden="true"
+            ></i>
 
-        <button type="submit" class="btn btn-primary btn-lg px-4">
+            Zurück
+          </a>
+        {% elif return_to_item_overview %}
+          <a
+            href="{% url 'gegenstandVerwaltung' %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+            <i
+              class="bi bi-arrow-left me-2"
+              aria-hidden="true"
+            ></i>
+
+            Zurück
+          </a>
+        {% elif return_to_item_summary %}
+          <a
+            href="{% url 'create_level7' %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+            <i
+              class="bi bi-arrow-left me-2"
+              aria-hidden="true"
+            ></i>
+
+            Zurück
+          </a>
+        {% else %}
+          <a
+            href="{% url back_url_name %}"
+            class="btn btn-outline-primary btn-lg px-4"
+          >
+            <i
+              class="bi bi-arrow-left me-2"
+              aria-hidden="true"
+            ></i>
+
+            Zurück
+          </a>
+        {% endif %}
+
+        <button
+          type="submit"
+          class="btn btn-primary btn-lg px-4"
+        >
           Weiter
-          <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i>
+
+          <i
+            class="bi bi-arrow-right ms-2"
+            aria-hidden="true"
+          ></i>
         </button>
       </nav>
+
     </form>
   </div>
 </main>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const itemSelect = document.getElementById("item-select");
+    const selectedTagsContainer =
+      document.getElementById("selected-tags");
+    const selectedTagsEmpty =
+      document.getElementById("selected-tags-empty");
+    const unlockedItemsInput =
+      document.getElementById("unlocked-items-input");
+
+    if (
+      !itemSelect ||
+      !selectedTagsContainer ||
+      !selectedTagsEmpty ||
+      !unlockedItemsInput
+    ) {
+      return;
+    }
+
+    const readSelectedItems = () => {
+      try {
+        const parsedItems = JSON.parse(
+          unlockedItemsInput.value || "[]"
+        );
+
+        return Array.isArray(parsedItems)
+          ? parsedItems
+          : [];
+      } catch (error) {
+        return [];
+      }
+    };
+
+    let selectedItems = readSelectedItems();
+
+    const updateHiddenInput = () => {
+      unlockedItemsInput.value =
+        JSON.stringify(selectedItems);
+    };
+
+    const removeItem = (itemToRemove) => {
+      selectedItems = selectedItems.filter(
+        (item) => item !== itemToRemove
+      );
+
+      updateHiddenInput();
+      renderTags();
+    };
+
+    const createTag = (item) => {
+      const tag = document.createElement("span");
+      tag.className = "tag-neutral";
+
+      const title = document.createElement("span");
+      title.className = "tag-title";
+      title.textContent = item;
+
+      const removeButton = document.createElement("button");
+      removeButton.type = "button";
+      removeButton.className = "tag-btn tag-remove";
+      removeButton.setAttribute(
+        "aria-label",
+        `${item} entfernen`
+      );
+      removeButton.textContent = "×";
+
+      removeButton.addEventListener("click", () => {
+        removeItem(item);
+      });
+
+      tag.appendChild(title);
+      tag.appendChild(removeButton);
+
+      return tag;
+    };
+
+    const renderTags = () => {
+      selectedTagsContainer.replaceChildren();
+
+      selectedItems.forEach((item) => {
+        selectedTagsContainer.appendChild(
+          createTag(item)
+        );
+      });
+
+      selectedTagsEmpty.classList.toggle(
+        "d-none",
+        selectedItems.length > 0
+      );
+    };
+
+    itemSelect.addEventListener("change", () => {
+      const selectedValue = itemSelect.value;
+
+      if (
+        !selectedValue ||
+        selectedItems.includes(selectedValue)
+      ) {
+        itemSelect.value = "";
+        return;
+      }
+
+      selectedItems.push(selectedValue);
+
+      updateHiddenInput();
+      renderTags();
+
+      itemSelect.value = "";
+    });
+
+    updateHiddenInput();
+    renderTags();
+  });
+</script>
 {% endblock %}
