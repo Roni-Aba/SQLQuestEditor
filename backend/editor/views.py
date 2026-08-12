@@ -660,18 +660,28 @@ def upload_json_view(request):
             },
         )
 
+    previous_workspace = request.session.get("game_workspace")
+    previous_game_root = request.session.get("game_root")
     request.session["game_workspace"] = str(workspace_path)
     game_root = workspace_path.joinpath(
         *json_relative_path.parent.parts
     )
     request.session["game_root"] = str(game_root)
-    clear_editor_state(request)
     try:
         game_json = database.initialize_editor_table_rows(
             request,
             normalize_game_messages(game_json),
         )
     except sqlite3.Error as error:
+        if previous_workspace is None:
+            request.session.pop("game_workspace", None)
+        else:
+            request.session["game_workspace"] = previous_workspace
+        if previous_game_root is None:
+            request.session.pop("game_root", None)
+        else:
+            request.session["game_root"] = previous_game_root
+        request.session.modified = True
         return render(
             request,
             "editor/start.html",
@@ -682,6 +692,7 @@ def upload_json_view(request):
                 ),
             },
         )
+    clear_editor_state(request)
     request.session["game_json"] = game_json
 
     request.session.modified = True
@@ -1095,6 +1106,7 @@ def create_level4_view(
             saved_level
         )
     )
+    error_message = ""
     if request.method == "POST":
         item_name = request.POST.get(
             "item_name",
@@ -1115,42 +1127,72 @@ def create_level4_view(
             list,
         ):
             unlocked_items = []
-        item["id"] = item_name
-        if item.get("type") == "table":
-            item["tableName"] = item_name
-            database.finalize_editor_table_rows(
-                request,
-                saved_level,
-                item,
-            )
-        item["unlockedItems"] = [str(item_id).strip() for item_id in unlocked_items if str(item_id).strip()]
-        saved_level["item"] = item
-        request.session["new_level"] = saved_level
-        request.session.modified = True
-        if return_to_item_summary:
-            request.session.pop("item_creation_return_to", None)
-            request.session.modified = True
-            return redirect("create_level7")
-        if request.session.get(
-            "item_edit_mode",
-            False,
-        ):
-            editing_item_id = (
-                request.session.get(
-                    "editing_item_id"
+        editing_item_id = request.session.get("editing_item_id", "")
+        existing_items = saved_level.get("items", [])
+        name_conflict = any(
+            isinstance(existing_item, dict)
+            and existing_item.get("id") != editing_item_id
+            and (
+                str(existing_item.get("id", "")).strip() == item_name
+                or (
+                    item.get("type") == "table"
+                    and str(existing_item.get("tableName", "")).strip()
+                    == item_name
                 )
             )
-            request.session.pop(
-                "editing_item_section",
-                None,
+            for existing_item in (
+                existing_items if isinstance(existing_items, list) else []
             )
-            request.session.modified = True
-            if editing_item_id:
-                return redirect(
-                    "edit_item",
-                    item_id=editing_item_id,
+        )
+        if name_conflict:
+            error_message = (
+                f'Der Gegenstands- oder Tabellenname "{item_name}" '
+                "wird in diesem Level bereits verwendet."
+            )
+            form_values["item_name"] = item_name
+        else:
+            old_table_name = (
+                database.table_name_for(item)
+                if item.get("type") == "table"
+                else ""
+            )
+            item["id"] = item_name
+            if item.get("type") == "table":
+                item["tableName"] = item_name
+                database.finalize_editor_table_rows(
+                    request,
+                    saved_level,
+                    item,
                 )
-        return redirect("create_level5")
+                database.move_editor_table_rows(
+                    request,
+                    saved_level,
+                    old_table_name,
+                    item_name,
+                )
+            item["unlockedItems"] = [str(item_id).strip() for item_id in unlocked_items if str(item_id).strip()]
+            saved_level["item"] = item
+            request.session["new_level"] = saved_level
+            request.session.modified = True
+            if return_to_item_summary:
+                request.session.pop("item_creation_return_to", None)
+                request.session.modified = True
+                return redirect("create_level7")
+            if request.session.get(
+                "item_edit_mode",
+                False,
+            ):
+                request.session.pop(
+                    "editing_item_section",
+                    None,
+                )
+                request.session.modified = True
+                if editing_item_id:
+                    return redirect(
+                        "edit_item",
+                        item_id=editing_item_id,
+                    )
+            return redirect("create_level5")
     return render(
         request,
         "editor/createLevel4.html",
@@ -1159,6 +1201,7 @@ def create_level4_view(
             "saved_level": saved_level,
             "form_values": form_values,
             "item_options": item_options,
+            "error_message": error_message,
             "is_item_edit": (
                 request.session.get(
                     "item_edit_mode",

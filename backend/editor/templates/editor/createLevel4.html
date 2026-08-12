@@ -47,6 +47,12 @@ Gegenstände | SQL Spell Quest Editor
               Gegenstände
             </h1>
 
+            {% if error_message %}
+              <div class="alert alert-danger" role="alert">
+                {{ error_message }}
+              </div>
+            {% endif %}
+
             <div class="d-flex flex-column gap-4">
 
               <div>

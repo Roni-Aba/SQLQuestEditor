@@ -10,6 +10,11 @@ EDITOR_TABLE_ROWS_FILENAME = ".editor-table-rows.json"
 EDITOR_LEVEL_DRAFT_KEY = "_editor_table_rows_key"
 EDITOR_TABLE_DRAFT_KEY = "_editor_table_rows_table_key"
 
+
+class EditorTableDataError(sqlite3.DatabaseError):
+    """Raised when table data referenced by a game cannot be loaded."""
+
+
 TYPE_MAPPING = {
     "text": "TEXT",
     "varchar": "TEXT",
@@ -334,6 +339,32 @@ def set_editor_table_rows(
     _save_editor_table_rows(request, table_rows)
 
 
+def move_editor_table_rows(
+    request,
+    level,
+    old_table_name,
+    new_table_name,
+):
+    old_table_name = str(old_table_name or "").strip()
+    new_table_name = str(new_table_name or "").strip()
+    if (
+        not old_table_name
+        or not new_table_name
+        or old_table_name == new_table_name
+    ):
+        return
+
+    table_rows = deepcopy(_editor_table_rows(request))
+    level_key = get_editor_level_key(request, level)
+    level_rows = table_rows.get(level_key, {})
+    if not isinstance(level_rows, dict) or old_table_name not in level_rows:
+        return
+
+    level_rows[new_table_name] = level_rows.pop(old_table_name)
+    table_rows[level_key] = level_rows
+    _save_editor_table_rows(request, table_rows)
+
+
 def remove_editor_table_rows(request, level, table_name):
     table_rows = deepcopy(_editor_table_rows(request))
     level_key = get_editor_level_key(request, level)
@@ -425,17 +456,32 @@ def initialize_editor_table_rows(request, game_json):
             if not isinstance(item, dict):
                 continue
 
-            embedded_rows = item.pop("data", [])
+            embedded_rows = item.pop("data", None)
             if item.get("type") != "table":
                 continue
 
             table_name = table_name_for(item)
             if not table_name:
-                continue
+                raise EditorTableDataError(
+                    f'Ein Tabellen-Item im Level "{level.get("id", "")}" '
+                    "besitzt keinen Tabellennamen."
+                )
 
             rows = read_table_rows(database_path, item)
             if rows is None:
-                rows = embedded_rows if isinstance(embedded_rows, list) else []
+                if isinstance(embedded_rows, list):
+                    rows = embedded_rows
+                elif database_path is None:
+                    database_name = level.get("databaseName", "")
+                    raise EditorTableDataError(
+                        f'Die Datenbank "{database_name}" für Level '
+                        f'"{level.get("id", "")}" wurde nicht gefunden.'
+                    )
+                else:
+                    raise EditorTableDataError(
+                        f'Die Tabelle "{table_name}" wurde in der Datenbank '
+                        f'"{database_path.name}" nicht gefunden.'
+                    )
 
             set_editor_table_rows(request, level, table_name, rows)
 
