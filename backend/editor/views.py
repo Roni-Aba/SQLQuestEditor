@@ -2883,9 +2883,15 @@ def save_level_view(request):
         return redirect("auswahl_view")
 
     saved_level.pop("messages", None)
+    saved_level = utils.save_current_item_to_new_level(
+        saved_level
+    )
+    level_for_json = utils.build_level_for_json(
+        saved_level
+    )
 
     level_id = str(
-        saved_level.get("id", "")
+        level_for_json.get("id", "")
     ).strip()
 
     if not level_id:
@@ -2935,7 +2941,7 @@ def save_level_view(request):
 
         if should_replace and not level_was_replaced:
             updated_levels.append(
-                deepcopy(saved_level)
+                deepcopy(level_for_json)
             )
             level_was_replaced = True
         else:
@@ -2943,7 +2949,7 @@ def save_level_view(request):
 
     if not level_was_replaced:
         updated_levels.append(
-            deepcopy(saved_level)
+            deepcopy(level_for_json)
         )
 
     game_json["level"] = updated_levels
