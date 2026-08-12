@@ -708,6 +708,8 @@ def save_new_level_to_game_json(
     ):
         saved_level = {}
 
+    saved_level.pop("messages", None)
+
     saved_level = (
         save_current_item_to_new_level(
             saved_level
@@ -771,6 +773,10 @@ def save_new_level_to_game_json(
         list,
     ):
         levels = []
+
+    for level in levels:
+        if isinstance(level, dict):
+            level.pop("messages", None)
 
     existing_index = None
 
