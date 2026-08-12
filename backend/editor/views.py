@@ -1,6 +1,6 @@
-from . import utils, sqlParser
+from . import database, utils
 import json, io, zipfile, sqlite3, tempfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.http import HttpResponse
@@ -175,6 +175,18 @@ def save_new_level_session(request, saved_level):
     request.session.modified = True
 
 
+def clear_editor_state(request):
+    for session_key in [
+        "new_level",
+        "editing_level_id",
+        "editing_item_id",
+        "item_edit_mode",
+        "editing_item_section",
+        "item_creation_return_to",
+    ]:
+        request.session.pop(session_key, None)
+
+
 def normalize_game_messages(game_json):
     if not isinstance(game_json, dict):
         return {}
@@ -216,6 +228,24 @@ def get_steps(active_step):
 def start_page(request):
     set_guided_level_creation(request, False)
     return render(request, "editor/start.html")
+
+
+def new_game_view(request):
+    if request.method != "POST":
+        return redirect("start")
+
+    request.session["game_json"] = {
+        "id": "SQLSpellQuest",
+        "messages": deepcopy(DEFAULT_MESSAGES),
+        "level": [],
+    }
+    request.session.pop("game_workspace", None)
+    request.session.pop("game_root", None)
+    database.start_new_editor_workspace(request)
+    clear_editor_state(request)
+    request.session.modified = True
+
+    return redirect("level")
 
 
 def kontakt_view(request):
@@ -464,18 +494,65 @@ def upload_json_view(request):
             "editor/start.html",
         )
 
-    uploaded_file = request.FILES.get(
-        "json_file"
-    )
+    uploaded_files = request.FILES.getlist("game_files")
+    legacy_json_file = request.FILES.get("json_file")
 
-    if not uploaded_file:
+    if not uploaded_files and legacy_json_file:
+        uploaded_files = [legacy_json_file]
+
+    if not uploaded_files:
         return render(
             request,
             "editor/start.html",
             {
-                "error": "Keine Datei hochgeladen.",
+                "error": "Kein Spielordner ausgewählt.",
             },
         )
+
+    relative_names = request.POST.getlist("game_relative_paths")
+    if len(relative_names) != len(uploaded_files):
+        relative_names = [
+            str(game_file.name)
+            for game_file in uploaded_files
+        ]
+
+    uploaded_entries = list(zip(uploaded_files, relative_names))
+    json_candidates = [
+        (game_file, relative_name)
+        for game_file, relative_name in uploaded_entries
+        if PurePosixPath(
+            str(relative_name).replace("\\", "/")
+        ).suffix.lower() == ".json"
+    ]
+    preferred_json_names = {
+        "sqlspellquest.json",
+        "game.json",
+    }
+    uploaded_entry = next(
+        (
+            (game_file, relative_name)
+            for game_file, relative_name in json_candidates
+            if PurePosixPath(
+                str(relative_name).replace("\\", "/")
+            ).name.lower() in preferred_json_names
+        ),
+        json_candidates[0] if len(json_candidates) == 1 else None,
+    )
+
+    if uploaded_entry is None:
+        return render(
+            request,
+            "editor/start.html",
+            {
+                "error": (
+                    "Im Spielordner wurde keine eindeutige JSON-Datei "
+                    "gefunden. Benenne sie bitte SQLSpellQuest.json "
+                    "oder Game.json."
+                ),
+            },
+        )
+
+    uploaded_file, json_relative_name = uploaded_entry
 
     try:
         file_content = uploaded_file.read().decode(
@@ -510,6 +587,50 @@ def upload_json_view(request):
             },
         )
 
+    workspace_path = Path(
+        tempfile.mkdtemp(prefix="sql-quest-game-")
+    )
+    json_relative_path = PurePosixPath(
+        str(json_relative_name).replace("\\", "/")
+    )
+
+    try:
+        for game_file, submitted_relative_name in uploaded_entries:
+            relative_name = str(
+                submitted_relative_name
+            ).replace("\\", "/")
+            relative_path = PurePosixPath(relative_name)
+
+            if (
+                relative_path.is_absolute()
+                or not relative_path.parts
+                or ".." in relative_path.parts
+            ):
+                raise ValueError(
+                    "Ungültiger Dateipfad im Spielordner."
+                )
+
+            target_path = workspace_path.joinpath(
+                *relative_path.parts
+            )
+            target_path.parent.mkdir(
+                parents=True,
+                exist_ok=True,
+            )
+
+            game_file.seek(0)
+            with target_path.open("wb") as target_file:
+                for chunk in game_file.chunks():
+                    target_file.write(chunk)
+    except (OSError, ValueError) as error:
+        return render(
+            request,
+            "editor/start.html",
+            {
+                "error": str(error),
+            },
+        )
+
     if not isinstance(game_json, dict):
         return render(
             request,
@@ -539,33 +660,40 @@ def upload_json_view(request):
             },
         )
 
-    game_json = normalize_game_messages(game_json)
+    previous_workspace = request.session.get("game_workspace")
+    previous_game_root = request.session.get("game_root")
+    request.session["game_workspace"] = str(workspace_path)
+    game_root = workspace_path.joinpath(
+        *json_relative_path.parent.parts
+    )
+    request.session["game_root"] = str(game_root)
+    try:
+        game_json = database.initialize_editor_table_rows(
+            request,
+            normalize_game_messages(game_json),
+        )
+    except sqlite3.Error as error:
+        if previous_workspace is None:
+            request.session.pop("game_workspace", None)
+        else:
+            request.session["game_workspace"] = previous_workspace
+        if previous_game_root is None:
+            request.session.pop("game_root", None)
+        else:
+            request.session["game_root"] = previous_game_root
+        request.session.modified = True
+        return render(
+            request,
+            "editor/start.html",
+            {
+                "error": (
+                    "Die Level-Datenbank konnte nicht gelesen werden: "
+                    f"{error}"
+                ),
+            },
+        )
+    clear_editor_state(request)
     request.session["game_json"] = game_json
-
-    request.session.pop(
-        "new_level",
-        None,
-    )
-
-    request.session.pop(
-        "editing_level_id",
-        None,
-    )
-
-    request.session.pop(
-        "editing_item_id",
-        None,
-    )
-
-    request.session.pop(
-        "item_edit_mode",
-        None,
-    )
-
-    request.session.pop(
-        "editing_item_section",
-        None,
-    )
 
     request.session.modified = True
     return redirect(
@@ -661,6 +789,17 @@ def create_level1_view(request):
         level_id = request.POST.get("level_name", "").strip()
         start_dialog = request.POST.get("level_greeting", "").strip()
         saved_level["id"] = level_id
+        if saved_level.get("databaseName") in {"", "level.db"}:
+            safe_level_id = database.sanitize_path_component(
+                level_id,
+                "level",
+            )
+            saved_level["databaseName"] = f"{safe_level_id}.db"
+        database.finalize_editor_level_rows(
+            request,
+            saved_level,
+            level_id,
+        )
         saved_level["startDialog"] = start_dialog
         uploaded_picture = request.FILES.get("levelPicture")
         if uploaded_picture:
@@ -967,6 +1106,7 @@ def create_level4_view(
             saved_level
         )
     )
+    error_message = ""
     if request.method == "POST":
         item_name = request.POST.get(
             "item_name",
@@ -987,37 +1127,72 @@ def create_level4_view(
             list,
         ):
             unlocked_items = []
-        item["id"] = item_name
-        if item.get("type") == "table":
-            item["tableName"] = item_name
-        item["unlockedItems"] = [str(item_id).strip() for item_id in unlocked_items if str(item_id).strip()]
-        saved_level["item"] = item
-        request.session["new_level"] = saved_level
-        request.session.modified = True
-        if return_to_item_summary:
-            request.session.pop("item_creation_return_to", None)
-            request.session.modified = True
-            return redirect("create_level7")
-        if request.session.get(
-            "item_edit_mode",
-            False,
-        ):
-            editing_item_id = (
-                request.session.get(
-                    "editing_item_id"
+        editing_item_id = request.session.get("editing_item_id", "")
+        existing_items = saved_level.get("items", [])
+        name_conflict = any(
+            isinstance(existing_item, dict)
+            and existing_item.get("id") != editing_item_id
+            and (
+                str(existing_item.get("id", "")).strip() == item_name
+                or (
+                    item.get("type") == "table"
+                    and str(existing_item.get("tableName", "")).strip()
+                    == item_name
                 )
             )
-            request.session.pop(
-                "editing_item_section",
-                None,
+            for existing_item in (
+                existing_items if isinstance(existing_items, list) else []
             )
-            request.session.modified = True
-            if editing_item_id:
-                return redirect(
-                    "edit_item",
-                    item_id=editing_item_id,
+        )
+        if name_conflict:
+            error_message = (
+                f'Der Gegenstands- oder Tabellenname "{item_name}" '
+                "wird in diesem Level bereits verwendet."
+            )
+            form_values["item_name"] = item_name
+        else:
+            old_table_name = (
+                database.table_name_for(item)
+                if item.get("type") == "table"
+                else ""
+            )
+            item["id"] = item_name
+            if item.get("type") == "table":
+                item["tableName"] = item_name
+                database.finalize_editor_table_rows(
+                    request,
+                    saved_level,
+                    item,
                 )
-        return redirect("create_level5")
+                database.move_editor_table_rows(
+                    request,
+                    saved_level,
+                    old_table_name,
+                    item_name,
+                )
+            item["unlockedItems"] = [str(item_id).strip() for item_id in unlocked_items if str(item_id).strip()]
+            saved_level["item"] = item
+            request.session["new_level"] = saved_level
+            request.session.modified = True
+            if return_to_item_summary:
+                request.session.pop("item_creation_return_to", None)
+                request.session.modified = True
+                return redirect("create_level7")
+            if request.session.get(
+                "item_edit_mode",
+                False,
+            ):
+                request.session.pop(
+                    "editing_item_section",
+                    None,
+                )
+                request.session.modified = True
+                if editing_item_id:
+                    return redirect(
+                        "edit_item",
+                        item_id=editing_item_id,
+                    )
+            return redirect("create_level5")
     return render(
         request,
         "editor/createLevel4.html",
@@ -1026,6 +1201,7 @@ def create_level4_view(
             "saved_level": saved_level,
             "form_values": form_values,
             "item_options": item_options,
+            "error_message": error_message,
             "is_item_edit": (
                 request.session.get(
                     "item_edit_mode",
@@ -1137,9 +1313,23 @@ def create_level31_view(request):
     form_values = {"item_type": item.get("type", "")}
 
     if request.method == "POST":
+        previous_item_type = item.get("type", "")
         item_type = request.POST.get("item_type", "").strip()
         if item_type not in ["table", "hint", "exit"]:
             item_type = "table"
+
+        if previous_item_type == "table" and item_type != "table":
+            table_name = database.get_editor_table_key(item)
+            if not request.session.get("editing_item_id"):
+                database.remove_editor_table_rows(
+                    request,
+                    saved_level,
+                    table_name,
+                )
+            item.pop("tableName", None)
+            item.pop("columns", None)
+            item.pop("rows", None)
+
         item["type"] = item_type
         saved_level["item"] = item
         request.session["new_level"] = saved_level
@@ -1886,10 +2076,47 @@ def create_level3table_view(request):
             )
 
         if not error_message:
-            item_name = item.get(
-                "id",
+            item_name = str(item.get("id", "")).strip()
+            table_storage_key = database.get_editor_table_key(item)
+
+            if not saved_level.get("databaseName"):
+                safe_level_id = database.sanitize_path_component(
+                    saved_level.get("id", ""),
+                    "level",
+                )
+                saved_level["databaseName"] = (
+                    f"{safe_level_id}.db"
+                )
+
+            old_table_name = ""
+            editing_item_id = request.session.get(
+                "editing_item_id",
                 "",
             )
+            for existing_item in saved_level.get("items", []):
+                if (
+                    isinstance(existing_item, dict)
+                    and existing_item.get("id") == editing_item_id
+                    and existing_item.get("type") == "table"
+                ):
+                    old_table_name = str(
+                        existing_item.get(
+                            "tableName",
+                            existing_item.get("id", ""),
+                        )
+                    ).strip()
+                    break
+
+            database.set_editor_table_rows(
+                request,
+                saved_level,
+                table_storage_key,
+                rows,
+                old_table_name=old_table_name,
+            )
+
+        if not error_message:
+            item_name = str(item.get("id", "")).strip()
 
             item["type"] = "table"
             item["tableName"] = item_name
@@ -2135,11 +2362,6 @@ def export_game_view(request):
                         ),
                     )
                 )
-                level_sql = (
-                    sqlParser.build_level_sql(
-                        level
-                    )
-                )
                 sql_archive_path = (
                     f"{level_folder}/databases/"
                     f"create_{safe_level_id}.sql"
@@ -2148,10 +2370,6 @@ def export_game_view(request):
                     f"{level_folder}/databases/"
                     f"{safe_level_id}.db"
                 )
-                zip_file.writestr(
-                    sql_archive_path,
-                    level_sql,
-                )
                 database_path = (
                     temp_directory
                     / (
@@ -2159,19 +2377,21 @@ def export_game_view(request):
                         f"{level_index}.db"
                     )
                 )
-                connection = sqlite3.connect(
-                    database_path
+                level_table_rows = database.get_export_table_rows(
+                    request,
+                    level,
                 )
-                try:
-                    if level_sql.strip():
-                        connection.executescript(
-                            level_sql
-                        )
+                database.create_level_database(
+                    database_path,
+                    level,
+                    level_table_rows,
+                )
 
-                    connection.commit()
-
-                finally:
-                    connection.close()
+                level_sql = database.database_dump(database_path)
+                zip_file.writestr(
+                    sql_archive_path,
+                    level_sql,
+                )
 
                 zip_file.write(
                     database_path,
@@ -2255,6 +2475,17 @@ def level_grunddaten_view(request):
             )
 
         saved_level["id"] = level_name
+        if saved_level.get("databaseName") in {"", "level.db"}:
+            safe_level_id = database.sanitize_path_component(
+                level_name,
+                "level",
+            )
+            saved_level["databaseName"] = f"{safe_level_id}.db"
+        database.finalize_editor_level_rows(
+            request,
+            saved_level,
+            level_name,
+        )
         saved_level["startDialog"] = level_greeting
 
         request.session["new_level"] = saved_level
@@ -2492,10 +2723,39 @@ def edit_item_view(request, item_id):
     )
 
     if currently_edited_item != item_id:
+        selected_item_data = next(
+            (
+                item
+                for item in saved_level.get("items", [])
+                if (
+                    isinstance(item, dict)
+                    and item.get("id") == item_id
+                )
+            ),
+            None,
+        )
+        table_rows = None
+        if (
+            isinstance(selected_item_data, dict)
+            and selected_item_data.get("type") == "table"
+        ):
+            table_name = str(
+                selected_item_data.get(
+                    "tableName",
+                    selected_item_data.get("id", ""),
+                )
+            ).strip()
+            table_rows = database.get_editor_table_rows(
+                request,
+                saved_level,
+                table_name,
+            )
+
         selected_item = (
             utils.load_item_for_editing(
                 saved_level,
                 item_id,
+                table_rows=table_rows,
             )
         )
 
@@ -2541,6 +2801,18 @@ def edit_item_view(request, item_id):
             [],
         )
 
+        original_item = next(
+            (
+                existing_item
+                for existing_item in items
+                if (
+                    isinstance(existing_item, dict)
+                    and existing_item.get("id") == old_item_id
+                )
+            ),
+            None,
+        )
+
         updated_items = []
         item_replaced = False
 
@@ -2577,6 +2849,23 @@ def edit_item_view(request, item_id):
                 request
             )
         )
+
+        if (
+            isinstance(original_item, dict)
+            and original_item.get("type") == "table"
+            and current_item.get("type") != "table"
+        ):
+            old_table_name = str(
+                original_item.get(
+                    "tableName",
+                    original_item.get("id", ""),
+                )
+            ).strip()
+            database.remove_editor_table_rows(
+                request,
+                saved_level,
+                old_table_name,
+            )
 
         request.session["new_level"] = (
             saved_level
@@ -2804,6 +3093,33 @@ def delete_item_view(request, item_id):
         "",
     )
 
+    deleted_item = next(
+        (
+            item
+            for item in saved_level.get("items", [])
+            if (
+                isinstance(item, dict)
+                and item.get("id") == item_id
+            )
+        ),
+        None,
+    )
+    if (
+        isinstance(deleted_item, dict)
+        and deleted_item.get("type") == "table"
+    ):
+        table_name = str(
+            deleted_item.get(
+                "tableName",
+                deleted_item.get("id", ""),
+            )
+        ).strip()
+        database.remove_editor_table_rows(
+            request,
+            saved_level,
+            table_name,
+        )
+
     saved_level = utils.remove_item_from_level(
         saved_level,
         item_id,
@@ -2897,6 +3213,12 @@ def save_level_view(request):
     if not level_id:
         return redirect("levelGrunddaten")
 
+    database.finalize_editor_level_rows(
+        request,
+        saved_level,
+        level_id,
+    )
+
     game_json = request.session.get(
         "game_json",
         {},
@@ -2956,6 +3278,13 @@ def save_level_view(request):
 
     request.session["game_json"] = game_json
 
+    if editing_level_id and editing_level_id != level_id:
+        database.move_editor_level_rows(
+            request,
+            editing_level_id,
+            level_id,
+        )
+
     request.session.pop(
         "editing_level_id",
         None,
@@ -3012,6 +3341,10 @@ def delete_level_view(request, level_id):
         ]
 
     request.session["game_json"] = game_json
+    database.remove_editor_level_rows(
+        request,
+        level_id,
+    )
 
     if request.session.get("editing_level_id") == level_id:
         request.session.pop("editing_level_id", None)

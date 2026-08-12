@@ -21,36 +21,91 @@ Startseite | SQL Spell Quest Editor
       </h1>
 
       <p class="fs-5 fw-medium text-body-secondary mb-5">
-        Wähle eine Game-Level-JSON-Datei aus, um ein Game zu editieren.
+        Erstelle ein neues Spiel oder lade ein vorhandenes Spiel mit allen
+        zugehörigen Dateien.
       </p>
 
-      <form
-        method="post"
-        enctype="multipart/form-data"
-        action="{% url 'upload_json' %}"
-        class="mx-auto"
-      >
-        {% csrf_token %}
+      {% if error %}
+        <div class="alert alert-danger text-start" role="alert">
+          {{ error }}
+        </div>
+      {% endif %}
 
-        <div class="mb-3 text-start">
-          <label for="json-file" class="form-label">
-            Game-Level-JSON-Datei
-          </label>
+      <div class="row g-4 text-start">
+        <div class="col-12 col-lg-6">
+          <section class="card h-100 shadow-sm" aria-labelledby="new-game-title">
+            <div class="card-body d-flex flex-column gap-3">
+              <div>
+                <h2 id="new-game-title" class="h4 card-title">
+                  Neues Spiel erstellen
+                </h2>
+                <p class="card-text text-body-secondary mb-0">
+                  Starte mit einer leeren JSON-Datei und füge anschließend
+                  deine Level hinzu.
+                </p>
+              </div>
 
-          <input
-            id="json-file"
-            class="form-control"
-            type="file"
-            name="json_file"
-            accept=".json,application/json"
-            required
-          >
+              <form
+                method="post"
+                action="{% url 'new_game' %}"
+                class="mt-auto"
+              >
+                {% csrf_token %}
+
+                <button type="submit" class="btn btn-primary">
+                  Neues Spiel beginnen
+                  <i class="bi bi-plus-lg ms-2" aria-hidden="true"></i>
+                </button>
+              </form>
+            </div>
+          </section>
         </div>
 
-        <button type="submit" class="btn btn-primary px-4">
-          JSON-Datei hochladen
-        </button>
-      </form>
+        <div class="col-12 col-lg-6">
+          <section class="card h-100 shadow-sm" aria-labelledby="existing-game-title">
+            <div class="card-body d-flex flex-column gap-3">
+              <div>
+                <h2 id="existing-game-title" class="h4 card-title">
+                  Vorhandenes Spiel laden
+                </h2>
+                <p class="card-text text-body-secondary mb-0">
+                  Wähle den kompletten Spielordner aus. Er sollte die
+                  Spiel-JSON sowie die zugehörigen Level- und Asset-Dateien
+                  enthalten.
+                </p>
+              </div>
+
+              <form
+                method="post"
+                enctype="multipart/form-data"
+                action="{% url 'upload_json' %}"
+                class="mt-auto"
+              >
+                {% csrf_token %}
+
+                <label for="game-folder" class="form-label">
+                  Spielordner
+                </label>
+                <input
+                  id="game-folder"
+                  class="form-control mb-3"
+                  type="file"
+                  name="game_files"
+                  webkitdirectory
+                  directory
+                  multiple
+                  required
+                >
+
+                <button type="submit" class="btn btn-outline-primary">
+                  Spielordner laden
+                  <i class="bi bi-folder2-open ms-2" aria-hidden="true"></i>
+                </button>
+              </form>
+            </div>
+          </section>
+        </div>
+      </div>
     </section>
   </div>
 </main>
