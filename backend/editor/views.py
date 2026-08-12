@@ -1,6 +1,6 @@
 from . import utils, sqlParser
 import json, io, zipfile, sqlite3, tempfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.http import HttpResponse
@@ -175,6 +175,18 @@ def save_new_level_session(request, saved_level):
     request.session.modified = True
 
 
+def clear_editor_state(request):
+    for session_key in [
+        "new_level",
+        "editing_level_id",
+        "editing_item_id",
+        "item_edit_mode",
+        "editing_item_section",
+        "item_creation_return_to",
+    ]:
+        request.session.pop(session_key, None)
+
+
 def normalize_game_messages(game_json):
     if not isinstance(game_json, dict):
         return {}
@@ -216,6 +228,22 @@ def get_steps(active_step):
 def start_page(request):
     set_guided_level_creation(request, False)
     return render(request, "editor/start.html")
+
+
+def new_game_view(request):
+    if request.method != "POST":
+        return redirect("start")
+
+    request.session["game_json"] = {
+        "id": "SQLSpellQuest",
+        "messages": deepcopy(DEFAULT_MESSAGES),
+        "level": [],
+    }
+    request.session.pop("game_workspace", None)
+    clear_editor_state(request)
+    request.session.modified = True
+
+    return redirect("level")
 
 
 def kontakt_view(request):
@@ -464,16 +492,53 @@ def upload_json_view(request):
             "editor/start.html",
         )
 
-    uploaded_file = request.FILES.get(
-        "json_file"
-    )
+    uploaded_files = request.FILES.getlist("game_files")
+    legacy_json_file = request.FILES.get("json_file")
 
-    if not uploaded_file:
+    if not uploaded_files and legacy_json_file:
+        uploaded_files = [legacy_json_file]
+
+    if not uploaded_files:
         return render(
             request,
             "editor/start.html",
             {
-                "error": "Keine Datei hochgeladen.",
+                "error": "Kein Spielordner ausgewählt.",
+            },
+        )
+
+    json_candidates = [
+        game_file
+        for game_file in uploaded_files
+        if PurePosixPath(
+            str(game_file.name).replace("\\", "/")
+        ).suffix.lower() == ".json"
+    ]
+    preferred_json_names = {
+        "sqlspellquest.json",
+        "game.json",
+    }
+    uploaded_file = next(
+        (
+            game_file
+            for game_file in json_candidates
+            if PurePosixPath(
+                str(game_file.name).replace("\\", "/")
+            ).name.lower() in preferred_json_names
+        ),
+        json_candidates[0] if len(json_candidates) == 1 else None,
+    )
+
+    if uploaded_file is None:
+        return render(
+            request,
+            "editor/start.html",
+            {
+                "error": (
+                    "Im Spielordner wurde keine eindeutige JSON-Datei "
+                    "gefunden. Benenne sie bitte SQLSpellQuest.json "
+                    "oder Game.json."
+                ),
             },
         )
 
@@ -510,6 +575,50 @@ def upload_json_view(request):
             },
         )
 
+    workspace_path = Path(
+        tempfile.mkdtemp(prefix="sql-quest-game-")
+    )
+    json_relative_path = PurePosixPath(
+        str(uploaded_file.name).replace("\\", "/")
+    )
+
+    try:
+        for game_file in uploaded_files:
+            relative_name = str(
+                game_file.name
+            ).replace("\\", "/")
+            relative_path = PurePosixPath(relative_name)
+
+            if (
+                relative_path.is_absolute()
+                or not relative_path.parts
+                or ".." in relative_path.parts
+            ):
+                raise ValueError(
+                    "Ungültiger Dateipfad im Spielordner."
+                )
+
+            target_path = workspace_path.joinpath(
+                *relative_path.parts
+            )
+            target_path.parent.mkdir(
+                parents=True,
+                exist_ok=True,
+            )
+
+            game_file.seek(0)
+            with target_path.open("wb") as target_file:
+                for chunk in game_file.chunks():
+                    target_file.write(chunk)
+    except (OSError, ValueError) as error:
+        return render(
+            request,
+            "editor/start.html",
+            {
+                "error": str(error),
+            },
+        )
+
     if not isinstance(game_json, dict):
         return render(
             request,
@@ -541,31 +650,13 @@ def upload_json_view(request):
 
     game_json = normalize_game_messages(game_json)
     request.session["game_json"] = game_json
-
-    request.session.pop(
-        "new_level",
-        None,
+    request.session["game_workspace"] = str(workspace_path)
+    request.session["game_json_path"] = str(
+        workspace_path.joinpath(
+            *json_relative_path.parts
+        )
     )
-
-    request.session.pop(
-        "editing_level_id",
-        None,
-    )
-
-    request.session.pop(
-        "editing_item_id",
-        None,
-    )
-
-    request.session.pop(
-        "item_edit_mode",
-        None,
-    )
-
-    request.session.pop(
-        "editing_item_section",
-        None,
-    )
+    clear_editor_state(request)
 
     request.session.modified = True
     return redirect(

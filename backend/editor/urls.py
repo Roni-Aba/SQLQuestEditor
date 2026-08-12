@@ -6,6 +6,7 @@ urlpatterns = [
     path("kontakt/", views.kontakt_view, name="kontakt"),
     path("level/", views.level_view, name="level"),
     path("upload-json/", views.upload_json_view, name="upload_json"),
+    path("new-game/", views.new_game_view, name="new_game"),
     path("components/", views.component_test_view, name="component_test"),
     path("createLevel/", views.create_level, name="create_level"),
     path("auswahl/", views.auswahl_view, name="auswahl_view"),
