@@ -175,6 +175,37 @@ def save_new_level_session(request, saved_level):
     request.session.modified = True
 
 
+def normalize_game_messages(game_json):
+    if not isinstance(game_json, dict):
+        return {}
+
+    levels = game_json.get("level", [])
+    root_messages = game_json.get("messages")
+
+    if not isinstance(root_messages, dict):
+        root_messages = None
+        if isinstance(levels, list):
+            for level in levels:
+                if not isinstance(level, dict):
+                    continue
+                level_messages = level.get("messages")
+                if isinstance(level_messages, dict):
+                    root_messages = deepcopy(level_messages)
+                    break
+
+        if root_messages is not None:
+            game_json["messages"] = root_messages
+        elif "messages" in game_json:
+            game_json["messages"] = {}
+
+    if isinstance(levels, list):
+        for level in levels:
+            if isinstance(level, dict):
+                level.pop("messages", None)
+
+    return game_json
+
+
 def get_steps(active_step):
     steps = []
     for number in range(0, 9):
@@ -508,6 +539,7 @@ def upload_json_view(request):
             },
         )
 
+    game_json = normalize_game_messages(game_json)
     request.session["game_json"] = game_json
 
     request.session.pop(
@@ -577,22 +609,14 @@ def create_level(
         None,
     )
 
-    saved_level = request.session.get(
-        "new_level",
-    )
-
-    if not isinstance(
-        saved_level,
-        dict,
-    ):
-        request.session["new_level"] = {
-            "id": "",
-            "levelPicture": "",
-            "databaseName": "",
-            "startDialog": "",
-            "queryRestriction": {},
-            "items": [],
-        }
+    request.session["new_level"] = {
+        "id": "",
+        "levelPicture": "",
+        "databaseName": "",
+        "startDialog": "",
+        "queryRestriction": {},
+        "items": [],
+    }
 
     request.session[
         "reset_item_draft_on_create_level3"
@@ -753,64 +777,12 @@ def create_level2_view(request):
         request.session.modified = True
         print("createLevel2 gespeichert:")
         print(json.dumps(saved_level, ensure_ascii=False, indent=2))
-        return redirect("create_level21")
+        return redirect("create_level3")
     return render(request, "editor/createLevel2.html", {
         "steps": steps,
         "saved_level": saved_level,
         "form_values": form_values,
     })
-
-
-def create_level21_view(request):
-    steps = get_steps(active_step=2)
-
-    saved_level = request.session.get(
-        "new_level",
-        {},
-    )
-
-    saved_messages = saved_level.get(
-        "messages",
-        {},
-    )
-
-    form_values = {
-        key: saved_messages.get(
-            key,
-            default_message,
-        )
-        for key, default_message in DEFAULT_MESSAGES.items()
-    }
-
-    if request.method == "POST":
-        messages = {}
-
-        for key, default_message in DEFAULT_MESSAGES.items():
-            submitted_message = request.POST.get(key, "").strip()
-
-            messages[key] = (
-                submitted_message
-                if submitted_message
-                else default_message
-            )
-        saved_level["messages"] = messages
-        request.session["new_level"] = saved_level
-        game_json = request.session.get("game_json", {})
-        game_json["messages"] = messages
-        request.session["game_json"] = game_json
-
-        request.session.modified = True
-        print(json.dumps(saved_messages, ensure_ascii=False, indent=2))
-        return redirect("create_level3")
-
-    return render(
-        request,
-        "editor/createLevel2-1.html",
-        {
-            "steps": steps,
-            "form_values": form_values,
-        },
-    )
 
 
 def create_level4_view(
@@ -2761,12 +2733,13 @@ DEFAULT_MESSAGES = {
 
 def messages_grunddaten_view(request):
     set_guided_level_creation(request, False)
-    saved_level = request.session.get(
-        "new_level",
+    game_json = request.session.get(
+        "game_json",
         {},
     )
+    game_json = normalize_game_messages(game_json)
 
-    saved_messages = saved_level.get(
+    saved_messages = game_json.get(
         "messages",
         {},
     )
@@ -2791,15 +2764,6 @@ def messages_grunddaten_view(request):
                 if value
                 else default_value
             )
-        saved_level["messages"] = messages
-        save_new_level_session(
-            request,
-            saved_level,
-        )
-        game_json = request.session.get(
-            "game_json",
-            {},
-        )
         game_json["messages"] = messages
         request.session["game_json"] = game_json
         request.session.modified = True
@@ -2819,7 +2783,6 @@ def messages_grunddaten_view(request):
         request,
         "editor/messagesGrunddaten.html",
         {
-            "saved_level": saved_level,
             "form_values": form_values,
         },
     )
@@ -2919,8 +2882,16 @@ def save_level_view(request):
     if not isinstance(saved_level, dict):
         return redirect("auswahl_view")
 
+    saved_level.pop("messages", None)
+    saved_level = utils.save_current_item_to_new_level(
+        saved_level
+    )
+    level_for_json = utils.build_level_for_json(
+        saved_level
+    )
+
     level_id = str(
-        saved_level.get("id", "")
+        level_for_json.get("id", "")
     ).strip()
 
     if not level_id:
@@ -2933,6 +2904,8 @@ def save_level_view(request):
 
     if not isinstance(game_json, dict):
         game_json = {}
+
+    game_json = normalize_game_messages(game_json)
 
     levels = game_json.get(
         "level",
@@ -2968,7 +2941,7 @@ def save_level_view(request):
 
         if should_replace and not level_was_replaced:
             updated_levels.append(
-                deepcopy(saved_level)
+                deepcopy(level_for_json)
             )
             level_was_replaced = True
         else:
@@ -2976,7 +2949,7 @@ def save_level_view(request):
 
     if not level_was_replaced:
         updated_levels.append(
-            deepcopy(saved_level)
+            deepcopy(level_for_json)
         )
 
     game_json["level"] = updated_levels
@@ -2997,6 +2970,10 @@ def save_level_view(request):
     )
     request.session.pop(
         "editing_item_section",
+        None,
+    )
+    request.session.pop(
+        "new_level",
         None,
     )
     request.session.modified = True

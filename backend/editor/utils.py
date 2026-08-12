@@ -683,6 +683,47 @@ def save_current_item_to_new_level(
     return saved_level
 
 
+def build_level_for_json(saved_level):
+    database_name = saved_level.get(
+        "databaseName",
+        saved_level.get(
+            "id",
+            "",
+        ),
+    )
+
+    if database_name and not database_name.endswith(
+        ".db"
+    ):
+        database_name = (
+            f"{database_name}.db"
+        )
+
+    return {
+        "id": saved_level.get(
+            "id",
+            "",
+        ),
+        "levelPicture": saved_level.get(
+            "levelPicture",
+            "",
+        ),
+        "databaseName": database_name,
+        "startDialog": saved_level.get(
+            "startDialog",
+            "",
+        ),
+        "queryRestriction": saved_level.get(
+            "queryRestriction",
+            {},
+        ),
+        "items": saved_level.get(
+            "items",
+            [],
+        ),
+    }
+
+
 def save_new_level_to_game_json(
     request,
 ):
@@ -708,6 +749,8 @@ def save_new_level_to_game_json(
     ):
         saved_level = {}
 
+    saved_level.pop("messages", None)
+
     saved_level = (
         save_current_item_to_new_level(
             saved_level
@@ -722,44 +765,7 @@ def save_new_level_to_game_json(
     if not level_id:
         return game_json, saved_level
 
-    database_name = saved_level.get(
-        "databaseName",
-        saved_level.get(
-            "id",
-            "",
-        ),
-    )
-
-    if database_name and not database_name.endswith(
-        ".db"
-    ):
-        database_name = (
-            f"{database_name}.db"
-        )
-
-    new_level = {
-        "id": saved_level.get(
-            "id",
-            "",
-        ),
-        "levelPicture": saved_level.get(
-            "levelPicture",
-            "",
-        ),
-        "databaseName": database_name,
-        "startDialog": saved_level.get(
-            "startDialog",
-            "",
-        ),
-        "queryRestriction": saved_level.get(
-            "queryRestriction",
-            {},
-        ),
-        "items": saved_level.get(
-            "items",
-            [],
-        ),
-    }
+    new_level = build_level_for_json(saved_level)
 
     levels = game_json.get(
         "level",
@@ -771,6 +777,10 @@ def save_new_level_to_game_json(
         list,
     ):
         levels = []
+
+    for level in levels:
+        if isinstance(level, dict):
+            level.pop("messages", None)
 
     existing_index = None
 

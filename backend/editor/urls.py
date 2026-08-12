@@ -11,7 +11,6 @@ urlpatterns = [
     path("auswahl/", views.auswahl_view, name="auswahl_view"),
     path("createLevel1/", views.create_level1_view, name="create_level1"),
     path("createLevel2/", views.create_level2_view, name="create_level2"),
-    path("createLevel21/", views.create_level21_view, name="create_level21"),
     path("createLevel3/", views.create_level3_view, name="create_level3"),
     path("createLevel3-1/", views.create_level31_view, name="create_level31"),
     path("createLevel3table/", views.create_level3table_view, name="create_level3table"),
