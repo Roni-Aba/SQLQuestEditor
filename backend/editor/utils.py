@@ -164,6 +164,8 @@ def prepare_game_json_for_export(
             ):
                 continue
 
+            item.pop("data", None)
+
             image_link = item.get(
                 "imageLink",
                 "",
@@ -530,81 +532,6 @@ def build_item_for_json(saved_level):
 
         item["description"] = description
 
-        item["data"] = []
-
-        rows = item_data.get(
-            "rows",
-            [],
-        )
-
-        if not isinstance(
-            rows,
-            list,
-        ):
-            rows = []
-
-        for row in rows:
-            if not isinstance(
-                row,
-                dict,
-            ):
-                continue
-
-            cleaned_row = {}
-            row_has_value = False
-
-            for column in columns:
-                if not isinstance(
-                    column,
-                    dict,
-                ):
-                    continue
-
-                column_id = str(
-                    column.get(
-                        "id",
-                        "",
-                    )
-                ).strip()
-
-                column_type = str(
-                    column.get(
-                        "type",
-                        "text",
-                    )
-                ).strip()
-
-                if not column_id:
-                    continue
-
-                cleaned_value = (
-                    convert_table_cell_value(
-                        row.get(
-                            column_id,
-                            "",
-                        ),
-                        column_type,
-                    )
-                )
-
-                if column_type == "boolean":
-                    if cleaned_value is True:
-                        row_has_value = True
-                elif cleaned_value not in (
-                    "",
-                    None,
-                ):
-                    row_has_value = True
-
-                cleaned_row[column_id] = (
-                    cleaned_value
-                )
-
-            if cleaned_row and row_has_value:
-                item["data"].append(
-                    cleaned_row
-                )
-
     if item["type"] == "hint":
         item["imageLink"] = item_data.get(
             "imageLink",
@@ -684,13 +611,10 @@ def save_current_item_to_new_level(
 
 
 def build_level_for_json(saved_level):
-    database_name = saved_level.get(
-        "databaseName",
-        saved_level.get(
-            "id",
-            "",
-        ),
-    )
+    database_name = str(
+        saved_level.get("databaseName", "")
+        or saved_level.get("id", "")
+    ).strip()
 
     if database_name and not database_name.endswith(
         ".db"
@@ -698,6 +622,14 @@ def build_level_for_json(saved_level):
         database_name = (
             f"{database_name}.db"
         )
+
+    items = deepcopy(saved_level.get("items", []))
+    if not isinstance(items, list):
+        items = []
+
+    for item in items:
+        if isinstance(item, dict):
+            item.pop("data", None)
 
     return {
         "id": saved_level.get(
@@ -717,10 +649,7 @@ def build_level_for_json(saved_level):
             "queryRestriction",
             {},
         ),
-        "items": saved_level.get(
-            "items",
-            [],
-        ),
+        "items": items,
     }
 
 
@@ -875,6 +804,7 @@ def get_item_options_for_current_level(
 def load_item_for_editing(
     saved_level,
     item_id,
+    table_rows=None,
 ):
     items = saved_level.get(
         "items",
@@ -1013,18 +943,11 @@ def load_item_for_editing(
             )
         )
 
-        table_data = selected_item.get(
-            "data",
-            [],
+        item_data["rows"] = (
+            table_rows
+            if isinstance(table_rows, list)
+            else []
         )
-
-        if not isinstance(
-            table_data,
-            list,
-        ):
-            table_data = []
-
-        item_data["rows"] = table_data
 
     elif item_type == "hint":
         item_data["text"] = (
