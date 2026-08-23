@@ -1,15 +1,15 @@
-.navbar-custom {
-    background-color: #6f42c1;
+.navbar.bg-primary {
+    background-color: var(--color-primary) !important;
 }
 
-.navbar-custom .navbar-brand {
+.navbar .navbar-brand {
     font-weight: 600;
 }
 
-.navbar-custom .nav-link {
+.navbar .nav-link {
     color: #f8f9fa;
 }
 
-.navbar-custom .nav-link:hover {
+.navbar .nav-link:hover {
     color: #e0d4ff;
 }

@@ -1,10 +1,10 @@
-<div class="d-flex align-items-center justify-content-between gap-2 w-100 rounded-3 bg-primary-subtle px-3 py-2">
+<div class="table-item d-flex align-items-center justify-content-between gap-2 w-100 rounded-3 px-3 py-2">
 
   <span class="fw-semibold">
     {{ title }}
   </span>
 
-  <div class="d-flex align-items-center gap-3">
+  <div class="table-item__actions d-flex align-items-center gap-3">
 
     {% if delete_url %}
       <form
@@ -17,7 +17,7 @@
 
         <button
           type="submit"
-          class="btn btn-link text-dark text-decoration-none p-0 fs-5 lh-1"
+          class="table-item__action btn btn-link text-dark text-decoration-none p-0 fs-5 lh-1"
           aria-label="{{ title }} löschen"
         >
           <i class="bi bi-x-lg" aria-hidden="true"></i>
@@ -26,7 +26,7 @@
     {% else %}
       <button
         type="button"
-        class="btn btn-link text-dark text-decoration-none p-0 fs-5 lh-1"
+        class="table-item__action btn btn-link text-dark text-decoration-none p-0 fs-5 lh-1"
         aria-label="{{ title }} löschen"
       >
         <i class="bi bi-x-lg" aria-hidden="true"></i>
@@ -36,7 +36,7 @@
     {% if edit_url %}
       <a
         href="{{ edit_url }}"
-        class="btn btn-link text-dark text-decoration-none p-0 fs-5 lh-1"
+        class="table-item__action btn btn-link text-dark text-decoration-none p-0 fs-5 lh-1"
         aria-label="{{ title }} bearbeiten"
       >
         <i class="bi bi-pencil" aria-hidden="true"></i>
@@ -44,7 +44,7 @@
     {% else %}
       <button
         type="button"
-        class="btn btn-link text-dark text-decoration-none p-0 fs-5 lh-1"
+        class="table-item__action btn btn-link text-dark text-decoration-none p-0 fs-5 lh-1"
         aria-label="{{ title }} bearbeiten"
       >
         <i class="bi bi-pencil" aria-hidden="true"></i>
