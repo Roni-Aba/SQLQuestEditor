@@ -1,10 +1,10 @@
-.tableItem {
-    background-color: #e7e0fa;
+.table-item {
+    background-color: var(--color-primary-soft);
     min-height: 55px;
     width: 100%;
 }
 
-.tableItemIcon {
+.table-item__action {
     line-height: 1;
     text-decoration: none;
     font-size: 22px;
