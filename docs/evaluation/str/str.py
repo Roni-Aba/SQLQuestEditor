@@ -7,7 +7,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DJANGO_TEMPLATE_ROOT = PROJECT_ROOT / "backend/editor/templates"
 TEMPLATE_DIRECTORY = PROJECT_ROOT / "backend/editor/templates/editor"
 CSV_FILE = Path(__file__).with_name("str_all_templates.csv")
