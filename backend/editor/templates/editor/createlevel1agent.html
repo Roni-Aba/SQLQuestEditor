@@ -1,0 +1,96 @@
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Levelgrunddaten | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link
+  rel="stylesheet"
+  href="{% static 'editor/components/helper/helper.css' %}"
+>
+{% endblock %}
+
+{% block content %}
+<main class="container-fluid px-4 py-5">
+  <section class="mx-auto mb-5" aria-label="Fortschritt der Levelerstellung">
+    <ol class="d-flex flex-wrap flex-md-nowrap align-items-center justify-content-between gap-3 list-unstyled mb-0">
+      {% for step in "12345678" %}
+        <li class="d-flex justify-content-center flex-shrink-0">
+          <span class="position-relative d-inline-flex" {% if forloop.first %}aria-current="step"{% endif %}>
+            <img
+              src="{% static 'editor/img/figma/figma_createlevel1agent_497_1698_step_' %}{% if forloop.first %}active{% else %}inactive{% endif %}.svg"
+              width="61"
+              height="61"
+              alt=""
+            >
+            <span class="position-absolute top-50 start-50 translate-middle fs-3 fw-semibold text-dark">
+              {{ step }}
+            </span>
+          </span>
+        </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  <div class="row gx-4 gy-5 align-items-start">
+    <aside class="col-12 col-lg-4" aria-label="Hilfe zur Levelerstellung">
+      {% include "editor/components/helper/helper.html" with helper_image="editor/img/figma/figma_createlevel1agent_497_1698_cosmo.png" helper_text="Hier legen wir die Grundsteine unseres Levels fest. Du kannst mir beschreiben, was du dir vorstellst, und ich zaubere dir ein schönes Hintergrundsbild." %}
+    </aside>
+
+    <section class="col-12 col-lg-6" aria-labelledby="level-basics-title">
+      <h1 id="level-basics-title" class="visually-hidden">Levelgrunddaten</h1>
+
+      <div class="d-flex flex-column gap-5">
+        <div>
+          <label class="h5 fw-semibold mb-4" for="level-name">
+            Verrate mir doch bitte, wie das Level heißen soll
+          </label>
+          <input
+            id="level-name"
+            type="text"
+            class="form-control form-control-lg p-4 rounded-3"
+            placeholder="Schreibe hinein"
+            aria-describedby="level-basics-note"
+          >
+        </div>
+
+        <div>
+          <input
+            id="level-background-image"
+            type="file"
+            class="visually-hidden"
+            accept="image/*"
+          >
+          <label class="btn btn-primary px-3 py-2" for="level-background-image">
+            Lade dein gewünschtes Hintergrundsbild hoch
+          </label>
+        </div>
+
+        <div>
+          <label class="h5 fw-semibold mb-4" for="level-greeting">
+            Wie soll der Nutzer des Levels begrüßt werden?
+          </label>
+          <textarea
+            id="level-greeting"
+            class="form-control form-control-lg p-4 rounded-3"
+            rows="2"
+            placeholder="Schreibe hinein"
+            aria-describedby="level-basics-note"
+          ></textarea>
+        </div>
+      </div>
+
+      <p id="level-basics-note" class="visually-hidden">
+        Diese Figma-Vorschau stellt Eingaben lokal dar und speichert noch keine Leveldaten.
+      </p>
+
+      <nav class="d-flex justify-content-end flex-wrap gap-4 mt-5" aria-label="Schrittnavigation">
+        <button type="button" class="btn btn-primary px-3 py-2">Zurück</button>
+        <button type="button" class="btn btn-primary px-3 py-2">Weiter</button>
+      </nav>
+    </section>
+  </div>
+</main>
+{% endblock %}

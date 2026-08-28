@@ -36,4 +36,9 @@ urlpatterns = [
     path("level/<str:level_id>/bearbeiten/",views.edit_level_view,name="edit_level"),
     path("level/speichern/",views.save_level_view,name="save_level"),
     path("level/<str:level_id>/delete/",views.delete_level_view,name="delete_level"),
+    path("auswahl3/", views.auswahl3, name="auswahl3"),
+    path("createlevel1agent/", views.createlevel1agent, name="createlevel1agent"),
+    path("plugintest1/", views.plugintest1, name="plugintest1"),
+    path("plugintest2/", views.plugintest2, name="plugintest2"),
+
 ]
