@@ -1,5 +1,10 @@
 Datei;STR-Score (%)
+PluginTest1.html;0.0
+PluginTest1v2.html;0.0
+PluginTest2.html;0.0
+PluginTest2v2.html;0.0
 auswahl.html;15.38
+auswahl3.html;12.5
 base.html;4.55
 components/button/button.html;0.0
 components/dropdown/dropdown.html;0.0
@@ -26,6 +31,7 @@ createLevel6-2.html;11.11
 createLevel6.html;10.14
 createLevel7.html;12.93
 createLevel8.html;9.76
+createlevel1agent.html;17.65
 editItem.html;12.5
 gegenstandVerwaltung.html;11.32
 level.html;8.0
