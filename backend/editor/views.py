@@ -3361,3 +3361,28 @@ def delete_level_view(request, level_id):
         )
     )
     return redirect("level")
+
+
+def auswahl3(request):
+    return render(
+        request,
+        "editor/auswahl3.html",
+    )
+
+
+def createlevel1agent(request):
+    return render(
+        request,
+        "editor/createlevel1agent.html",
+    )
+
+def plugintest1(request):
+    return render(
+        request,
+        "editor/plugintest1.html",
+    )
+
+def plugintest2(request):
+    return render(
+        request, "editor/plugintest2.html"
+    )
