@@ -6,6 +6,18 @@ Diese Datei ist der verbindliche Projektkontext für Codex in diesem Repository.
 
 Das Projekt wird Design-Driven entwickelt: Die Mockups liegen in Figma und werden per MCP bereitgestellt. Figma beschreibt das Zielbild und die Interaktionsabsicht. Die Umsetzung bleibt aber eine serverseitige Django-Anwendung mit Bootstrap 5 und bestehenden, wiederverwendbaren Django-Template-Komponenten.
 
+## 0. Verbindliches Arbeitsprotokoll
+
+Jede ausgeführte Arbeitshandlung ist unmittelbar nach ihrem Abschluss in `log.md` zu protokollieren. Das umfasst insbesondere Analyse, Toolaufrufe, Entscheidungen, Dateiänderungen, Prüfungen und Sichtprüfungen. Ausschließlich der Log-Aufruf selbst wird nicht erneut geloggt, damit keine Endlosschleife entsteht.
+
+Aus dem Projektstamm ist dafür dieses Skript zu verwenden:
+
+```bash
+./scripts/log_agent_step.sh <kategorie> "<kurze Aktion>" [--duration-ms <ms>] [--tokens-estimated <anzahl>]
+```
+
+Zulässige Kategorien sind `analyse`, `tool`, `entscheidung`, `implementierung`, `validierung` und `sichtpruefung`. Kategorie, Aktion, exakter ISO-8601-Timestamp und Tokenverbrauch sind Pflichtfelder jedes Eintrags. Die beobachtete Laufzeit ist eine optionale Zusatzangabe und wird in Millisekunden übergeben, sobald sie zuverlässig messbar ist. Die sichtbare Textnutzlast von Request und Response darf näherungsweise als Zeichenanzahl geteilt durch vier erfasst werden; sie wird ausdrücklich nur als Schätzung markiert und darf nicht als tatsächlicher Modell-Tokenverbrauch ausgegeben werden. Ist der sichtbare Umfang nicht zuverlässig messbar, bleibt der Tokenverbrauch transparent `nicht verfügbar`.
+
 ## 1. Zielbild
 
 Der SQL Spell Quest Editor soll visuell möglichst nah an den Figma-Mockups bleiben, ohne die bestehende Django-Struktur unnötig umzubauen.
@@ -308,6 +320,8 @@ Für neue Komponenten wird ausschließlich ein Django-Template angelegt und Boot
 Ein Figma-MCP-Prompt darf niemals dazu führen, dass eine bestehende HTML- oder CSS-Datei angepasst oder neues CSS angelegt wird. Das gilt auch dann, wenn die Figma-Referenz dadurch nur näherungsweise umgesetzt werden kann. Bestehende Templates, Komponenten, Layouts und ihre CSS-Abhängigkeiten bleiben unverändert und werden ausschließlich wiederverwendet.
 
 Für die Umsetzung sind ausschließlich Bootstrap-Klassen im neuen Template zu verwenden. Zu jedem Figma-Prompt müssen eine neue Render-View in `views.py` und genau eine neue Route in `urls.py` ergänzt werden. Bestehende Views, Routen, HTML-Dateien und Verträge bleiben unverändert. Wenn das Design ohne CSS-Datei oder Änderung an fertigem Bestand nicht sinnvoll abbildbar ist, muss die Abweichung benannt und vor einer solchen Änderung beim Nutzer nachgefragt werden.
+
+Vor jedem Figma-MCP-Call muss der Nutzer nach dem Namen der neu zu generierenden Seite gefragt werden. Der bestätigte Seitenname ist für Template-, View- und Routennamen zu verwenden; die Figma-Node-ID wird weiterhin zusätzlich zur eindeutigen Benennung angehängt.
 
 Bei jedem Figma-Request in dieser Reihenfolge arbeiten:
 
