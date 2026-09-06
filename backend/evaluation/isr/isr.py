@@ -10,7 +10,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DJANGO_TEMPLATE_ROOT = PROJECT_ROOT / "backend/editor/templates"
 TEMPLATE_DIRECTORY = PROJECT_ROOT / "backend/editor/templates/editor"
-CSV_FILE = Path(__file__).with_name("isr_all_templates.csv")
+CSV_FILE = Path(__file__).with_name("isr_all_templatesOld.csv")
 RUN_ALL_TEMPLATES = True
 TEMPLATE_REFERENCE = re.compile(r'''{%\s*(?:include|extends)\s+["']([^"']+)["']''')
 
