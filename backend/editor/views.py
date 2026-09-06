@@ -3397,3 +3397,9 @@ def plugintest2(request):
         request, "editor/plugintest2.html"
     )
 
+
+def figma_overview_45_1891_view(request):
+    return render(
+        request,
+        "editor/figma_overview_45_1891.html",
+    )

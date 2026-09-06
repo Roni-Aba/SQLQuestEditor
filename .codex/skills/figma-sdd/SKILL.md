@@ -1,30 +1,45 @@
 ---
 name: figma-sdd
-description: "Liest einen Figma-Node, analysiert lokale Django-Bausteine und erstellt ein bebildertes GitLab-Issue im Projekt stu235370/sql-quest-editor. Verwenden für Figma-zu-GitLab-Workitem; nicht für Implementierung."
+description: "Liest einen Figma-Node, analysiert lokale Django-Bausteine und erstellt ein GitHub-Issue im Repository Roni-Aba/SQLQuestEditor. Verwenden für Figma-zu-GitHub-Workitem; nicht für Implementierung."
 ---
 
-# Figma zu GitLab-Workitem
+# Figma zu GitHub-Workitem
 
-Lies den Figma-Node als Designquelle, ermittle die tatsächlich passenden lokalen Django-Templates und -Komponenten und erstelle daraus ein klar abgegrenztes GitLab-Workitem. Figma beschreibt die Oberfläche, aber keine erfundene Fachlogik.
+Lies den Figma-Node als Designquelle, ermittle die tatsächlich passenden lokalen
+Django-Templates und -Komponenten und erstelle daraus ein klar abgegrenztes
+GitHub-Workitem. Figma beschreibt die Oberfläche, aber keine erfundene Fachlogik.
 
 ## Geltungsbereich
 
-- Das Ergebnis ist genau ein GitLab-Issue im festen Projekt [`stu235370/sql-quest-editor`](https://git.informatik.uni-kiel.de/stu235370/sql-quest-editor).
-- Verwende immer GitLab-Host `git.informatik.uni-kiel.de`, Namespace `stu235370` und Projekt `sql-quest-editor`. Andere Repository-Ziele sind nicht zulässig.
-- Ein Screenshot des angeforderten Figma-Nodes ist zwingender Bestandteil des Issues.
+- Das Ergebnis ist genau ein GitHub-Issue im festen Repository
+  [`Roni-Aba/SQLQuestEditor`](https://github.com/Roni-Aba/SQLQuestEditor).
+- Verwende immer GitHub und das Repository `owner=Roni-Aba`, `repo=SQLQuestEditor`.
+  Andere Repository-Ziele sind nicht zulässig.
 - Erstelle keine Spec-Kit-Artefakte, lokalen SDD-Dateien, Unteraufgaben oder Code.
-- Diese Skill ändert weder Figma noch das lokale Projekt. Eine spätere Implementierung ist ein separater, ausdrücklicher Auftrag.
+- Dieser Skill ändert weder Figma noch das lokale Projekt. Eine spätere Implementierung
+  ist ein separater, ausdrücklicher Auftrag.
 
 ## Eingang und Preflight
 
-Vor dem ersten Figma-MCP-Aufruf muss der Nutzer den semantischen Namen der neu zu generierenden Seite bestätigt haben. Fordere außerdem einen Figma-Frame- oder Node-Link an, falls er nicht vorliegt.
+Vor dem ersten Figma-MCP-Aufruf muss der Nutzer den semantischen Namen der neu zu
+generierenden Seite bestätigt haben. Fordere außerdem einen Figma-Frame- oder Node-Link
+an, falls er nicht vorliegt.
 
 1. Lies `AGENTS.md`, prüfe `git status --short` und schütze alle fremden Änderungen.
-2. Analysiere den lokalen Bestand ausschließlich lesend. Prüfe mindestens die passenden Dateien unter `backend/editor/templates/editor/`, die Komponenten unter `backend/editor/templates/editor/components/`, die verwendeten `{% include %}`-Beziehungen, CSS-Abhängigkeiten und die für den Node relevanten JavaScript-Hooks. Öffne die tatsächlich in Frage kommenden Dateien und halte die konkrete Wiederverwendung fest; nenne keine Komponente nur aufgrund ihres Namens.
-3. Lade eine verfügbare GitLab-Skill (bevorzugt `$gitlab`) bzw. den verbundenen GitLab-Connector. Das Ziel ist fest `namespace=stu235370`, `project=sql-quest-editor` auf `git.informatik.uni-kiel.de`; frage nicht nach einem anderen Repository und leite keine Zielwerte aus dem lokalen Git-Remote ab.
-4. Protokolliere jede Arbeitshandlung mit `./scripts/log_agent_step.sh`, sofern das Projekt diesen verpflichtenden Workflow bereitstellt.
+2. Analysiere den lokalen Bestand ausschließlich lesend. Prüfe mindestens die passenden
+   Dateien unter `backend/editor/templates/editor/`, die Komponenten unter
+   `backend/editor/templates/editor/components/`, die verwendeten `{% include %}`-
+   Beziehungen, CSS-Abhängigkeiten und die für den Node relevanten JavaScript-Hooks.
+   Öffne die tatsächlich in Frage kommenden Dateien und halte die konkrete
+   Wiederverwendung fest; nenne keine Komponente nur aufgrund ihres Namens.
+3. Lade einen verfügbaren GitHub-Connector oder eine GitHub-Skill. Das Ziel ist fest
+   `Roni-Aba/SQLQuestEditor`; frage nicht nach einem anderen Repository und leite keine
+   Zielwerte aus dem lokalen Git-Remote ab.
+4. Protokolliere jede Arbeitshandlung mit `./scripts/log_agent_step.sh`, sofern das
+   Projekt diesen verpflichtenden Workflow bereitstellt.
 
-Wenn `get_design_context` verwendet wird, lade davor zwingend die Skill `figma:figma-design-to-code` und befolge ihre Anweisungen.
+Wenn `get_design_context` verwendet wird, lade davor zwingend die Skill
+`figma:figma-design-to-code` und befolge ihre Anweisungen.
 
 ## Designkontext aus Figma
 
@@ -36,17 +51,21 @@ Lies den angegebenen Figma-Node per MCP und erfasse nur belegbare Informationen:
 - Mapping auf bestehende Django-Komponenten, Bootstrap und geschützte Verträge
 - Abweichungen, technische Risiken und offene fachliche Fragen
 
-Erfinde aus visuellen Elementen keine Persistenz, Session-Daten, POST-Logik, API-Verträge oder Validierungsregeln. Temporäre MCP-Asset-URLs dürfen nicht als dauerhafte Referenz gespeichert werden.
+Erfinde aus visuellen Elementen keine Persistenz, Session-Daten, POST-Logik,
+API-Verträge oder Validierungsregeln. Temporäre MCP-Asset-URLs dürfen nicht als
+dauerhafte Referenz gespeichert werden.
 
-Erzeuge zusätzlich per Figma MCP einen Screenshot genau dieses Nodes. Bewahre ihn nur temporär auf, bis er als Anhang an das Issue übergeben wurde; ersetze ihn nicht durch eine selbst erzeugte oder fremde Grafik.
+## GitHub-Workitem erstellen
 
-## GitLab-Workitem erstellen
+Die GitHub-Skill beziehungsweise der GitHub-Connector prüft im Repository
+`Roni-Aba/SQLQuestEditor` auf ähnliche offene Issues und erstellt das Issue über den
+verbundenen GitHub-Zugriff. Nenne vor der Schreibaktion nochmals das feste Ziel
+`github.com/Roni-Aba/SQLQuestEditor` und den konkreten Issue-Titel. Bei einem
+wahrscheinlichen Duplikat nenne den Fund und erstelle kein zweites Issue ohne Zustimmung.
 
-Die GitLab-Skill bzw. der GitLab-Connector prüft im Projekt `stu235370/sql-quest-editor` auf ähnliche offene Issues und erstellt das Issue über den verbundenen GitLab-Zugriff. Nenne vor der Schreibaktion nochmals das feste Ziel `git.informatik.uni-kiel.de/stu235370/sql-quest-editor` und den konkreten Issue-Titel. Bei einem wahrscheinlichen Duplikat nenne den Fund und erstelle kein zweites Issue ohne Zustimmung.
-
-Hänge den Figma-Screenshot über den GitLab-Uploadweg an das Issue an und binde ihn sichtbar in dessen Beschreibung ein. Erstelle kein Issue mit einer lokalen Dateireferenz, Platzhalter-URL oder einem fehlenden Screenshot. Bietet der GitLab-Connector keinen Anhangs-Upload, halte vor der Issue-Erstellung an und nenne den fehlenden Uploadweg als Blocker; lege keinen Ersatz-Commit und keine externe Dateiablage an.
-
-Erstelle das Issue nur, wenn der Nutzer die externe Erstellung ausdrücklich beauftragt hat. Bei einer vollständigen, ausdrücklichen Anfrage darf es ohne weiteren Freigabeschritt erstellt werden.
+Erstelle das Issue nur, wenn der Nutzer die externe Erstellung ausdrücklich beauftragt
+hat. Bei einer vollständigen, ausdrücklichen Anfrage darf es ohne weiteren
+Freigabeschritt erstellt werden.
 
 Verwende diese kompakte Beschreibung:
 
@@ -82,8 +101,12 @@ Verwende diese kompakte Beschreibung:
 - <nur tatsächliche Lücken oder Risiken>
 ```
 
-Formuliere einen präzisen Titel als `Figma: <Seitenname> (<Node-ID>)`. Übernimm Labels, Assignee, Meilenstein oder Epic nur, wenn sie angefordert wurden oder eindeutig als Projektnorm vorliegen.
+Formuliere einen präzisen Titel als `Figma: <Seitenname> (<Node-ID>)`. Übernimm
+Labels, Assignee, Meilenstein oder Projekt nur, wenn sie angefordert wurden oder eindeutig
+als Projektnorm vorliegen.
 
 ## Abschluss
 
-Melde das Ziel `git.informatik.uni-kiel.de/stu235370/sql-quest-editor`, Issue-URL bzw. IID, Figma-Node, den angehängten Screenshot und offene Fragen. Falls kein Zugriff oder kein Anhangs-Upload besteht, melde ausschließlich den konkreten Blocker; lege keine lokale Ersatzdatei an.
+Melde das Ziel `github.com/Roni-Aba/SQLQuestEditor`, die Issue-URL beziehungsweise
+Issue-Nummer, den Figma-Node und offene Fragen. Falls kein GitHub-Zugriff besteht,
+melde ausschließlich den konkreten Blocker.

@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "presets": {
+    "sql-quest-figma": {
+      "version": "1.0.0",
+      "source": "local",
+      "manifest_hash": "sha256:fe6977be8f98b2298f1e4ccfcae31ede44f3e1f7fe8ebb3526f6fa5bff544e76",
+      "enabled": true,
+      "priority": 1,
+      "registered_commands": {
+        "codex": [
+          "speckit.specify",
+          "speckit.plan",
+          "speckit.implement",
+          "speckit.converge"
+        ]
+      },
+      "registered_skills": {
+        "codex": [
+          "speckit-specify",
+          "speckit-plan",
+          "speckit-implement",
+          "speckit-converge"
+        ]
+      },
+      "installed_at": "2026-09-06T11:28:45.491168+00:00"
+    }
+  }
+}

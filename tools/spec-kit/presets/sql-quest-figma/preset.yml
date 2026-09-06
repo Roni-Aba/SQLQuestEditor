@@ -1,0 +1,45 @@
+schema_version: "1.0"
+
+preset:
+  id: "sql-quest-figma"
+  name: "SQL Quest Figma Workflow"
+  version: "1.0.0"
+  description: "Erweitert den Spec-Kit-Workflow um verbindliche Figma-MCP-Analysen."
+  author: "Ronia Aba"
+  repository: "https://github.com/Roni-Aba/SQLQuestEditor"
+  license: "MIT"
+
+requires:
+  speckit_version: ">=1.0.0"
+
+provides:
+  templates:
+    - type: "command"
+      name: "speckit.specify"
+      file: "commands/speckit.specify.md"
+      description: "Figma-MCP-Erweiterung für die Spezifikation."
+      strategy: "wrap"
+
+    - type: "command"
+      name: "speckit.plan"
+      file: "commands/speckit.plan.md"
+      description: "Figma-MCP-Erweiterung für die technische Planung."
+      strategy: "wrap"
+
+    - type: "command"
+      name: "speckit.implement"
+      file: "commands/speckit.implement.md"
+      description: "Figma-MCP-Erweiterung für die Implementierung."
+      strategy: "wrap"
+
+    - type: "command"
+      name: "speckit.converge"
+      file: "commands/speckit.converge.md"
+      description: "Figma-MCP-Erweiterung für die Abschlussprüfung."
+      strategy: "wrap"
+
+tags:
+  - "figma"
+  - "mcp"
+  - "django"
+  - "frontend"

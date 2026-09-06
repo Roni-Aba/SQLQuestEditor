@@ -1,0 +1,60 @@
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Levelübersicht | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'editor/components/helper/helper.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="container min-vh-100 d-flex align-items-center py-5" aria-labelledby="level-overview-title">
+  <h1 id="level-overview-title" class="visually-hidden">
+    Übersicht zur Levelerstellung
+  </h1>
+
+  <div class="row align-items-center justify-content-center gy-5 gx-lg-5 w-100 py-lg-5">
+    <section class="col-12 col-lg-3" aria-label="Bereiche der Levelerstellung">
+      <div class="d-flex flex-column align-items-center align-items-lg-start gap-5">
+        <a class="btn bg-primary border-primary text-white fw-semibold px-3 py-2" href="{% url 'levelGrunddaten' %}">
+          Levelgrunddaten
+        </a>
+        <a class="btn bg-primary border-primary text-white fw-semibold px-3 py-2" href="{% url 'sql_grunddaten_view' %}">
+          SQL Beschränkungen
+        </a>
+        <a class="btn bg-primary border-primary text-white fw-semibold px-3 py-2" href="{% url 'messages_grunddaten' %}">
+          Systemnachrichten
+        </a>
+        <a class="btn bg-primary border-primary text-white fw-semibold px-3 py-2" href="{% url 'gegenstandVerwaltung' %}">
+          Gegenstände
+        </a>
+      </div>
+    </section>
+
+    <section class="col-12 col-lg-4" aria-label="Hinweise von Cosmo">
+      <div class="d-flex flex-column align-items-center text-center">
+        {% include "editor/components/helper/helper.html" with helper_image="editor/img/figma/figma_overview_45_1891_cosmo.png" helper_text="Du befindest dich in der Übersicht zur Levelerstellung. Wenn du möchtest, begleite ich dich Schritt für Schritt durch den gesamten Erstellungsprozess. Wähle hierfür die „Geführte Levelerstellung“ rechts von mir. Alternativ kannst du direkt den Bereich links auswählen, welchen du bearbeiten möchtest." aria_label="Erklärung zur Levelerstellung" image_alt="Cosmo, dein Begleiter bei der Levelerstellung" %}
+
+        <div class="mt-5">
+          <button type="button" class="btn bg-primary border-primary text-white fw-semibold px-3 py-2" disabled aria-describedby="save-level-unavailable">
+            Level speichern
+          </button>
+          <span id="save-level-unavailable" class="visually-hidden">
+            Speichern ist in dieser Ansicht nicht verfügbar.
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <section class="col-12 col-lg-3" aria-label="Geführte Levelerstellung">
+      <div class="d-flex justify-content-center">
+        <a class="btn bg-primary border-primary text-white fw-semibold px-3 py-2" href="{% url 'create_level' %}">
+          Geführte Levelerstellung
+        </a>
+      </div>
+    </section>
+  </div>
+</main>
+{% endblock %}

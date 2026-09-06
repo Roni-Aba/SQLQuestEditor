@@ -42,5 +42,6 @@ urlpatterns = [
     path("createlevel1agentv2/", views.createlevel1agentv2, name="createlevel1agentv2"),
     path("plugintest1/", views.plugintest1, name="plugintest1"),
     path("plugintest2/", views.plugintest2, name="plugintest2"),
+    path("figma/overview-45-1891/", views.figma_overview_45_1891_view, name="figma_overview_45_1891"),
 
 ]
