@@ -1,0 +1,59 @@
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'editor/components/button/button.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/statusBar/statusBar.css' %}">
+<link rel="stylesheet" href="{% static 'editor/css/auswahl.css' %}">
+
+<main class="create-level-page">
+
+  <section class="create-level-status">
+    {% include "editor/components/statusBar/statusBar.html" %}
+  </section>
+
+  <section class="level-menu">
+    <a href="/createLevel/basic/" class="text-decoration-none">
+      {% include "editor/components/button/button.html" with title="Levelgrunddaten" %}
+    </a>
+
+    <a href="/createLevel/sql/" class="text-decoration-none">
+      {% include "editor/components/button/button.html" with title="SQL Beschränkungen" %}
+    </a>
+
+    <a href="/createLevel/items/" class="text-decoration-none">
+      {% include "editor/components/button/button.html" with title="Gegenstände" %}
+    </a>
+  </section>
+
+  <section class="level-center">
+    <img
+      src="{% static 'editor/img/cat2.png' %}"
+      alt="Cosmo Wizard"
+      class="create-level-cosmo"
+    >
+
+    <p class="intro-text">
+      Du befindest dich in der Übersicht zur Levelerstellung.
+      Wenn du möchtest, begleite ich dich Schritt für Schritt durch
+      den gesamten Erstellungsprozess. Wähle hierfür die
+      “Geführte Levelerstellung” rechts von mir.
+      Alternativ kannst du direkt den Bereich links auswählen,
+      welchen du bearbeiten möchtest.
+    </p>
+
+    <a href="{% url 'export_game' %}" class="text-decoration-none">
+      {% include "editor/components/button/button.html" with title="Exportiere das Spiel" %}
+    </a>
+  </section>
+
+  <section class="guided-section">
+    <a href="/createLevel/" class="text-decoration-none">
+      {% include "editor/components/button/button.html" with title="Geführte Levelerstellung" %}
+    </a>
+  </section>
+
+</main>
+
+{% endblock %}

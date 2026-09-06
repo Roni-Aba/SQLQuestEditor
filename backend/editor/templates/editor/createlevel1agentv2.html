@@ -1,0 +1,36 @@
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Levelgrunddaten | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link
+  rel="stylesheet"
+  href="{% static 'editor/components/button/button.css' %}"
+>
+<link
+  rel="stylesheet"
+  href="{% static 'editor/components/statusBar/statusBar.css' %}"
+>
+<link
+  rel="stylesheet"
+  href="{% static 'editor/components/helper/helper.css' %}"
+>
+{% endblock %}
+
+{% block content %}
+<main class="create-page">
+  <div class="create-page__content">
+    <section class="create-page__status" aria-label="Fortschritt der Levelerstellung">
+      {% include "editor/components/statusBar/statusBar.html" with steps=steps %}
+    </section>
+
+    {% url 'create_level1' as create_level1_url %}
+    {% url 'create_level' as create_level_url %}
+
+    {% include "editor/partials/levelGrunddatenForm.html" with form_action=create_level1_url back_url=create_level_url helper_text="Hier legen wir die Grundsteine unseres Levels fest. Du kannst mir beschreiben, was du dir vorstellst, und ich zaubere dir ein schönes Hintergrundsbild." submit_label="Weiter" submit_icon="bi-arrow-right" submit_button_id="continue-button" require_picture=True use_component_back_button=True %}
+  </div>
+</main>
+{% endblock %}

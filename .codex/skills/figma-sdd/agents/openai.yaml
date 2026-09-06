@@ -1,0 +1,4 @@
+interface:
+  display_name: "Figma zu GitLab-Workitem"
+  short_description: "Figma-Kontext als GitLab-Issue mit Screenshot"
+  default_prompt: "Use $figma-sdd to create an illustrated GitLab issue in stu235370/sql-quest-editor from this Figma node."
