@@ -5,7 +5,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 TEMPLATE_ROOT = PROJECT_ROOT / "backend/editor/templates"
 
-PAGE_PROFILES = {
+TEMPLATES = {
     "levelgrunddaten": {
         "expected": {
             "editor/components/button/button.html",
@@ -15,8 +15,10 @@ PAGE_PROFILES = {
             "editor/components/helper/helper.html",
         },
         "templates": {
+            "Ansatz B Old" : "editor/createLevel1Old.html",
             "Ansatz B": "editor/createLevel1.html",
-            "Ansatz C": "editor/createLevel1agent.html",
+            "Ansatz C old": "editor/createLevel1agent.html",
+            "Ansatz C " : "editor/createLevel1agentv2.html",
         },
     },
     "auswahl": {
@@ -26,18 +28,16 @@ PAGE_PROFILES = {
             "editor/components/helper/helper.html",
         },
         "templates": {
+            "Ansatz B Old" : "editor/auswahlOld.html",
             "Ansatz B": "editor/auswahl.html",
-            "Ansatz C": "editor/auswahl3.html",
+            "Ansatz C old": "editor/auswahl3.html",
+            "Ansatz C " : "editor/auswahl3v2.html",
         },
     },
 }
 
-INCLUDE_PATTERN = re.compile(
-    r"""{%\s*include\s+["']([^"']+)["'][^%]*%}"""
-)
-EXTENDS_PATTERN = re.compile(
-    r"""{%\s*extends\s+["']([^"']+)["']\s*%}"""
-)
+INCLUDE_PATTERN = re.compile(r"""{%\s*include\s+["']([^"']+)["'][^%]*%}""")
+EXTENDS_PATTERN = re.compile(r"""{%\s*extends\s+["']([^"']+)["']\s*%}""")
 
 
 def collect_templates(template: Path, visited=None):
@@ -86,8 +86,8 @@ def print_result(label: str, template_name: str, expected_components: set[str]):
 
 
 if __name__ == "__main__":
-    for page_name, profile in PAGE_PROFILES.items():
-        print(f"\n{'=' * 60}\n{page_name.upper()}\n{'=' * 60}")
+    for name, pages in TEMPLATES.items():
+        print("- - - - - - - - - - - - - " + name.upper() + "- - - - - - - - - - - - - ")
 
-        for label, template_name in profile["templates"].items():
-            print_result(label, template_name, profile["expected"])
+        for label, template_name in pages["templates"].items():
+            print_result(label, template_name, pages["expected"])
