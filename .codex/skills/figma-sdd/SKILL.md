@@ -1,0 +1,89 @@
+---
+name: figma-sdd
+description: "Liest einen Figma-Node, analysiert lokale Django-Bausteine und erstellt ein bebildertes GitLab-Issue im Projekt stu235370/sql-quest-editor. Verwenden für Figma-zu-GitLab-Workitem; nicht für Implementierung."
+---
+
+# Figma zu GitLab-Workitem
+
+Lies den Figma-Node als Designquelle, ermittle die tatsächlich passenden lokalen Django-Templates und -Komponenten und erstelle daraus ein klar abgegrenztes GitLab-Workitem. Figma beschreibt die Oberfläche, aber keine erfundene Fachlogik.
+
+## Geltungsbereich
+
+- Das Ergebnis ist genau ein GitLab-Issue im festen Projekt [`stu235370/sql-quest-editor`](https://git.informatik.uni-kiel.de/stu235370/sql-quest-editor).
+- Verwende immer GitLab-Host `git.informatik.uni-kiel.de`, Namespace `stu235370` und Projekt `sql-quest-editor`. Andere Repository-Ziele sind nicht zulässig.
+- Ein Screenshot des angeforderten Figma-Nodes ist zwingender Bestandteil des Issues.
+- Erstelle keine Spec-Kit-Artefakte, lokalen SDD-Dateien, Unteraufgaben oder Code.
+- Diese Skill ändert weder Figma noch das lokale Projekt. Eine spätere Implementierung ist ein separater, ausdrücklicher Auftrag.
+
+## Eingang und Preflight
+
+Vor dem ersten Figma-MCP-Aufruf muss der Nutzer den semantischen Namen der neu zu generierenden Seite bestätigt haben. Fordere außerdem einen Figma-Frame- oder Node-Link an, falls er nicht vorliegt.
+
+1. Lies `AGENTS.md`, prüfe `git status --short` und schütze alle fremden Änderungen.
+2. Analysiere den lokalen Bestand ausschließlich lesend. Prüfe mindestens die passenden Dateien unter `backend/editor/templates/editor/`, die Komponenten unter `backend/editor/templates/editor/components/`, die verwendeten `{% include %}`-Beziehungen, CSS-Abhängigkeiten und die für den Node relevanten JavaScript-Hooks. Öffne die tatsächlich in Frage kommenden Dateien und halte die konkrete Wiederverwendung fest; nenne keine Komponente nur aufgrund ihres Namens.
+3. Lade eine verfügbare GitLab-Skill (bevorzugt `$gitlab`) bzw. den verbundenen GitLab-Connector. Das Ziel ist fest `namespace=stu235370`, `project=sql-quest-editor` auf `git.informatik.uni-kiel.de`; frage nicht nach einem anderen Repository und leite keine Zielwerte aus dem lokalen Git-Remote ab.
+4. Protokolliere jede Arbeitshandlung mit `./scripts/log_agent_step.sh`, sofern das Projekt diesen verpflichtenden Workflow bereitstellt.
+
+Wenn `get_design_context` verwendet wird, lade davor zwingend die Skill `figma:figma-design-to-code` und befolge ihre Anweisungen.
+
+## Designkontext aus Figma
+
+Lies den angegebenen Figma-Node per MCP und erfasse nur belegbare Informationen:
+
+- Figma-Link, Node-ID, Abrufdatum und bestätigter Seitenname
+- sichtbare Texte, Informationshierarchie, Layout, Responsive-Hinweise und Zustände
+- vorhandene Komponenten, Variablen, Assets und Interaktionshinweise
+- Mapping auf bestehende Django-Komponenten, Bootstrap und geschützte Verträge
+- Abweichungen, technische Risiken und offene fachliche Fragen
+
+Erfinde aus visuellen Elementen keine Persistenz, Session-Daten, POST-Logik, API-Verträge oder Validierungsregeln. Temporäre MCP-Asset-URLs dürfen nicht als dauerhafte Referenz gespeichert werden.
+
+Erzeuge zusätzlich per Figma MCP einen Screenshot genau dieses Nodes. Bewahre ihn nur temporär auf, bis er als Anhang an das Issue übergeben wurde; ersetze ihn nicht durch eine selbst erzeugte oder fremde Grafik.
+
+## GitLab-Workitem erstellen
+
+Die GitLab-Skill bzw. der GitLab-Connector prüft im Projekt `stu235370/sql-quest-editor` auf ähnliche offene Issues und erstellt das Issue über den verbundenen GitLab-Zugriff. Nenne vor der Schreibaktion nochmals das feste Ziel `git.informatik.uni-kiel.de/stu235370/sql-quest-editor` und den konkreten Issue-Titel. Bei einem wahrscheinlichen Duplikat nenne den Fund und erstelle kein zweites Issue ohne Zustimmung.
+
+Hänge den Figma-Screenshot über den GitLab-Uploadweg an das Issue an und binde ihn sichtbar in dessen Beschreibung ein. Erstelle kein Issue mit einer lokalen Dateireferenz, Platzhalter-URL oder einem fehlenden Screenshot. Bietet der GitLab-Connector keinen Anhangs-Upload, halte vor der Issue-Erstellung an und nenne den fehlenden Uploadweg als Blocker; lege keinen Ersatz-Commit und keine externe Dateiablage an.
+
+Erstelle das Issue nur, wenn der Nutzer die externe Erstellung ausdrücklich beauftragt hat. Bei einer vollständigen, ausdrücklichen Anfrage darf es ohne weiteren Freigabeschritt erstellt werden.
+
+Verwende diese kompakte Beschreibung:
+
+```markdown
+## Figma-Quelle
+- Link: <Figma-URL>
+- Node: <Node-ID>
+- Seite: <bestätigter Seitenname>
+
+## Ziel
+<belegbares, kurzes Ziel der Oberfläche>
+
+## Designanforderungen
+- <sichtbare Hierarchie, Komponenten und Zustände>
+- <relevante Layout- und Responsive-Anforderungen>
+- <Assets oder Design-System-Hinweise>
+
+## Projektvorgaben
+- Neue Figma-Seite nur additiv: neues Template, neue Render-View, neue Route.
+- Bestehende Templates, Komponenten und CSS-Dateien nicht ändern.
+- Bootstrap verwenden; keine neue CSS-Datei und keine erfundene Backend-Logik.
+
+## Lokale Bestandsanalyse
+- Wiederzuverwendende Templates und Komponenten: <konkrete, geprüfte Repository-Pfade>
+- Relevante Includes, CSS-Abhängigkeiten und JavaScript-Hooks: <konkrete, geprüfte Repository-Pfade>
+- Abgeleitete Umsetzung: <welche Bestandsteile unverändert wiederverwendet werden und welches neue Template, welche View und welche Route erforderlich wären>
+
+## Akzeptanzkriterien
+- [ ] <aus Figma belegbarer, überprüfbarer Punkt>
+- [ ] <aus Figma belegbarer, überprüfbarer Punkt>
+
+## Offene Fragen / Risiken
+- <nur tatsächliche Lücken oder Risiken>
+```
+
+Formuliere einen präzisen Titel als `Figma: <Seitenname> (<Node-ID>)`. Übernimm Labels, Assignee, Meilenstein oder Epic nur, wenn sie angefordert wurden oder eindeutig als Projektnorm vorliegen.
+
+## Abschluss
+
+Melde das Ziel `git.informatik.uni-kiel.de/stu235370/sql-quest-editor`, Issue-URL bzw. IID, Figma-Node, den angehängten Screenshot und offene Fragen. Falls kein Zugriff oder kein Anhangs-Upload besteht, melde ausschließlich den konkreten Blocker; lege keine lokale Ersatzdatei an.

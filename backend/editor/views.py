@@ -3368,12 +3368,22 @@ def auswahl3(request):
         request,
         "editor/auswahl3.html",
     )
+def auswahl3v2(request):
+    return render(
+        request,
+        "editor/auswahl3v2.html"
+    )
 
 
 def createlevel1agent(request):
     return render(
         request,
         "editor/createlevel1agent.html",
+    )
+def createlevel1agentv2(request):
+    return render(
+        request,
+        "editor/createlevel1agentv2.html",
     )
 
 def plugintest1(request):
@@ -3386,3 +3396,4 @@ def plugintest2(request):
     return render(
         request, "editor/plugintest2.html"
     )
+

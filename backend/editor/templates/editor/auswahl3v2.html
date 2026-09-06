@@ -1,0 +1,53 @@
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Levelübersicht | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'editor/components/button/button.css' %}">
+<link rel="stylesheet" href="{% static 'editor/components/helper/helper.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="container py-5" aria-labelledby="level-overview-title">
+  {% url 'levelGrunddaten' as level_grunddaten_url %}
+  {% url 'sql_grunddaten_view' as sql_grunddaten_url %}
+  {% url 'messages_grunddaten' as messages_grunddaten_url %}
+  {% url 'gegenstandVerwaltung' as gegenstand_verwaltung_url %}
+  {% url 'create_level' as create_level_url %}
+
+  <h1 id="level-overview-title" class="visually-hidden">
+    Übersicht zur Levelerstellung
+  </h1>
+
+  <div class="row align-items-center justify-content-center gy-5 gx-lg-5 py-lg-5">
+    <section class="col-12 col-lg-3" aria-label="Bereiche der Levelerstellung">
+      <div class="d-grid gap-5">
+        {% include "editor/components/button/button.html" with href=level_grunddaten_url title="Levelgrunddaten" %}
+        {% include "editor/components/button/button.html" with href=sql_grunddaten_url title="SQL Beschränkungen" %}
+        {% include "editor/components/button/button.html" with href=messages_grunddaten_url title="Systemnachrichten" %}
+        {% include "editor/components/button/button.html" with href=gegenstand_verwaltung_url title="Gegenstände" %}
+      </div>
+    </section>
+
+    <section class="col-12 col-lg-4" aria-label="Hinweise von Cosmo">
+      <div class="d-flex flex-column align-items-center text-center gap-4">
+        {% include "editor/components/helper/helper.html" with helper_image="editor/img/cat2.png" helper_text="Du befindest dich in der Übersicht zur Levelerstellung. Wenn du möchtest, begleite ich dich Schritt für Schritt durch den gesamten Erstellungsprozess. Wähle hierfür die Geführte Levelerstellung rechts von mir. Alternativ kannst du direkt den Bereich links auswählen, welchen du bearbeiten möchtest." %}
+
+        <form action="{% url 'save_level' %}" method="post" class="w-100">
+          {% csrf_token %}
+          {% include "editor/components/button/button.html" with title="Level speichern" type="submit" %}
+        </form>
+      </div>
+    </section>
+
+    <section class="col-12 col-lg-3" aria-label="Geführte Levelerstellung">
+      <div class="d-flex justify-content-center">
+        {% include "editor/components/button/button.html" with href=create_level_url title="Geführte Levelerstellung" %}
+      </div>
+    </section>
+  </div>
+</main>
+{% endblock %}
