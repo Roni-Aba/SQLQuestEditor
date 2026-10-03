@@ -43,5 +43,8 @@ urlpatterns = [
     path("plugintest1/", views.plugintest1, name="plugintest1"),
     path("plugintest2/", views.plugintest2, name="plugintest2"),
     path("figma/overview-45-1891/", views.figma_overview_45_1891_view, name="figma_overview_45_1891"),
+    path("figma/levelauswahl-575-2535/", views.figma_levelauswahl_575_2535_view, name="figma_levelauswahl_575_2535"),
+    path("sddcreatelevel1/", views.createlevel1sdd, name="sddcreatelevel1"),
+    path("sddauswahl/", views.auswahlsdd, name="sddauswahl"),
 
 ]

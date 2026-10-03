@@ -1,0 +1,101 @@
+{% extends "editor/base.html" %}
+{% load static %}
+
+{% block title %}
+Levelgrunddaten | SQL Spell Quest Editor
+{% endblock %}
+
+{% block additional_css %}
+<link
+  rel="stylesheet"
+  href="{% static 'editor/components/statusBar/statusBar.css' %}"
+>
+<link
+  rel="stylesheet"
+  href="{% static 'editor/components/helper/helper.css' %}"
+>
+{% endblock %}
+
+{% block content %}
+<main
+  class="container vw-100 overflow-hidden py-5"
+  aria-labelledby="level-basics-title"
+>
+  <h1 id="level-basics-title" class="visually-hidden">
+    Levelgrunddaten
+  </h1>
+
+  <section
+    class="mb-5"
+    aria-label="Fortschritt der Levelerstellung"
+  >
+    {% include "editor/components/statusBar/statusBar.html" with steps=steps %}
+  </section>
+
+  <div class="row justify-content-center align-items-start g-5">
+    <section class="col-12 col-lg-4" aria-label="Hinweise von Cosmo">
+      {% include "editor/components/helper/helper.html" with helper_image="editor/img/cat3.png" helper_text="Hier legen wir die Grundsteine unseres Levels fest. Du kannst mir beschreiben was du dir vorstellst und ich zaubere dir ein schönes Hintergrundsbild" %}
+    </section>
+
+    <section class="col-12 col-lg-7" aria-label="Angaben zum Level">
+      <div class="d-flex flex-column gap-5">
+        <div>
+          <label for="level-name" class="form-label fw-semibold">
+            Verrate mir doch bitte wie das Level heißen soll
+          </label>
+          <input
+            id="level-name"
+            type="text"
+            class="form-control form-control-lg"
+            placeholder="Schreibe hinein"
+            readonly
+          >
+        </div>
+
+        <div class="d-flex flex-column align-items-start gap-2">
+          <button
+            type="button"
+            class="btn bg-primary border-primary text-white btn-lg"
+          >
+            <i class="bi bi-image me-2" aria-hidden="true"></i>
+            Lade dein gewünschtes Hintergrundsbild hoch
+          </button>
+        </div>
+
+        <div>
+          <label for="level-greeting" class="form-label fw-semibold">
+            Wie soll der Nutzer des Levels begrüßt werden?
+          </label>
+          <input
+            id="level-greeting"
+            type="text"
+            class="form-control form-control-lg"
+            placeholder="Schreibe hinein"
+            readonly
+          >
+        </div>
+
+        <nav
+          class="d-flex flex-wrap justify-content-between gap-3 pt-2"
+          aria-label="Navigation der Levelgrunddaten"
+        >
+          <button
+            type="button"
+            class="btn bg-primary border-primary text-white btn-lg px-4"
+          >
+            <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>
+            Zurück
+          </button>
+          <button
+            type="button"
+            class="btn bg-primary border-primary text-white btn-lg px-4"
+          >
+            Weiter
+            <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i>
+          </button>
+        </nav>
+      </div>
+    </section>
+  </div>
+</main>
+{% endblock %}

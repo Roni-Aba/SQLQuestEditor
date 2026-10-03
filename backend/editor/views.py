@@ -3403,3 +3403,30 @@ def figma_overview_45_1891_view(request):
         request,
         "editor/figma_overview_45_1891.html",
     )
+
+
+def figma_levelauswahl_575_2535_view(request):
+    return render(
+        request,
+        "editor/figma_levelauswahl_575_2535.html",
+        {
+            "steps": [
+                {"number": number, "active": number == 1}
+                for number in range(1, 9)
+            ],
+        },
+    )
+
+
+def createlevel1sdd(request):
+    return render(
+        request,
+        "editor/createLevel1sdd.html",
+        {
+            "steps": get_steps(active_step=1),
+        },
+    )
+
+
+def auswahlsdd(request):
+    return render(request, "editor/auswahlsdd.html")
