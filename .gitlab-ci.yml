@@ -7,7 +7,11 @@ test:
   image: python:3.11
   script:
     - python --version
+    - python -m pip install -r backend/requirements.txt
     - python -m compileall .
+    - python backend/manage.py check
+    - cd backend
+    - python manage.py test --verbosity 2
 
 docs:
   stage: docs
@@ -27,4 +31,3 @@ docs:
 #    - pip install pylint pylint-django
 #    - pylint editor config
 #    - pylint editor config --fail-under=7.0
-
