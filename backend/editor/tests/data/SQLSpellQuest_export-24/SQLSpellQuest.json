@@ -1,0 +1,150 @@
+{
+  "id": "SQLSpellQuest",
+  "messages": {
+    "wrong_password": "Das Passwort ist nicht korrekt. Versuche es bitte erneut.",
+    "wrong_password_new_hint": "Das Passwort ist nicht korrekt. Ein neuer Hinweis wurde freigeschaltet.",
+    "not_a_table": "Auf %s kann keine SQL-Abfrage ausgeführt werden, da es sich nicht um eine Tabelle handelt.",
+    "unknown_table": "Die Tabelle ist nicht bekannt. Checke bitte den Tabellennamen.",
+    "locked_table": "Die Tabelle ist noch nicht freigeschaltet.",
+    "sql_error": "Die SQL-Abfrage konnte nicht gecallt werden. Check bitte die Syntax und versuche es erneut.",
+    "no_result": "Die SQL-Abfrage hat kein Ergebnis geliefert.",
+    "row_restriction": "Die Abfrage liefert zu viele Zeilen. Limitiere das Ergebnis bitte auf die notwendigen Zeilen ein.",
+    "col_restriction": "Die Abfrage liefert zu viele Spalten. Choose bitte nur die benötigten Spalten aus.",
+    "row_and_col_restriction": "Die Abfrage liefert zu viele Zeilen und Spalten. Limitiere das Ergebnis bitte auf die benötigten Zeilen und Spalten ein."
+  },
+  "level": [
+    {
+      "id": "level1",
+      "levelPicture": "bachelor_TJ3YGDP.png",
+      "databaseName": "level1.db",
+      "startDialog": "Hello Player",
+      "queryRestriction": {
+        "rowRestriction": {
+          "maxNumber": 5,
+          "violationMessages": [
+            "Too many rows"
+          ]
+        },
+        "columnRestriction": {
+          "maxNumber": 5,
+          "violationMessages": [
+            "Too many columns"
+          ]
+        },
+        "colAndRowViolationMessages": [
+          "Too many rows and columns"
+        ]
+      },
+      "items": [
+        {
+          "id": "Heft",
+          "password": {
+            "unlockPasswords": [],
+            "passwordHint": ""
+          },
+          "neededItems": [],
+          "type": "table",
+          "unlocked": true,
+          "boundingBoxImage": {
+            "x": 516,
+            "y": 650,
+            "width": 363,
+            "height": 297
+          },
+          "boundingBoxIcon": {
+            "x": 510,
+            "y": 647,
+            "width": 367,
+            "height": 293
+          },
+          "unlockHints": [],
+          "nextDialog": {
+            "afterUnlock": "",
+            "afterQuery": ""
+          },
+          "tableName": "Heft",
+          "description": [
+            "ID (int)",
+            "Name (varchar)"
+          ]
+        },
+        {
+          "id": "Stift",
+          "password": {
+            "unlockPasswords": [
+              "Aldi"
+            ],
+            "passwordHint": "Look into the heft table and find out where the stift is from"
+          },
+          "neededItems": [
+            "Heft"
+          ],
+          "type": "hint",
+          "unlocked": false,
+          "boundingBoxImage": {
+            "x": 191,
+            "y": 657,
+            "width": 108,
+            "height": 137
+          },
+          "boundingBoxIcon": {
+            "x": 187,
+            "y": 679,
+            "width": 130,
+            "height": 127
+          },
+          "unlockHints": [
+            {
+              "numWrongAttempts": 1,
+              "hint": "Try again"
+            },
+            {
+              "numWrongAttempts": 2,
+              "hint": "You can do it"
+            },
+            {
+              "numWrongAttempts": 3,
+              "hint": "Aldi"
+            }
+          ],
+          "nextDialog": {
+            "afterUnlock": "Nice",
+            "afterQuery": ""
+          },
+          "imageLink": "happpybears.png",
+          "text": "leave the room"
+        },
+        {
+          "id": "Door",
+          "password": {
+            "unlockPasswords": [],
+            "passwordHint": ""
+          },
+          "neededItems": [
+            "Heft",
+            "Stift"
+          ],
+          "type": "exit",
+          "unlocked": true,
+          "boundingBoxImage": {
+            "x": 1106,
+            "y": 6,
+            "width": 305,
+            "height": 465
+          },
+          "boundingBoxIcon": {
+            "x": 1116,
+            "y": 0,
+            "width": 290,
+            "height": 472
+          },
+          "unlockHints": [],
+          "nextDialog": {
+            "afterUnlock": "Great game",
+            "afterQuery": ""
+          }
+        }
+      ]
+    }
+  ]
+}
