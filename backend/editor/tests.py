@@ -1,9 +1,10 @@
 import json
+import sqlite3
 from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from zipfile import ZipFile
-
+import shutil
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
@@ -13,6 +14,26 @@ class GuidedLevelTests(TestCase):
     def step(self, page, data, next_page):
         response = self.client.post(reverse(page), data)
         self.assertRedirects(response, reverse(next_page))
+
+    def import_example_game(self, example):
+        files = sorted(path for path in example.rglob("*") if path.is_file())
+        response = self.client.post(
+            reverse("upload_json"),
+            {
+                "game_files": [
+                    SimpleUploadedFile(path.name, path.read_bytes())
+                    for path in files
+                ],
+                "game_relative_paths": [
+                    f"{example.name}/{path.relative_to(example).as_posix()}"
+                    for path in files
+                ],
+            },
+        )
+        workspace = self.client.session.get("game_workspace")
+        if workspace:
+            self.addCleanup(shutil.rmtree, workspace, ignore_errors=True)
+        self.assertRedirects(response, reverse("level"))
 
     def test_guided_level_matches_example_export(self):
         example = (
@@ -207,3 +228,276 @@ class GuidedLevelTests(TestCase):
                     f"{level['id']}/databases/{level['databaseName']}",
                     exported.namelist(),
                 )
+
+    def test_save_imported_level_without_changes(self):
+        example = Path(__file__).parent / "tests/data/SQLSpellQuest_export-24"
+        expected = json.loads(
+            (example / "SQLSpellQuest.json").read_text(encoding="utf-8")
+        )
+
+        with TemporaryDirectory() as root, self.settings(BASE_DIR=Path(root)):
+            self.import_example_game(example)
+
+            response = self.client.get(
+                reverse("edit_level", kwargs={"level_id": "level1"})
+            )
+            self.assertRedirects(response, reverse("auswahl_view"))
+
+            response = self.client.post(reverse("save_level"))
+            self.assertRedirects(response, reverse("level"))
+
+            response = self.client.get(reverse("export_game"))
+            self.assertEqual(response.status_code, 200)
+            with ZipFile(BytesIO(response.content)) as exported:
+                actual = json.loads(exported.read("SQLSpellQuest.json"))
+
+                for image_path in (example / "level1/assets").iterdir():
+                    archive_path = image_path.relative_to(example).as_posix()
+
+                    self.assertIn(archive_path, exported.namelist())
+                    self.assertEqual(
+                        exported.read(archive_path),
+                        image_path.read_bytes(),
+                    )
+
+            self.assertEqual(actual, expected)
+
+    def test_edit_imported_level_and_hint_survive_reopening(self):
+        example = Path(__file__).parent / "tests/data/SQLSpellQuest_export-24"
+        expected = json.loads(
+            (example / "SQLSpellQuest.json").read_text(encoding="utf-8")
+        )
+        level_id = expected["level"][0]["id"]
+        hint_id = "Stift"
+        new_greeting = "Willkommen zurück"
+        new_hint_text = "Suche im Heft nach dem Hinweis"
+
+        with TemporaryDirectory() as root, self.settings(BASE_DIR=Path(root)):
+            self.import_example_game(example)
+            self.assertRedirects(
+                self.client.get(reverse("edit_level", args=[level_id])),
+                reverse("auswahl_view"),
+            )
+            selection = self.client.get(reverse("auswahl_view"))
+            self.assertTemplateUsed(selection, "editor/auswahl.html")
+            shortcuts = {
+                "levelGrunddaten": "editor/levelGrunddaten.html",
+                "sql_grunddaten_view": "editor/sqlGrunddaten.html",
+                "messages_grunddaten": "editor/messagesGrunddaten.html",
+                "gegenstandVerwaltung": "editor/gegenstandVerwaltung.html",
+            }
+            for name, template in shortcuts.items():
+                url = reverse(name)
+                self.assertContains(selection, f'href="{url}"')
+                self.assertTemplateUsed(self.client.get(url), template)
+            self.assertContains(selection, f'action="{reverse("save_level")}"')
+            self.assertContains(selection, f'href="{reverse("create_level")}"')
+
+            self.assertRedirects(
+                self.client.post(
+                    reverse("levelGrunddaten"),
+                    {
+                        "level_name": level_id,
+                        "level_greeting": new_greeting,
+                    },
+                ),
+                reverse("auswahl_view"),
+            )
+
+            edit_hint_url = reverse("edit_item", args=[hint_id])
+            items_page = self.client.get(reverse("gegenstandVerwaltung"))
+            self.assertContains(items_page, f'href="{edit_hint_url}"')
+            for item_id, section in (("Heft", "table"), ("Door", "exit")):
+                item_page = self.client.get(reverse("edit_item", args=[item_id]))
+                section_url = reverse("edit_item_section", args=[item_id, section])
+                self.assertContains(item_page, f'href="{section_url}"')
+            edit_page = self.client.get(edit_hint_url)
+            self.assertTemplateUsed(edit_page, "editor/editItem.html")
+            hint_section_url = reverse("edit_item_section", args=[hint_id, "hint"])
+            self.assertContains(edit_page, f'href="{hint_section_url}"')
+            self.assertRedirects(
+                self.client.get(hint_section_url),
+                reverse("create_level3hint"),
+            )
+            self.assertRedirects(
+                self.client.post(
+                    reverse("create_level3hint"),
+                    {"hint_type": "text_image", "hint_text": new_hint_text},
+                ),
+                edit_hint_url,
+            )
+            draft = self.client.session
+            self.assertEqual(draft["new_level"]["item"]["text"], new_hint_text)
+            self.assertEqual(
+                draft["game_json"]["level"][0]["items"][1]["text"],
+                expected["level"][0]["items"][1]["text"],
+            )
+            self.assertEqual(draft["editing_item_id"], hint_id)
+            self.assertTrue(draft["item_edit_mode"])
+
+            self.assertTemplateUsed(self.client.get(edit_hint_url), "editor/editItem.html")
+            self.assertTemplateUsed(
+                self.client.get(reverse("auswahl_view")), "editor/auswahl.html"
+            )
+            self.assertTemplateUsed(
+                self.client.get(reverse("gegenstandVerwaltung")),
+                "editor/gegenstandVerwaltung.html",
+            )
+            self.assertTemplateUsed(self.client.get(edit_hint_url), "editor/editItem.html")
+            self.assertRedirects(
+                self.client.get(hint_section_url), reverse("create_level3hint")
+            )
+            hint_form = self.client.get(reverse("create_level3hint"))
+            self.assertEqual(hint_form.context["form_values"]["hint_text"], new_hint_text)
+
+            self.assertRedirects(
+                self.client.post(edit_hint_url),
+                reverse("gegenstandVerwaltung"),
+            )
+            after_item_save = self.client.session
+            for key in (
+                "editing_item_id",
+                "item_edit_mode",
+                "editing_item_section",
+                "item_creation_return_to",
+            ):
+                self.assertNotIn(key, after_item_save)
+            for key in ("item", "unlockCondition", "position"):
+                self.assertNotIn(key, after_item_save["new_level"])
+
+            items_page = self.client.get(reverse("gegenstandVerwaltung"))
+            new_item_url = f'{reverse("create_level3")}?return_to=items'
+            self.assertContains(items_page, f'href="{new_item_url}"')
+            self.assertTemplateUsed(
+                self.client.get(new_item_url), "editor/createLevel3.html"
+            )
+            for key in ("item", "unlockCondition", "position"):
+                self.assertNotIn(key, self.client.session["new_level"])
+            self.client.get(reverse("gegenstandVerwaltung"))
+            self.client.get(reverse("auswahl_view"))
+
+            self.assertRedirects(
+                self.client.post(reverse("save_level")),
+                reverse("level"),
+            )
+            after_level_save = self.client.session
+            for key in (
+                "new_level",
+                "editing_level_id",
+                "editing_item_id",
+                "item_edit_mode",
+                "item_creation_return_to",
+            ):
+                self.assertNotIn(key, after_level_save)
+
+            self.assertRedirects(
+                self.client.get(reverse("edit_level", args=[level_id])),
+                reverse("auswahl_view"),
+            )
+            reopened_level = self.client.session["new_level"]
+            self.assertEqual(reopened_level["startDialog"], new_greeting)
+            reopened_hint = next(
+                item for item in reopened_level["items"] if item["id"] == hint_id
+            )
+            self.assertEqual(reopened_hint["text"], new_hint_text)
+
+            response = self.client.get(reverse("export_game"))
+            self.assertEqual(response.status_code, 200)
+            with ZipFile(BytesIO(response.content)) as exported:
+                actual = json.loads(exported.read("SQLSpellQuest.json"))
+
+            expected_level = expected["level"][0]
+            expected_level["startDialog"] = new_greeting
+            expected_hint = next(
+                item for item in expected_level["items"] if item["id"] == hint_id
+            )
+            expected_hint["text"] = new_hint_text
+            self.assertEqual(actual, expected)
+
+    def test_deleting_table_row_changes_exported_database(self):
+        example = Path(__file__).parent / "tests/data/SQLSpellQuest_export-24"
+        level_id = "level1"
+        table_id = "Heft"
+        edit_table_url = reverse("edit_item", args=[table_id])
+        table_section_url = reverse("edit_item_section", args=[table_id, "table"])
+
+        with TemporaryDirectory() as root, self.settings(BASE_DIR=Path(root)):
+            self.import_example_game(example)
+            self.assertRedirects(
+                self.client.get(reverse("edit_level", args=[level_id])),
+                reverse("auswahl_view"),
+            )
+            self.assertContains(
+                self.client.get(reverse("auswahl_view")),
+                f'href="{reverse("gegenstandVerwaltung")}"',
+            )
+            self.assertContains(
+                self.client.get(reverse("gegenstandVerwaltung")),
+                f'href="{edit_table_url}"',
+            )
+            self.assertContains(
+                self.client.get(edit_table_url),
+                f'href="{table_section_url}"',
+            )
+            self.assertRedirects(
+                self.client.get(table_section_url), reverse("create_level3table")
+            )
+
+            table_form = self.client.get(reverse("create_level3table"))
+            columns = table_form.context["form_values"]["columns"]
+            original_rows = table_form.context["form_values"]["rows"]
+            self.assertEqual(
+                [row["Name"] for row in original_rows],
+                ["Aldi", "Lidl", "Tedi"],
+            )
+            remaining_rows = [
+                row for row in original_rows if row["Name"] != "Lidl"
+            ]
+
+            self.assertRedirects(
+                self.client.post(
+                    reverse("create_level3table"),
+                    {
+                        "column_ids[]": [column["id"] for column in columns],
+                        "column_types[]": [column["type"] for column in columns],
+                        "rows_json": json.dumps(remaining_rows),
+                    },
+                ),
+                edit_table_url,
+            )
+            self.assertRedirects(
+                self.client.post(edit_table_url),
+                reverse("gegenstandVerwaltung"),
+            )
+            self.assertRedirects(
+                self.client.post(reverse("save_level")), reverse("level")
+            )
+
+            self.assertRedirects(
+                self.client.get(reverse("edit_level", args=[level_id])),
+                reverse("auswahl_view"),
+            )
+            self.client.get(edit_table_url)
+            self.client.get(table_section_url)
+            reopened_form = self.client.get(reverse("create_level3table"))
+            self.assertEqual(
+                [row["Name"] for row in reopened_form.context["form_values"]["rows"]],
+                ["Aldi", "Tedi"],
+            )
+
+            response = self.client.get(reverse("export_game"))
+            self.assertEqual(response.status_code, 200)
+            database_file = Path(root) / "exported-level1.db"
+            with ZipFile(BytesIO(response.content)) as exported:
+                database_file.write_bytes(
+                    exported.read("level1/databases/level1.db")
+                )
+
+            connection = sqlite3.connect(database_file)
+            try:
+                exported_rows = connection.execute(
+                    'SELECT "Name" FROM "Heft" ORDER BY "ID"'
+                ).fetchall()
+            finally:
+                connection.close()
+            self.assertEqual(exported_rows, [("Aldi",), ("Tedi",)])

@@ -155,6 +155,31 @@
           {% endif %}
 
         {% endif %}
+
+        {% if item_id %}
+          {% if summary.item_type == "table" %}
+            <a
+              href="{% url 'edit_item_section' item_id=item_id section='table' %}"
+              class="btn btn-sm btn-outline-primary mt-3"
+            >
+              Tabelleninformationen bearbeiten
+            </a>
+          {% elif summary.item_type == "hint" %}
+            <a
+              href="{% url 'edit_item_section' item_id=item_id section='hint' %}"
+              class="btn btn-sm btn-outline-primary mt-3"
+            >
+              Hinweisinformationen bearbeiten
+            </a>
+          {% elif summary.item_type == "exit" %}
+            <a
+              href="{% url 'edit_item_section' item_id=item_id section='exit' %}"
+              class="btn btn-sm btn-outline-primary mt-3"
+            >
+              Exitinformationen bearbeiten
+            </a>
+          {% endif %}
+        {% endif %}
       </div>
     </article>
 

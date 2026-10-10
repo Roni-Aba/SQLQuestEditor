@@ -31,33 +31,17 @@ Levelübersicht | SQL Spell Quest Editor
         >
           <div class="d-flex flex-column align-items-center align-items-lg-start gap-5">
 
-            <a
-              href="{% url 'levelGrunddaten' %}"
-              class="text-decoration-none"
-            >
-              {% include "editor/components/button/button.html" with title="Levelgrunddaten" %}
-            </a>
+            {% url 'levelGrunddaten' as level_basics_url %}
+            {% include "editor/components/button/button.html" with title="Levelgrunddaten" href=level_basics_url %}
 
-            <a
-              href="{% url 'sql_grunddaten_view' %}"
-              class="text-decoration-none"
-            >
-              {% include "editor/components/button/button.html" with title="SQL-Beschränkungen" %}
-            </a>
+            {% url 'sql_grunddaten_view' as sql_basics_url %}
+            {% include "editor/components/button/button.html" with title="SQL-Beschränkungen" href=sql_basics_url %}
 
-            <a
-              href="{% url 'messages_grunddaten' %}"
-              class="text-decoration-none"
-            >
-              {% include "editor/components/button/button.html" with title="Systemnachrichten" %}
-            </a>
+            {% url 'messages_grunddaten' as messages_url %}
+            {% include "editor/components/button/button.html" with title="Systemnachrichten" href=messages_url %}
 
-            <a
-              href="{% url 'gegenstandVerwaltung' %}"
-              class="text-decoration-none"
-            >
-              {% include "editor/components/button/button.html" with title="Gegenstände" %}
-            </a>
+            {% url 'gegenstandVerwaltung' as items_url %}
+            {% include "editor/components/button/button.html" with title="Gegenstände" href=items_url %}
 
           </div>
         </section>
@@ -93,12 +77,8 @@ Levelübersicht | SQL Spell Quest Editor
         >
           <div class="d-flex justify-content-center ps-lg-4">
 
-            <a
-              href="{% url 'create_level' %}"
-              class="text-decoration-none"
-            >
-              {% include "editor/components/button/button.html" with title="Geführte Levelerstellung" %}
-            </a>
+            {% url 'create_level' as guided_level_url %}
+            {% include "editor/components/button/button.html" with title="Geführte Levelerstellung" href=guided_level_url %}
 
           </div>
         </section>

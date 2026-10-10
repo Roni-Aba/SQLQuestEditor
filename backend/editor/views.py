@@ -2310,6 +2310,7 @@ def export_game_view(request):
     ) = utils.prepare_game_json_for_export(
         game_json,
         settings.BASE_DIR,
+        request.session.get("game_root"),
     )
 
     zip_buffer = io.BytesIO()
@@ -2867,6 +2868,9 @@ def edit_item_view(request, item_id):
                 old_table_name,
             )
 
+        for draft_key in ("item", "unlockCondition", "position"):
+            saved_level.pop(draft_key, None)
+
         request.session["new_level"] = (
             saved_level
         )
@@ -2886,6 +2890,7 @@ def edit_item_view(request, item_id):
             "editing_item_section",
             None,
         )
+        request.session.pop("item_creation_return_to", None)
 
         request.session.modified = True
 
@@ -3305,6 +3310,8 @@ def save_level_view(request):
         "new_level",
         None,
     )
+    request.session.pop("item_creation_return_to", None)
+    request.session.pop("reset_item_draft_on_create_level3", None)
     request.session.modified = True
     print("Systemnachrichten gespeichert:")
     print(

@@ -3,6 +3,7 @@ from copy import deepcopy
 def prepare_game_json_for_export(
     game_json,
     base_dir,
+    game_root=None,
 ):
     if not isinstance(
         game_json,
@@ -19,6 +20,7 @@ def prepare_game_json_for_export(
     base_dir = Path(
         base_dir
     )
+    game_root = Path(game_root) if game_root else None
 
     level_image_directories = [
         (
@@ -94,6 +96,13 @@ def prepare_game_json_for_export(
         used_level_names.add(
             level_folder
         )
+        imported_image_directories = []
+        if game_root is not None:
+            imported_image_directories = [
+                game_root / original_level_folder / "assets",
+                game_root / "assets",
+                game_root,
+            ]
         level_asset_names = {}
         level_picture = level.get(
             "levelPicture",
@@ -114,7 +123,7 @@ def prepare_game_json_for_export(
 
             source_path = find_export_asset(
                 clean_level_picture,
-                level_image_directories,
+                imported_image_directories + level_image_directories,
             )
 
             if source_path is not None:
@@ -178,7 +187,7 @@ def prepare_game_json_for_export(
             item["imageLink"] = (clean_image_link)
             source_path = find_export_asset(
                 clean_image_link,
-                item_image_directories,
+                imported_image_directories + item_image_directories,
             )
 
             if source_path is None:
