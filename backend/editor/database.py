@@ -219,6 +219,11 @@ def read_table_rows(database_path, table_item):
 
 
 def get_editor_level_key(request, level):
+    if isinstance(level, dict):
+        draft_key = str(level.get(EDITOR_LEVEL_DRAFT_KEY, "")).strip()
+        if draft_key:
+            return draft_key
+
     editing_level_id = request.session.get("editing_level_id", "")
     if editing_level_id:
         return str(editing_level_id)
@@ -237,6 +242,35 @@ def get_editor_level_key(request, level):
     draft_key = f"draft-{uuid.uuid4().hex}"
     level[EDITOR_LEVEL_DRAFT_KEY] = draft_key
     return draft_key
+
+
+def begin_editor_level_rows(request, level):
+    """Keep table changes for an opened level separate until it is saved."""
+    if not isinstance(level, dict):
+        return
+
+    level_id = str(level.get("id", "")).strip()
+    if not level_id:
+        return
+
+    draft_key = f"draft-{uuid.uuid4().hex}"
+    table_rows = deepcopy(_editor_table_rows(request))
+    table_rows[draft_key] = deepcopy(table_rows.get(level_id, {}))
+    _save_editor_table_rows(request, table_rows)
+    level[EDITOR_LEVEL_DRAFT_KEY] = draft_key
+
+
+def discard_editor_level_rows(request, level):
+    if not isinstance(level, dict):
+        return
+
+    draft_key = str(level.get(EDITOR_LEVEL_DRAFT_KEY, "")).strip()
+    if not draft_key:
+        return
+
+    table_rows = deepcopy(_editor_table_rows(request))
+    table_rows.pop(draft_key, None)
+    _save_editor_table_rows(request, table_rows)
 
 
 def _editor_table_rows(request):
@@ -409,7 +443,10 @@ def finalize_editor_level_rows(request, level, level_id):
 
     draft_key = str(level.pop(EDITOR_LEVEL_DRAFT_KEY, "")).strip()
     if draft_key and draft_key != str(level_id):
-        move_editor_level_rows(request, draft_key, level_id)
+        table_rows = deepcopy(_editor_table_rows(request))
+        if draft_key in table_rows:
+            table_rows[str(level_id)] = table_rows.pop(draft_key)
+            _save_editor_table_rows(request, table_rows)
 
 
 def finalize_editor_table_rows(request, level, table_item):

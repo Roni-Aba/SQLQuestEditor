@@ -31,6 +31,7 @@ urlpatterns = [
     path("gegenstandVerwaltung/", views.gegenstand_view, name="gegenstandVerwaltung"),
     path("gegenstandVerwaltung/<str:item_id>/bearbeiten/",views.edit_item_view,name="edit_item"),
     path("gegenstandVerwaltung/<str:item_id>/bearbeiten/<str:section>/",views.edit_item_section_view,name="edit_item_section"),
+    path("gegenstandVerwaltung/bearbeitung/abbrechen/", views.cancel_item_edit_view, name="cancel_item_edit"),
     path("gegenstandVerwaltung/<str:item_id>/entfernen/",views.delete_item_view,name="delete_item"),
     path("messagesGrunddaten/",views.messages_grunddaten_view,name="messages_grunddaten"),
     path("level/<str:level_id>/bearbeiten/",views.edit_level_view,name="edit_level"),

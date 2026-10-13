@@ -170,6 +170,18 @@ def parse_optional_int(value):
     return None
 
 
+def level_name_is_taken(game_json, level_name, editing_level_id=None):
+    levels = game_json.get("level", []) if isinstance(game_json, dict) else []
+    if not isinstance(levels, list):
+        return False
+    return any(
+        isinstance(level, dict)
+        and level.get("id") == level_name
+        and level.get("id") != editing_level_id
+        for level in levels
+    )
+
+
 def save_new_level_session(request, saved_level):
     request.session["new_level"] = saved_level
     request.session.modified = True
@@ -273,6 +285,7 @@ def level_view(request):
         "editor/level.html",
         {
             "levels": valid_levels,
+            "error_message": request.session.pop("level_error", ""),
         },
     )
 
@@ -337,11 +350,9 @@ def edit_level_view(
         request
     )
 
-    request.session["new_level"] = (
-        build_level_edit_session(
-            selected_level
-        )
-    )
+    level_draft = build_level_edit_session(selected_level)
+    database.begin_editor_level_rows(request, level_draft)
+    request.session["new_level"] = level_draft
 
     request.session[
         "editing_level_id"
@@ -416,6 +427,7 @@ def build_clean_level_session(
 
 
 def clear_level_edit_session(request):
+    database.discard_editor_level_rows(request, request.session.get("new_level"))
     session_keys = [
         "new_level",
         "editing_level_id",
@@ -721,6 +733,7 @@ def create_level(
     request,
 ):
     set_guided_level_creation(request, True)
+    database.discard_editor_level_rows(request, request.session.get("new_level"))
     for session_key in [
         "editing_level_id",
         "editing_item_id",
@@ -788,13 +801,19 @@ def create_level1_view(request):
     if request.method == "POST":
         level_id = request.POST.get("level_name", "").strip()
         start_dialog = request.POST.get("level_greeting", "").strip()
+        if level_name_is_taken(request.session.get("game_json", {}), level_id):
+            return render(request, "editor/createLevel1.html", {
+                "steps": steps,
+                "saved_level": saved_level,
+                "form_values": {
+                    "level_name": level_id,
+                    "level_greeting": start_dialog,
+                    "level_picture": saved_level.get("levelPicture", ""),
+                },
+                "error_message": f'Der Levelname "{level_id}" wird bereits verwendet.',
+            })
         saved_level["id"] = level_id
-        if saved_level.get("databaseName") in {"", "level.db"}:
-            safe_level_id = database.sanitize_path_component(
-                level_id,
-                "level",
-            )
-            saved_level["databaseName"] = f"{safe_level_id}.db"
+        saved_level["databaseName"] = utils.database_name_for_level(level_id)
         database.finalize_editor_level_rows(
             request,
             saved_level,
@@ -1159,18 +1178,22 @@ def create_level4_view(
             item["id"] = item_name
             if item.get("type") == "table":
                 item["tableName"] = item_name
-                database.finalize_editor_table_rows(
-                    request,
-                    saved_level,
-                    item,
-                )
-                database.move_editor_table_rows(
-                    request,
-                    saved_level,
-                    old_table_name,
-                    item_name,
-                )
+                if not request.session.get("item_edit_mode"):
+                    database.finalize_editor_table_rows(
+                        request,
+                        saved_level,
+                        item,
+                    )
+                    database.move_editor_table_rows(
+                        request,
+                        saved_level,
+                        old_table_name,
+                        item_name,
+                    )
             item["unlockedItems"] = [str(item_id).strip() for item_id in unlocked_items if str(item_id).strip()]
+            unlock_condition = saved_level.get("unlockCondition")
+            if isinstance(unlock_condition, dict):
+                unlock_condition["requiredItems"] = item["unlockedItems"]
             saved_level["item"] = item
             request.session["new_level"] = saved_level
             request.session.modified = True
@@ -2075,18 +2098,13 @@ def create_level3table_view(request):
                 "Lege mindestens eine Tabellenspalte an."
             )
 
-        if not error_message:
+        if not error_message and not request.session.get("item_edit_mode"):
             item_name = str(item.get("id", "")).strip()
             table_storage_key = database.get_editor_table_key(item)
 
-            if not saved_level.get("databaseName"):
-                safe_level_id = database.sanitize_path_component(
-                    saved_level.get("id", ""),
-                    "level",
-                )
-                saved_level["databaseName"] = (
-                    f"{safe_level_id}.db"
-                )
+            saved_level["databaseName"] = utils.database_name_for_level(
+                saved_level.get("id", "")
+            )
 
             old_table_name = ""
             editing_item_id = request.session.get(
@@ -2369,7 +2387,7 @@ def export_game_view(request):
                 )
                 database_archive_path = (
                     f"{level_folder}/databases/"
-                    f"{safe_level_id}.db"
+                    f"{level['databaseName']}"
                 )
                 database_path = (
                     temp_directory
@@ -2443,6 +2461,24 @@ def level_grunddaten_view(request):
             "",
         ).strip()
 
+        if level_name_is_taken(
+            request.session.get("game_json", {}),
+            level_name,
+            request.session.get("editing_level_id"),
+        ):
+            return render(
+                request,
+                "editor/levelGrunddaten.html",
+                {
+                    "form_values": {
+                        "level_name": level_name,
+                        "level_picture": saved_level.get("levelPicture", ""),
+                        "level_greeting": level_greeting,
+                    },
+                    "error_message": f'Der Levelname "{level_name}" wird bereits verwendet.',
+                },
+            )
+
         uploaded_picture = request.FILES.get(
             "levelPicture"
         )
@@ -2476,17 +2512,13 @@ def level_grunddaten_view(request):
             )
 
         saved_level["id"] = level_name
-        if saved_level.get("databaseName") in {"", "level.db"}:
-            safe_level_id = database.sanitize_path_component(
+        saved_level["databaseName"] = utils.database_name_for_level(level_name)
+        if not request.session.get("editing_level_id"):
+            database.finalize_editor_level_rows(
+                request,
+                saved_level,
                 level_name,
-                "level",
             )
-            saved_level["databaseName"] = f"{safe_level_id}.db"
-        database.finalize_editor_level_rows(
-            request,
-            saved_level,
-            level_name,
-        )
         saved_level["startDialog"] = level_greeting
 
         request.session["new_level"] = saved_level
@@ -2814,6 +2846,56 @@ def edit_item_view(request, item_id):
             None,
         )
 
+        if isinstance(original_item, dict):
+            if (
+                current_item.get("type") == "exit"
+                and "nextLevelId" in original_item
+                and "nextLevelId" not in current_item
+            ):
+                current_item["nextLevelId"] = saved_level.get("item", {}).get(
+                    "nextLevelId", ""
+                )
+            supported_fields = {
+                "id", "password", "neededItems", "type", "unlocked",
+                "boundingBoxImage", "boundingBoxIcon", "unlockHints",
+                "nextDialog", "tableName", "description", "imageLink",
+                "text", "nextLevelId",
+            }
+            for key, value in original_item.items():
+                if key not in supported_fields:
+                    current_item.setdefault(key, deepcopy(value))
+            for key in ("password", "nextDialog", "boundingBoxImage", "boundingBoxIcon"):
+                old_values = original_item.get(key)
+                new_values = current_item.get(key)
+                if isinstance(old_values, dict) and isinstance(new_values, dict):
+                    for nested_key, value in old_values.items():
+                        new_values.setdefault(nested_key, deepcopy(value))
+
+        old_table_name = (
+            database.table_name_for(original_item)
+            if isinstance(original_item, dict)
+            and original_item.get("type") == "table"
+            else ""
+        )
+        if current_item.get("type") == "table":
+            table_name = database.table_name_for(current_item)
+            draft_rows = saved_level.get("item", {}).get("rows")
+            if not isinstance(draft_rows, list):
+                draft_rows = database.get_editor_table_rows(
+                    request, saved_level, old_table_name
+                )
+            database.set_editor_table_rows(
+                request,
+                saved_level,
+                table_name,
+                draft_rows,
+                old_table_name=old_table_name,
+            )
+        elif old_table_name:
+            database.remove_editor_table_rows(
+                request, saved_level, old_table_name
+            )
+
         updated_items = []
         item_replaced = False
 
@@ -2836,6 +2918,17 @@ def edit_item_view(request, item_id):
                 current_item
             )
 
+        if old_item_id != current_item.get("id"):
+            for dependent in updated_items:
+                if not isinstance(dependent, dict):
+                    continue
+                needed_items = dependent.get("neededItems")
+                if isinstance(needed_items, list):
+                    dependent["neededItems"] = [
+                        current_item["id"] if needed == old_item_id else needed
+                        for needed in needed_items
+                    ]
+
         saved_level["items"] = (
             updated_items
         )
@@ -2845,28 +2938,10 @@ def edit_item_view(request, item_id):
         )
         request.session.modified = True
 
-        game_json, saved_level = (
-            utils.save_new_level_to_game_json(
-                request
-            )
-        )
-
-        if (
-            isinstance(original_item, dict)
-            and original_item.get("type") == "table"
-            and current_item.get("type") != "table"
-        ):
-            old_table_name = str(
-                original_item.get(
-                    "tableName",
-                    original_item.get("id", ""),
-                )
-            ).strip()
-            database.remove_editor_table_rows(
-                request,
-                saved_level,
-                old_table_name,
-            )
+        if request.session.get("editing_level_id"):
+            game_json = request.session.get("game_json", {})
+        else:
+            game_json, saved_level = utils.save_new_level_to_game_json(request)
 
         for draft_key in ("item", "unlockCondition", "position"):
             saved_level.pop(draft_key, None)
@@ -2964,6 +3039,12 @@ def edit_item_section_view(
 
 
 def cancel_item_edit_view(request):
+    saved_level = request.session.get("new_level")
+    if isinstance(saved_level, dict):
+        for draft_key in ("item", "unlockCondition", "position"):
+            saved_level.pop(draft_key, None)
+        request.session["new_level"] = saved_level
+
     request.session.pop(
         "item_edit_mode",
         None,
@@ -3204,9 +3285,11 @@ def save_level_view(request):
         return redirect("auswahl_view")
 
     saved_level.pop("messages", None)
-    saved_level = utils.save_current_item_to_new_level(
-        saved_level
-    )
+    if request.session.get("editing_item_id"):
+        for draft_key in ("item", "unlockCondition", "position"):
+            saved_level.pop(draft_key, None)
+    else:
+        saved_level = utils.save_current_item_to_new_level(saved_level)
     level_for_json = utils.build_level_for_json(
         saved_level
     )
@@ -3218,15 +3301,17 @@ def save_level_view(request):
     if not level_id:
         return redirect("levelGrunddaten")
 
+    editing_level_id = request.session.get("editing_level_id")
+    game_json = request.session.get("game_json", {})
+    if level_name_is_taken(game_json, level_id, editing_level_id):
+        return redirect("levelGrunddaten")
+
+    has_table_draft = bool(saved_level.get(database.EDITOR_LEVEL_DRAFT_KEY))
+
     database.finalize_editor_level_rows(
         request,
         saved_level,
         level_id,
-    )
-
-    game_json = request.session.get(
-        "game_json",
-        {},
     )
 
     if not isinstance(game_json, dict):
@@ -3241,10 +3326,6 @@ def save_level_view(request):
 
     if not isinstance(levels, list):
         levels = []
-
-    editing_level_id = request.session.get(
-        "editing_level_id"
-    )
 
     updated_levels = []
     level_was_replaced = False
@@ -3279,16 +3360,27 @@ def save_level_view(request):
             deepcopy(level_for_json)
         )
 
+    if editing_level_id and editing_level_id != level_id:
+        for level in updated_levels:
+            if not isinstance(level, dict):
+                continue
+            for item in level.get("items", []):
+                if (
+                    isinstance(item, dict)
+                    and item.get("type") == "exit"
+                    and item.get("nextLevelId") == editing_level_id
+                ):
+                    item["nextLevelId"] = level_id
+
     game_json["level"] = updated_levels
 
     request.session["game_json"] = game_json
 
     if editing_level_id and editing_level_id != level_id:
-        database.move_editor_level_rows(
-            request,
-            editing_level_id,
-            level_id,
-        )
+        if has_table_draft:
+            database.remove_editor_level_rows(request, editing_level_id)
+        else:
+            database.move_editor_level_rows(request, editing_level_id, level_id)
 
     request.session.pop(
         "editing_level_id",
@@ -3331,6 +3423,30 @@ def delete_level_view(request, level_id):
     levels = game_json.get("level", [])
 
     if isinstance(levels, list):
+        referencing_levels = [
+            level.get("id", "")
+            for level in levels
+            if isinstance(level, dict) and level.get("id") != level_id
+            and any(
+                isinstance(item, dict)
+                and item.get("type") == "exit"
+                and item.get("nextLevelId") == level_id
+                for item in (
+                    level.get("items", [])
+                    if isinstance(level.get("items", []), list)
+                    else []
+                )
+            )
+        ]
+        if referencing_levels:
+            names = ", ".join(str(name) for name in referencing_levels)
+            request.session["level_error"] = (
+                f'Ein Ausgang in Level {names} verweist noch auf "{level_id}". '
+                "Ändere zuerst den Ausgang."
+            )
+            return redirect("level")
+
+    if isinstance(levels, list):
         game_json["level"] = [
 
             level
@@ -3354,6 +3470,7 @@ def delete_level_view(request, level_id):
     )
 
     if request.session.get("editing_level_id") == level_id:
+        database.discard_editor_level_rows(request, request.session.get("new_level"))
         request.session.pop("editing_level_id", None)
 
         request.session.pop("new_level", None)

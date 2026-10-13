@@ -1,5 +1,6 @@
 import json
 import sqlite3
+from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -501,3 +502,311 @@ class GuidedLevelTests(TestCase):
             finally:
                 connection.close()
             self.assertEqual(exported_rows, [("Aldi",), ("Tedi",)])
+
+    def test_editing_exit_preserves_next_level_and_after_query(self):
+        example = Path(__file__).parent / "tests/data/SQLSpellQuest_export-24"
+
+        with TemporaryDirectory() as root, self.settings(BASE_DIR=Path(root)):
+            self.import_example_game(example)
+            game = self.client.session["game_json"]
+            exit_item = game["level"][0]["items"][2]
+            exit_item["nextLevelId"] = "level2"
+            exit_item["nextDialog"]["afterQuery"] = "Nach der Abfrage"
+            exit_item["customData"] = {"reward": "stern"}
+            exit_item["nextDialog"]["customEvent"] = "Musik starten"
+            game["level"].append({
+                "id": "level2", "levelPicture": "", "databaseName": "level2.db",
+                "startDialog": "", "queryRestriction": {}, "items": [],
+            })
+            session = self.client.session
+            session["game_json"] = game
+            session.save()
+
+            self.client.get(reverse("edit_level", args=["level1"]))
+            edit_url = reverse("edit_item", args=["Door"])
+            self.client.get(edit_url)
+            self.assertRedirects(self.client.post(edit_url), reverse("gegenstandVerwaltung"))
+            self.assertRedirects(self.client.post(reverse("save_level")), reverse("level"))
+
+            response = self.client.get(reverse("export_game"))
+            with ZipFile(BytesIO(response.content)) as exported:
+                saved_game = json.loads(exported.read("SQLSpellQuest.json"))
+            saved_exit = saved_game["level"][0]["items"][2]
+            self.assertEqual(saved_exit["nextLevelId"], "level2")
+            self.assertEqual(saved_exit["nextDialog"]["afterQuery"], "Nach der Abfrage")
+            self.assertEqual(saved_exit["customData"], {"reward": "stern"})
+            self.assertEqual(saved_exit["nextDialog"]["customEvent"], "Musik starten")
+
+            self.client.get(reverse("edit_level", args=["level1"]))
+            self.client.get(edit_url)
+            self.client.get(reverse("edit_item_section", args=["Door", "exit"]))
+            self.client.post(reverse("create_level3exit"), {
+                "exit_success_message": "Great game", "next_level_id": "",
+            })
+            self.client.post(edit_url)
+            self.client.post(reverse("save_level"))
+            response = self.client.get(reverse("export_game"))
+            with ZipFile(BytesIO(response.content)) as exported:
+                saved_game = json.loads(exported.read("SQLSpellQuest.json"))
+            self.assertEqual(saved_game["level"][0]["items"][2]["nextLevelId"], "")
+
+    def test_renaming_table_item_updates_dependencies(self):
+        example = Path(__file__).parent / "tests/data/SQLSpellQuest_export-24"
+
+        with TemporaryDirectory() as root, self.settings(BASE_DIR=Path(root)):
+            self.import_example_game(example)
+            self.client.get(reverse("edit_level", args=["level1"]))
+            edit_url = reverse("edit_item", args=["Heft"])
+            self.client.get(edit_url)
+            self.client.get(reverse("edit_item_section", args=["Heft", "grunddaten"]))
+            self.assertRedirects(
+                self.client.post(reverse("create_level4"), {
+                    "item_name": "Notizbuch", "unlocked_items": "[]",
+                }),
+                edit_url,
+            )
+            self.assertRedirects(self.client.post(edit_url), reverse("gegenstandVerwaltung"))
+            self.assertEqual(
+                [item["id"] for item in self.client.session["game_json"]["level"][0]["items"]],
+                ["Heft", "Stift", "Door"],
+            )
+            self.assertRedirects(self.client.post(reverse("save_level")), reverse("level"))
+
+            response = self.client.get(reverse("export_game"))
+            database_file = Path(root) / "renamed-table.db"
+            with ZipFile(BytesIO(response.content)) as exported:
+                saved_game = json.loads(exported.read("SQLSpellQuest.json"))
+                database_file.write_bytes(exported.read("level1/databases/level1.db"))
+            items = saved_game["level"][0]["items"]
+            self.assertEqual(items[0]["id"], "Notizbuch")
+            self.assertEqual(items[0]["tableName"], "Notizbuch")
+            self.assertEqual(items[1]["neededItems"], ["Notizbuch"])
+            self.assertEqual(items[2]["neededItems"], ["Notizbuch", "Stift"])
+            with sqlite3.connect(database_file) as connection:
+                self.assertEqual(
+                    connection.execute('SELECT "Name" FROM "Notizbuch" ORDER BY "ID"').fetchall(),
+                    [("Aldi",), ("Lidl",), ("Tedi",)],
+                )
+
+    def test_changing_item_requirement_replaces_old_requirement(self):
+        example = Path(__file__).parent / "tests/data/SQLSpellQuest_export-24"
+
+        with TemporaryDirectory() as root, self.settings(BASE_DIR=Path(root)):
+            self.import_example_game(example)
+            self.client.get(reverse("edit_level", args=["level1"]))
+            edit_url = reverse("edit_item", args=["Stift"])
+            self.client.get(edit_url)
+            self.client.get(reverse("edit_item_section", args=["Stift", "grunddaten"]))
+            self.client.post(reverse("create_level4"), {
+                "item_name": "Stift", "unlocked_items": "[]",
+            })
+            self.client.post(edit_url)
+            self.client.post(reverse("save_level"))
+
+            response = self.client.get(reverse("export_game"))
+            with ZipFile(BytesIO(response.content)) as exported:
+                saved_game = json.loads(exported.read("SQLSpellQuest.json"))
+            self.assertEqual(saved_game["level"][0]["items"][1]["neededItems"], [])
+
+    def test_cancel_item_edit_discards_table_row_changes(self):
+        example = Path(__file__).parent / "tests/data/SQLSpellQuest_export-24"
+
+        with TemporaryDirectory() as root, self.settings(BASE_DIR=Path(root)):
+            self.import_example_game(example)
+            original_game = deepcopy(self.client.session["game_json"])
+            self.client.get(reverse("edit_level", args=["level1"]))
+            edit_url = reverse("edit_item", args=["Heft"])
+            cancel_url = reverse("cancel_item_edit")
+            self.assertContains(self.client.get(edit_url), f'href="{cancel_url}"')
+            self.client.get(reverse("edit_item_section", args=["Heft", "table"]))
+            form = self.client.get(reverse("create_level3table"))
+            columns = form.context["form_values"]["columns"]
+            rows = form.context["form_values"]["rows"]
+            self.client.post(reverse("create_level3table"), {
+                "column_ids[]": [column["id"] for column in columns],
+                "column_types[]": [column["type"] for column in columns],
+                "rows_json": json.dumps(rows[:2]),
+            })
+            self.client.get(reverse("edit_item_section", args=["Heft", "grunddaten"]))
+            self.client.post(reverse("create_level4"), {
+                "item_name": "AbgebrochenesHeft", "unlocked_items": "[]",
+            })
+            self.assertRedirects(self.client.get(cancel_url), reverse("gegenstandVerwaltung"))
+            self.assertEqual(self.client.session["game_json"], original_game)
+            self.assertNotIn("item", self.client.session["new_level"])
+
+            response = self.client.get(reverse("export_game"))
+            database_file = Path(root) / "after-cancel.db"
+            with ZipFile(BytesIO(response.content)) as exported:
+                database_file.write_bytes(exported.read("level1/databases/level1.db"))
+            with sqlite3.connect(database_file) as connection:
+                self.assertEqual(
+                    connection.execute('SELECT "Name" FROM "Heft" ORDER BY "ID"').fetchall(),
+                    [("Aldi",), ("Lidl",), ("Tedi",)],
+                )
+
+            self.client.get(edit_url)
+            self.client.get(reverse("edit_item_section", args=["Heft", "table"]))
+            reopened = self.client.get(reverse("create_level3table"))
+            self.assertEqual(
+                [row["Name"] for row in reopened.context["form_values"]["rows"]],
+                ["Aldi", "Lidl", "Tedi"],
+            )
+
+    def test_level_rename_updates_exit_reference_and_rejects_collision(self):
+        example = Path(__file__).parent / "tests/data/SQLSpellQuest_export-24"
+
+        with TemporaryDirectory() as root, self.settings(BASE_DIR=Path(root)):
+            self.import_example_game(example)
+            game = self.client.session["game_json"]
+            second_level = {
+                "id": "level2", "levelPicture": "", "databaseName": "level2.db",
+                "startDialog": "", "queryRestriction": {},
+                "items": [{
+                    "id": "Exit2", "type": "exit", "nextLevelId": "level1",
+                    "neededItems": [], "nextDialog": {"afterUnlock": "", "afterQuery": ""},
+                }],
+            }
+            game["level"].append(second_level)
+            session = self.client.session
+            session["game_json"] = game
+            session.save()
+
+            self.client.get(reverse("edit_level", args=["level1"]))
+            collision = self.client.post(reverse("levelGrunddaten"), {
+                "level_name": "level2", "level_greeting": "Hallo",
+            })
+            self.assertEqual(collision.status_code, 200)
+            self.assertContains(collision, "bereits verwendet")
+            self.assertEqual(self.client.session["new_level"]["id"], "level1")
+
+            self.assertRedirects(
+                self.client.post(reverse("levelGrunddaten"), {
+                    "level_name": "level1-neu", "level_greeting": "Hallo",
+                }),
+                reverse("auswahl_view"),
+            )
+            self.assertEqual(
+                [level["id"] for level in self.client.session["game_json"]["level"]],
+                ["level1", "level2"],
+            )
+            self.assertRedirects(self.client.post(reverse("save_level")), reverse("level"))
+            saved_levels = self.client.session["game_json"]["level"]
+            self.assertEqual([level["id"] for level in saved_levels], ["level1-neu", "level2"])
+            self.assertEqual(saved_levels[0]["databaseName"], "level1-neu.db")
+            self.assertEqual(saved_levels[1]["items"][0]["nextLevelId"], "level1-neu")
+
+            response = self.client.get(reverse("export_game"))
+            self.assertEqual(response.status_code, 200)
+            with ZipFile(BytesIO(response.content)) as exported:
+                exported_game = json.loads(exported.read("SQLSpellQuest.json"))
+                self.assertEqual(
+                    exported_game["level"][0]["databaseName"],
+                    "level1-neu.db",
+                )
+                self.assertIn(
+                    "level1-neu/databases/level1-neu.db",
+                    exported.namelist(),
+                )
+                database_file = Path(root) / "level1-neu.db"
+                database_file.write_bytes(
+                    exported.read("level1-neu/databases/level1-neu.db")
+                )
+            with sqlite3.connect(database_file) as connection:
+                self.assertEqual(
+                    connection.execute('SELECT "Name" FROM "Heft" ORDER BY "ID"').fetchall(),
+                    [("Aldi",), ("Lidl",), ("Tedi",)],
+                )
+
+    def test_guided_creation_rejects_existing_level_name(self):
+        example = Path(__file__).parent / "tests/data/SQLSpellQuest_export-24"
+
+        with TemporaryDirectory() as root, self.settings(BASE_DIR=Path(root)):
+            self.import_example_game(example)
+            original_game = deepcopy(self.client.session["game_json"])
+            self.client.get(reverse("create_level"))
+            response = self.client.post(reverse("create_level1"), {
+                "level_name": "level1",
+                "level_greeting": "Anderes Level",
+                "levelPicture": SimpleUploadedFile(
+                    "collision.png", b"image", content_type="image/png"
+                ),
+            })
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, "bereits verwendet")
+            self.assertEqual(self.client.session["game_json"], original_game)
+            self.assertEqual(self.client.session["new_level"]["id"], "")
+            self.assertFalse(
+                (Path(root) / "editor/static/editor/img/levels/collision.png").exists()
+            )
+
+    def test_referenced_level_cannot_be_deleted(self):
+        example = Path(__file__).parent / "tests/data/SQLSpellQuest_export-24"
+
+        with TemporaryDirectory() as root, self.settings(BASE_DIR=Path(root)):
+            self.import_example_game(example)
+            game = self.client.session["game_json"]
+            game["level"].append({
+                "id": "level2", "levelPicture": "", "databaseName": "level2.db",
+                "startDialog": "", "queryRestriction": {},
+                "items": [{"id": "Exit2", "type": "exit", "nextLevelId": "level1"}],
+            })
+            session = self.client.session
+            session["game_json"] = game
+            session.save()
+
+            delete_url = reverse("delete_level", args=["level1"])
+            response = self.client.post(delete_url, follow=True)
+            self.assertRedirects(response, reverse("level"))
+            self.assertEqual(
+                [level["id"] for level in self.client.session["game_json"]["level"]],
+                ["level1", "level2"],
+            )
+            self.assertContains(response, "verweist noch")
+
+            session = self.client.session
+            game = session["game_json"]
+            game["level"][1]["items"][0]["nextLevelId"] = ""
+            session["game_json"] = game
+            session.save()
+            self.assertRedirects(self.client.post(delete_url), reverse("level"))
+            self.assertEqual(
+                [level["id"] for level in self.client.session["game_json"]["level"]],
+                ["level2"],
+            )
+
+    def test_abandoning_level_edit_keeps_original_table_rows(self):
+        example = Path(__file__).parent / "tests/data/SQLSpellQuest_export-24"
+
+        with TemporaryDirectory() as root, self.settings(BASE_DIR=Path(root)):
+            self.import_example_game(example)
+            self.client.get(reverse("edit_level", args=["level1"]))
+            edit_url = reverse("edit_item", args=["Heft"])
+            self.client.get(edit_url)
+            self.client.get(reverse("edit_item_section", args=["Heft", "table"]))
+            form = self.client.get(reverse("create_level3table"))
+            columns = form.context["form_values"]["columns"]
+            rows = form.context["form_values"]["rows"]
+            self.client.post(reverse("create_level3table"), {
+                "column_ids[]": [column["id"] for column in columns],
+                "column_types[]": [column["type"] for column in columns],
+                "rows_json": json.dumps(rows[:2]),
+            })
+            self.client.post(edit_url)
+
+            self.client.get(reverse("create_level"))
+            self.assertEqual(self.client.session["new_level"]["id"], "")
+            self.assertEqual(
+                [item["id"] for item in self.client.session["game_json"]["level"][0]["items"]],
+                ["Heft", "Stift", "Door"],
+            )
+
+            response = self.client.get(reverse("export_game"))
+            database_file = Path(root) / "after-abandon.db"
+            with ZipFile(BytesIO(response.content)) as exported:
+                database_file.write_bytes(exported.read("level1/databases/level1.db"))
+            with sqlite3.connect(database_file) as connection:
+                self.assertEqual(
+                    connection.execute('SELECT "Name" FROM "Heft" ORDER BY "ID"').fetchall(),
+                    [("Aldi",), ("Lidl",), ("Tedi",)],
+                )

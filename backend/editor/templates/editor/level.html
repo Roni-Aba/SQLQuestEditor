@@ -35,6 +35,10 @@ Levelübersicht | SQL Spell Quest Editor
         Deine Level
       </h1>
 
+      {% if error_message %}
+        <div class="alert alert-danger" role="alert">{{ error_message }}</div>
+      {% endif %}
+
       <div class="d-grid gap-3">
         {% for level in levels %}
           {% url 'edit_level' level_id=level.id as edit_level_url %}

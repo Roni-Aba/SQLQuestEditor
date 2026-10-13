@@ -146,8 +146,9 @@ def prepare_game_json_for_export(
                 level["levelPicture"] = (
                     exported_filename
                 )
-        database_filename = (
-            f"{level_folder}.db"
+        database_filename = database_name_for_level(
+            requested_level_id,
+            fallback=f"level{level_index}",
         )
 
         level["databaseName"] = (
@@ -246,6 +247,10 @@ def sanitize_export_name(
         )
 
     return clean_name
+
+
+def database_name_for_level(level_id, fallback="level"):
+    return f"{sanitize_export_name(level_id, fallback=fallback)}.db"
 
 def find_export_asset(
     filename,
@@ -381,12 +386,9 @@ def build_item_for_json(saved_level):
         {},
     )
 
-    required_items = unlock_condition.get(
-        "requiredItems",
-        item_data.get(
-            "unlockedItems",
-            [],
-        ),
+    required_items = item_data.get(
+        "unlockedItems",
+        unlock_condition.get("requiredItems", []),
     )
 
     failure_hints = unlock_condition.get(
@@ -466,9 +468,12 @@ def build_item_for_json(saved_level):
                 "successMessage",
                 "",
             ),
-            "afterQuery": "",
+            "afterQuery": unlock_condition.get("afterQuery", ""),
         },
     }
+
+    if item["type"] == "exit" and item_data.get("nextLevelId"):
+        item["nextLevelId"] = item_data["nextLevelId"]
 
     if item["type"] == "table":
         table_name = str(
@@ -620,17 +625,7 @@ def save_current_item_to_new_level(
 
 
 def build_level_for_json(saved_level):
-    database_name = str(
-        saved_level.get("databaseName", "")
-        or saved_level.get("id", "")
-    ).strip()
-
-    if database_name and not database_name.endswith(
-        ".db"
-    ):
-        database_name = (
-            f"{database_name}.db"
-        )
+    database_name = database_name_for_level(saved_level.get("id", ""))
 
     items = deepcopy(saved_level.get("items", []))
     if not isinstance(items, list):
@@ -704,6 +699,11 @@ def save_new_level_to_game_json(
         return game_json, saved_level
 
     new_level = build_level_for_json(saved_level)
+
+    if request.session.get("editing_level_id"):
+        request.session["new_level"] = saved_level
+        request.session.modified = True
+        return game_json, saved_level
 
     levels = game_json.get(
         "level",
@@ -1036,6 +1036,7 @@ def load_item_for_editing(
             "afterUnlock",
             "",
         ),
+        "afterQuery": next_dialog.get("afterQuery", ""),
         "failureHints": failure_hints,
         "showHintsOnFailure": bool(
             failure_hints
