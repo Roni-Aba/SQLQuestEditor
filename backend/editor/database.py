@@ -544,8 +544,13 @@ def _create_table(connection, table_item, rows):
             )
         else:
             sql_type = TYPE_MAPPING.get(column["type"], "TEXT")
+            nullable = any(
+                isinstance(row, dict) and row.get(column_name) is None
+                for row in (rows if isinstance(rows, list) else [])
+            )
+            constraint = "" if nullable else " NOT NULL"
             column_definitions.append(
-                f"{quote_identifier(column_name)} {sql_type} NOT NULL"
+                f"{quote_identifier(column_name)} {sql_type}{constraint}"
             )
 
     if not has_id_column:
@@ -556,34 +561,62 @@ def _create_table(connection, table_item, rows):
         f"({', '.join(column_definitions)})"
     )
 
-    data_columns = [
-        column for column in columns if column["id"].lower() != "id"
-    ]
-    if not data_columns or not isinstance(rows, list):
+    if not isinstance(rows, list):
         return
 
-    column_names = [column["id"] for column in data_columns]
-    quoted_columns = ", ".join(map(quote_identifier, column_names))
-    placeholders = ", ".join("?" for _ in column_names)
-    values = [
-        tuple(row.get(column_name, "") for column_name in column_names)
-        for row in rows
-        if isinstance(row, dict)
-    ]
-    if values:
-        connection.executemany(
-            f"INSERT INTO {quote_identifier(table_name)} "
-            f"({quoted_columns}) VALUES ({placeholders})",
-            values,
-        )
+    if not has_id_column:
+        columns.insert(0, {"id": "ID", "type": "int"})
+    insert_table_rows(connection, table_name, columns, rows)
 
 
-def create_level_database(database_path, level, table_rows):
+def insert_table_rows(connection, table_name, columns, rows):
+    column_names = [column["id"] for column in columns]
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        selected = [name for name in column_names if name in row]
+        if selected:
+            quoted_columns = ", ".join(map(quote_identifier, selected))
+            placeholders = ", ".join("?" for _ in selected)
+            connection.execute(
+                f"INSERT INTO {quote_identifier(table_name)} "
+                f"({quoted_columns}) VALUES ({placeholders})",
+                tuple(row[name] for name in selected),
+            )
+        else:
+            connection.execute(
+                f"INSERT INTO {quote_identifier(table_name)} DEFAULT VALUES"
+            )
+
+
+def create_level_database(
+    database_path, level, table_rows, source_database=None, source_tables=None
+):
     database_path = Path(database_path)
     database_path.parent.mkdir(parents=True, exist_ok=True)
 
+    if source_database:
+        source_database = Path(source_database)
+        if not source_database.is_file():
+            raise FileNotFoundError(
+                f'Die Level-Datenbank "{source_database.name}" wurde nicht gefunden.'
+            )
+        with _read_only_connection(source_database) as source:
+            with sqlite3.connect(database_path) as target:
+                source.backup(target)
+
     with sqlite3.connect(database_path) as connection:
         items = level.get("items", [])
+        active_tables = {
+            table_name_for(item) for item in items if isinstance(item, dict)
+            and item.get("type") == "table"
+        } if isinstance(items, list) else set()
+        source_tables = source_tables or {}
+        for current_name, original_name in source_tables.items():
+            if current_name not in active_tables:
+                connection.execute(
+                    f"DROP TABLE {quote_identifier(original_name)}"
+                )
         for item in items if isinstance(items, list) else []:
             if not isinstance(item, dict) or item.get("type") != "table":
                 continue
@@ -593,7 +626,63 @@ def create_level_database(database_path, level, table_rows):
                 if isinstance(table_rows, dict)
                 else []
             )
-            _create_table(connection, item, rows)
+            table_name = table_name_for(item)
+            original_name = source_tables.get(table_name)
+            if not original_name:
+                _create_table(connection, item, rows)
+                continue
+            present = connection.execute(
+                "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+                (original_name,),
+            ).fetchone()
+            if present is None:
+                raise ValueError(f'Die importierte Tabelle "{original_name}" fehlt.')
+            source_item = {**item, "tableName": original_name}
+            original_rows = read_table_rows(source_database, source_item)
+            if original_name != table_name:
+                connection.execute(
+                    f"ALTER TABLE {quote_identifier(original_name)} "
+                    f"RENAME TO {quote_identifier(table_name)}"
+                )
+            columns = _description_columns(item.get("description", []))
+            requested = [column["id"] for column in columns]
+            if not any(name.lower() == "id" for name in requested):
+                requested.insert(0, "ID")
+            actual = [entry[1] for entry in connection.execute(
+                f"PRAGMA table_info({quote_identifier(table_name)})"
+            )]
+            if requested != actual:
+                raise ValueError(
+                    f'Die Spalten der importierten Tabelle "{table_name}" '
+                    "weichen von der Levelbeschreibung ab."
+                )
+            if original_rows != rows:
+                trigger = connection.execute(
+                    "SELECT name FROM sqlite_master "
+                    "WHERE type = 'trigger' AND tbl_name = ?",
+                    (table_name,),
+                ).fetchone()
+                if trigger:
+                    raise ValueError(
+                        f'Die Tabelle "{table_name}" hat einen Trigger; '
+                        "bearbeitete Zeilen können nicht verlustfrei exportiert werden."
+                    )
+                for (other_table,) in connection.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table'"
+                ):
+                    for foreign_key in connection.execute(
+                        f"PRAGMA foreign_key_list({quote_identifier(other_table)})"
+                    ):
+                        if (
+                            other_table.casefold() == table_name.casefold()
+                            or str(foreign_key[2]).casefold() == table_name.casefold()
+                        ):
+                            raise ValueError(
+                                f'Die Tabelle "{table_name}" hat Fremdschlüssel; '
+                                "bearbeitete Zeilen können nicht verlustfrei exportiert werden."
+                            )
+                connection.execute(f"DELETE FROM {quote_identifier(table_name)}")
+                insert_table_rows(connection, table_name, columns, rows)
 
 
 def database_dump(database_path):

@@ -1,5 +1,5 @@
 from . import database, utils
-import json, io, zipfile, sqlite3, tempfile
+import json, io, zipfile, sqlite3, tempfile, shutil
 from pathlib import Path, PurePosixPath
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
@@ -253,6 +253,9 @@ def new_game_view(request):
     }
     request.session.pop("game_workspace", None)
     request.session.pop("game_root", None)
+    request.session.pop("import_sources", None)
+    request.session.pop("import_json_path", None)
+    request.session.pop("import_manifest", None)
     database.start_new_editor_workspace(request)
     clear_editor_state(request)
     request.session.modified = True
@@ -351,6 +354,8 @@ def edit_level_view(
     )
 
     level_draft = build_level_edit_session(selected_level)
+    source = request.session.get("import_sources", {}).get(str(level_id), {})
+    level_draft["_import_table_sources"] = deepcopy(source.get("tables", {}))
     database.begin_editor_level_rows(request, level_draft)
     request.session["new_level"] = level_draft
 
@@ -607,6 +612,7 @@ def upload_json_view(request):
     )
 
     try:
+        seen_paths = set()
         for game_file, submitted_relative_name in uploaded_entries:
             relative_name = str(
                 submitted_relative_name
@@ -622,6 +628,13 @@ def upload_json_view(request):
                     "Ungültiger Dateipfad im Spielordner."
                 )
 
+            normalized_path = str(relative_path).casefold()
+            if normalized_path in seen_paths:
+                raise ValueError(
+                    f'Der Dateipfad "{relative_name}" ist doppelt vorhanden.'
+                )
+            seen_paths.add(normalized_path)
+
             target_path = workspace_path.joinpath(
                 *relative_path.parts
             )
@@ -631,10 +644,11 @@ def upload_json_view(request):
             )
 
             game_file.seek(0)
-            with target_path.open("wb") as target_file:
+            with target_path.open("xb") as target_file:
                 for chunk in game_file.chunks():
                     target_file.write(chunk)
     except (OSError, ValueError) as error:
+        shutil.rmtree(workspace_path, ignore_errors=True)
         return render(
             request,
             "editor/start.html",
@@ -644,6 +658,7 @@ def upload_json_view(request):
         )
 
     if not isinstance(game_json, dict):
+        shutil.rmtree(workspace_path, ignore_errors=True)
         return render(
             request,
             "editor/start.html",
@@ -661,6 +676,7 @@ def upload_json_view(request):
     )
 
     if not isinstance(levels, list):
+        shutil.rmtree(workspace_path, ignore_errors=True)
         return render(
             request,
             "editor/start.html",
@@ -685,6 +701,7 @@ def upload_json_view(request):
             normalize_game_messages(game_json),
         )
     except sqlite3.Error as error:
+        shutil.rmtree(workspace_path, ignore_errors=True)
         if previous_workspace is None:
             request.session.pop("game_workspace", None)
         else:
@@ -704,6 +721,58 @@ def upload_json_view(request):
                 ),
             },
         )
+    import_sources = {}
+    for level in game_json.get("level", []):
+        if not isinstance(level, dict):
+            continue
+        level_id = str(level.get("id", ""))
+        database_path = database.get_level_database_path(request, level)
+        level_folder = utils.sanitize_export_name(level_id, "level")
+        asset_paths = {}
+        level_items = level.get("items", [])
+        if not isinstance(level_items, list):
+            level_items = []
+        for reference in [level.get("levelPicture", ""), *[
+            item.get("imageLink", "") for item in level_items
+            if isinstance(item, dict)
+        ]]:
+            if not reference:
+                continue
+            filename = utils.sanitize_export_name(reference)
+            source = utils.find_export_asset(filename, [
+                game_root / level_folder / "assets",
+                game_root / "assets",
+                game_root,
+            ])
+            if source is not None:
+                asset_paths[filename] = str(source)
+            else:
+                asset_paths[filename] = str(
+                    game_root / level_folder / "assets" / filename
+                )
+        import_sources[level_id] = {
+            "folder": level_folder,
+            "database": str(database_path) if database_path else "",
+            "tables": {
+                database.table_name_for(item): database.table_name_for(item)
+                for item in level_items
+                if isinstance(item, dict) and item.get("type") == "table"
+            },
+            "assets": asset_paths,
+        }
+    request.session["import_sources"] = import_sources
+    request.session["import_json_path"] = str(game_root / json_relative_path.name)
+    request.session["import_manifest"] = {
+        "files": [
+            path.relative_to(game_root).as_posix()
+            for path in game_root.rglob("*") if path.is_file()
+        ],
+        "folders": [source["folder"] for source in import_sources.values()],
+        "databases": [
+            source["database"] for source in import_sources.values()
+            if source["database"]
+        ],
+    }
     clear_editor_state(request)
     request.session["game_json"] = game_json
 
@@ -830,6 +899,9 @@ def create_level1_view(request):
                 uploaded_picture
             )
             saved_level["levelPicture"] = level_picture_name
+            saved_level.setdefault("_new_asset_sources", {})[
+                level_picture_name
+            ] = str(upload_dir / level_picture_name)
         save_new_level_session(request, saved_level)
         print("createLevel1 gespeichert:")
         print(json.dumps(saved_level, ensure_ascii=False, indent=2))
@@ -1876,6 +1948,9 @@ def create_level3hint_view(request):
                 uploaded_image,
             )
             item["imageLink"] = filename
+            saved_level.setdefault("_new_asset_sources", {})[
+                filename
+            ] = str(upload_dir / filename)
         elif hint_type == "text":
             item["imageLink"] = ""
         saved_level["item"] = item
@@ -2311,7 +2386,7 @@ def create_level8_view(request):
     )
 
 
-def export_game_view(request):
+def _build_game_export(request):
     game_json = request.session.get(
         "game_json",
         {},
@@ -2329,9 +2404,11 @@ def export_game_view(request):
         game_json,
         settings.BASE_DIR,
         request.session.get("game_root"),
+        request.session.get("import_sources", {}),
     )
 
     zip_buffer = io.BytesIO()
+    managed_archive_paths = {"SQLSpellQuest.json"}
 
     with tempfile.TemporaryDirectory() as temp_directory:
         temp_directory = Path(
@@ -2389,6 +2466,9 @@ def export_game_view(request):
                     f"{level_folder}/databases/"
                     f"{level['databaseName']}"
                 )
+                managed_archive_paths.update(
+                    (sql_archive_path, database_archive_path)
+                )
                 database_path = (
                     temp_directory
                     / (
@@ -2400,10 +2480,19 @@ def export_game_view(request):
                     request,
                     level,
                 )
+                source = request.session.get("import_sources", {}).get(
+                    str(level_id), {}
+                )
+                if source and not source.get("database"):
+                    raise FileNotFoundError(
+                        f'Die Level-Datenbank für "{level_id}" wurde nicht gefunden.'
+                    )
                 database.create_level_database(
                     database_path,
                     level,
                     level_table_rows,
+                    source_database=source.get("database"),
+                    source_tables=source.get("tables"),
                 )
 
                 level_sql = database.database_dump(database_path)
@@ -2433,6 +2522,65 @@ def export_game_view(request):
                     source_path,
                     archive_path,
                 )
+            game_root_value = request.session.get("game_root")
+            if game_root_value:
+                game_root = Path(game_root_value)
+                if not game_root.is_dir():
+                    raise FileNotFoundError("Der importierte Spielordner fehlt.")
+                imported_sources = request.session.get("import_sources", {})
+                manifest = request.session.get("import_manifest", {})
+                managed_input_paths = {
+                    Path(path) for path in manifest.get("databases", [])
+                }
+                imported_json = request.session.get("import_json_path")
+                if imported_json:
+                    managed_input_paths.add(Path(imported_json))
+                active_folders = {
+                    source["folder"]: utils.sanitize_export_name(level_id)
+                    for level_id, source in imported_sources.items()
+                    if source.get("folder")
+                }
+                deliberate_replacements = {
+                    f'{utils.sanitize_export_name(level_id)}/assets/{filename}': Path(path)
+                    for level_id, source in imported_sources.items()
+                    for filename, path in source.get("replacements", {}).items()
+                }
+                all_folders = set(manifest.get("folders", []))
+                input_files = set(manifest.get("files", []))
+                input_files.update(
+                    path.relative_to(game_root).as_posix()
+                    for path in game_root.rglob("*") if path.is_file()
+                )
+                for relative_name in sorted(input_files):
+                    input_path = game_root / relative_name
+                    parts = PurePosixPath(relative_name).parts
+                    if parts and parts[0] in all_folders and parts[0] not in active_folders:
+                        continue
+                    if not input_path.is_file():
+                        raise FileNotFoundError(
+                            f'Die importierte Datei "{relative_name}" fehlt.'
+                        )
+                    if input_path in managed_input_paths:
+                        continue
+                    if parts and parts[0] in active_folders:
+                        archive_path = PurePosixPath(
+                            active_folders[parts[0]], *parts[1:]
+                        ).as_posix()
+                    else:
+                        archive_path = relative_name
+                    if archive_path in managed_archive_paths:
+                        continue
+                    if archive_path in asset_files:
+                        if Path(asset_files[archive_path]) != input_path:
+                            if deliberate_replacements.get(archive_path) == Path(
+                                asset_files[archive_path]
+                            ):
+                                continue
+                            raise ValueError(
+                                f'Die Datei "{archive_path}" würde im Export überschrieben.'
+                            )
+                        continue
+                    zip_file.write(input_path, archive_path)
     zip_buffer.seek(0)
     response = HttpResponse(
         zip_buffer.getvalue(),
@@ -2445,6 +2593,18 @@ def export_game_view(request):
         'filename="SQLSpellQuest_export.zip"'
     )
     return response
+
+
+def export_game_view(request):
+    try:
+        return _build_game_export(request)
+    except (OSError, sqlite3.Error, ValueError) as error:
+        game_json = request.session.get("game_json", {})
+        levels = game_json.get("level", []) if isinstance(game_json, dict) else []
+        return render(request, "editor/level.html", {
+            "levels": levels if isinstance(levels, list) else [],
+            "error_message": f"Export fehlgeschlagen: {error}",
+        }, status=400)
 
 def level_grunddaten_view(request):
     set_guided_level_creation(request, False)
@@ -2510,6 +2670,9 @@ def level_grunddaten_view(request):
             saved_level["levelPicture"] = (
                 level_picture_name
             )
+            saved_level.setdefault("_new_asset_sources", {})[
+                level_picture_name
+            ] = str(upload_dir / level_picture_name)
 
         saved_level["id"] = level_name
         saved_level["databaseName"] = utils.database_name_for_level(level_name)
@@ -2879,6 +3042,12 @@ def edit_item_view(request, item_id):
         )
         if current_item.get("type") == "table":
             table_name = database.table_name_for(current_item)
+            table_sources = saved_level.get("_import_table_sources", {})
+            if old_table_name and old_table_name != table_name:
+                original_name = table_sources.pop(old_table_name, None)
+                if original_name:
+                    table_sources[table_name] = original_name
+            saved_level["_import_table_sources"] = table_sources
             draft_rows = saved_level.get("item", {}).get("rows")
             if not isinstance(draft_rows, list):
                 draft_rows = database.get_editor_table_rows(
@@ -3376,6 +3545,17 @@ def save_level_view(request):
 
     request.session["game_json"] = game_json
 
+    import_sources = request.session.get("import_sources", {})
+    if editing_level_id and editing_level_id in import_sources:
+        source = import_sources.pop(editing_level_id)
+        source["tables"] = saved_level.get("_import_table_sources", source["tables"])
+        source["assets"].update(saved_level.get("_new_asset_sources", {}))
+        source.setdefault("replacements", {}).update(
+            saved_level.get("_new_asset_sources", {})
+        )
+        import_sources[level_id] = source
+        request.session["import_sources"] = import_sources
+
     if editing_level_id and editing_level_id != level_id:
         if has_table_draft:
             database.remove_editor_level_rows(request, editing_level_id)
@@ -3464,6 +3644,9 @@ def delete_level_view(request, level_id):
         ]
 
     request.session["game_json"] = game_json
+    import_sources = request.session.get("import_sources", {})
+    import_sources.pop(str(level_id), None)
+    request.session["import_sources"] = import_sources
     database.remove_editor_level_rows(
         request,
         level_id,

@@ -4,6 +4,7 @@ def prepare_game_json_for_export(
     game_json,
     base_dir,
     game_root=None,
+    import_sources=None,
 ):
     if not isinstance(
         game_json,
@@ -85,17 +86,16 @@ def prepare_game_json_for_export(
             requested_level_id,
             fallback=f"level{level_index}",
         )
-        original_level_folder = level_folder
-        counter = 2
-        while level_folder in used_level_names:
-            level_folder = (
-                f"{original_level_folder}_"
-                f"{counter}"
+        if level_folder.casefold() in used_level_names:
+            raise ValueError(
+                f'Die Levelnamen erzeugen denselben Exportordner "{level_folder}".'
             )
-            counter += 1
         used_level_names.add(
-            level_folder
+            level_folder.casefold()
         )
+        original_level_folder = level_folder
+        imported_source = (import_sources or {}).get(str(requested_level_id), {})
+        imported_assets = imported_source.get("assets", {})
         imported_image_directories = []
         if game_root is not None:
             imported_image_directories = [
@@ -121,9 +121,9 @@ def prepare_game_json_for_export(
                 clean_level_picture
             )
 
-            source_path = find_export_asset(
-                clean_level_picture,
-                imported_image_directories + level_image_directories,
+            source_path = resolve_export_asset(
+                clean_level_picture, imported_assets,
+                level_image_directories + imported_image_directories,
             )
 
             if source_path is not None:
@@ -186,13 +186,10 @@ def prepare_game_json_for_export(
 
             clean_image_link = (sanitize_export_name(image_link,fallback="hint_image",))
             item["imageLink"] = (clean_image_link)
-            source_path = find_export_asset(
-                clean_image_link,
-                imported_image_directories + item_image_directories,
+            source_path = resolve_export_asset(
+                clean_image_link, imported_assets,
+                item_image_directories + imported_image_directories,
             )
-
-            if source_path is None:
-                continue
 
             exported_filename = (
                 _reserve_asset_filename(
@@ -270,6 +267,18 @@ def find_export_asset(
         if candidate.is_file():
             return candidate
     return None
+
+
+def resolve_export_asset(filename, imported_assets, possible_directories):
+    if filename in imported_assets:
+        source = Path(imported_assets[filename])
+        if source.is_file():
+            return source
+        raise FileNotFoundError(f'Das Bild "{filename}" wurde nicht gefunden.')
+    source = find_export_asset(filename, possible_directories)
+    if source is None:
+        raise FileNotFoundError(f'Das Bild "{filename}" wurde nicht gefunden.')
+    return source
 def _reserve_asset_filename(
     requested_filename,
     source_path,
@@ -331,6 +340,9 @@ def convert_table_cell_value(
     raw_value,
     column_type,
 ):
+    if raw_value is None:
+        return None
+
     if column_type == "boolean":
         if isinstance(raw_value, bool):
             return raw_value
@@ -346,9 +358,6 @@ def convert_table_cell_value(
             "on",
             "ja",
         }
-
-    if raw_value is None:
-        return ""
 
     normalized_value = str(
         raw_value

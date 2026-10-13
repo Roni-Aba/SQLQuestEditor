@@ -810,3 +810,146 @@ class GuidedLevelTests(TestCase):
                     connection.execute('SELECT "Name" FROM "Heft" ORDER BY "ID"').fetchall(),
                     [("Aldi",), ("Lidl",), ("Tedi",)],
                 )
+
+class ImportExportTests(TestCase):
+    def import_files(self, files):
+        response = self.client.post(reverse("upload_json"), {
+            "game_files": [
+                SimpleUploadedFile(Path(name).name, content)
+                for name, content in files.items()
+            ],
+            "game_relative_paths": [f"Spiel/{name}" for name in files],
+        })
+        workspace = self.client.session.get("game_workspace")
+        if workspace:
+            self.addCleanup(shutil.rmtree, workspace, ignore_errors=True)
+        self.assertRedirects(response, reverse("level"))
+
+    def example_files(self, root):
+        database_path = Path(root) / "level1.db"
+        with sqlite3.connect(database_path) as connection:
+            connection.executescript('''
+                CREATE TABLE "Notebook" ("ID" INTEGER PRIMARY KEY, "Name" TEXT);
+                INSERT INTO "Notebook" VALUES (7, 'Aldi'), (42, NULL);
+                CREATE INDEX "notebook_name" ON "Notebook" ("Name");
+                CREATE TABLE "OnlyID" ("ID" INTEGER PRIMARY KEY);
+                INSERT INTO "OnlyID" VALUES (7), (42);
+            ''')
+        empty_database = Path(root) / "level2.db"
+        sqlite3.connect(empty_database).close()
+        game = {
+            "id": "Rundlauf", "messages": {},
+            "level": [
+                {
+                    "id": "level1", "databaseName": "level1.db",
+                    "levelPicture": "same.png", "startDialog": "Hallo",
+                    "queryRestriction": {},
+                    "items": [
+                        {"id": "Notebook", "type": "table", "tableName": "Notebook",
+                         "description": ["ID (int)", "Name (varchar)"]},
+                        {"id": "OnlyID", "type": "table", "tableName": "OnlyID",
+                         "description": ["ID (int)"]},
+                    ],
+                },
+                {
+                    "id": "level2", "databaseName": "level2.db",
+                    "levelPicture": "same.png", "startDialog": "Weiter",
+                    "queryRestriction": {}, "items": [],
+                },
+            ],
+        }
+        return {
+            "SQLSpellQuest.json": json.dumps(game).encode(),
+            "level1/databases/level1.db": database_path.read_bytes(),
+            "level2/databases/level2.db": empty_database.read_bytes(),
+            "level1/assets/same.png": b"background one",
+            "level2/assets/same.png": b"background two",
+            "level1/assets/unused.png": b"extra image",
+        }
+
+    def test_import_export_round_trip(self):
+        with TemporaryDirectory() as root, self.settings(BASE_DIR=Path(root)):
+            files = self.example_files(root)
+            self.import_files(files)
+            imported_game = self.client.session["game_json"]
+
+            response = self.client.get(reverse("export_game"))
+            self.assertEqual(response.status_code, 200)
+            with ZipFile(BytesIO(response.content)) as archive:
+                exported = {name: archive.read(name) for name in archive.namelist()}
+
+            self.assertEqual(json.loads(exported["SQLSpellQuest.json"]), imported_game)
+            for name in (
+                "level1/assets/same.png", "level2/assets/same.png",
+                "level1/assets/unused.png",
+            ):
+                self.assertEqual(exported[name], files[name])
+
+            exported_database = Path(root) / "exported.db"
+            exported_database.write_bytes(exported["level1/databases/level1.db"])
+            with sqlite3.connect(exported_database) as connection:
+                self.assertEqual(
+                    connection.execute('SELECT * FROM "Notebook" ORDER BY "ID"').fetchall(),
+                    [(7, "Aldi"), (42, None)],
+                )
+                self.assertEqual(
+                    connection.execute('SELECT * FROM "OnlyID" ORDER BY "ID"').fetchall(),
+                    [(7,), (42,)],
+                )
+                self.assertIsNotNone(connection.execute(
+                    "SELECT 1 FROM sqlite_master WHERE name = 'notebook_name'"
+                ).fetchone())
+
+            self.import_files(exported)
+            self.assertEqual(self.client.session["game_json"], imported_game)
+
+    def test_duplicate_upload_path_is_rejected(self):
+        game = {"id": "Rundlauf", "messages": {}, "level": []}
+        response = self.client.post(reverse("upload_json"), {
+            "game_files": [
+                SimpleUploadedFile("SQLSpellQuest.json", json.dumps(game).encode()),
+                SimpleUploadedFile("same.png", b"first"),
+                SimpleUploadedFile("same.png", b"second"),
+            ],
+            "game_relative_paths": [
+                "Spiel/SQLSpellQuest.json",
+                "Spiel/assets/same.png",
+                "Spiel/assets/same.png",
+            ],
+        })
+        self.assertContains(response, "doppelt")
+        self.assertNotIn("game_json", self.client.session)
+
+    def test_editing_table_rows_keeps_original_ids(self):
+        with TemporaryDirectory() as root, self.settings(BASE_DIR=Path(root)):
+            self.import_files(self.example_files(root))
+            self.client.get(reverse("edit_level", args=["level1"]))
+            edit_url = reverse("edit_item", args=["Notebook"])
+            self.client.get(edit_url)
+            self.client.get(reverse("edit_item_section", args=["Notebook", "table"]))
+            self.assertRedirects(self.client.post(reverse("create_level3table"), {
+                "column_ids[]": ["ID", "Name"],
+                "column_types[]": ["number", "text"],
+                "rows_json": json.dumps([{"ID": 42, "Name": None}]),
+            }), edit_url)
+            self.client.post(edit_url)
+            self.client.post(reverse("save_level"))
+
+            response = self.client.get(reverse("export_game"))
+            self.assertEqual(response.status_code, 200)
+            with ZipFile(BytesIO(response.content)) as archive:
+                database_path = Path(root) / "edited.db"
+                database_path.write_bytes(archive.read("level1/databases/level1.db"))
+            with sqlite3.connect(database_path) as connection:
+                self.assertEqual(
+                    connection.execute('SELECT * FROM "Notebook"').fetchall(),
+                    [(42, None)],
+                )
+
+    def test_missing_imported_image_blocks_export(self):
+        with TemporaryDirectory() as root, self.settings(BASE_DIR=Path(root)):
+            self.import_files(self.example_files(root))
+            image = Path(self.client.session["game_root"]) / "level1/assets/same.png"
+            image.unlink()
+            response = self.client.get(reverse("export_game"))
+            self.assertContains(response, "same.png", status_code=400)
