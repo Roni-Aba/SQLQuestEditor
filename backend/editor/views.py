@@ -7,7 +7,11 @@ from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from copy import deepcopy
 from django.views.decorators.http import require_POST
-
+from .services.level_basics import (
+    level1_form_values,
+    level2_form_values,
+    query_restriction_from_post,
+)
 
 def remember_item_summary_return(request):
     if (
@@ -862,11 +866,8 @@ def auswahl_view(request):
 def create_level1_view(request):
     steps = get_steps(active_step=1)
     saved_level = request.session.get("new_level", {})
-    form_values = {
-        "level_name": saved_level.get("id", ""),
-        "level_greeting": saved_level.get("startDialog", ""),
-        "level_picture": saved_level.get("levelPicture", ""),
-    }
+    form_values = level1_form_values(saved_level)
+
     if request.method == "POST":
         level_id = request.POST.get("level_name", "").strip()
         start_dialog = request.POST.get("level_greeting", "").strip()
@@ -881,6 +882,7 @@ def create_level1_view(request):
                 },
                 "error_message": f'Der Levelname "{level_id}" wird bereits verwendet.',
             })
+
         saved_level["id"] = level_id
         saved_level["databaseName"] = utils.database_name_for_level(level_id)
         database.finalize_editor_level_rows(
@@ -916,98 +918,17 @@ def create_level1_view(request):
 def create_level2_view(request):
     steps = get_steps(active_step=2)
     saved_level = request.session.get("new_level", {})
-    query_restriction = saved_level.get("queryRestriction", {})
-    row_restriction = query_restriction.get("rowRestriction", {})
-    column_restriction = query_restriction.get("columnRestriction", {})
-    row_messages = row_restriction.get("violationMessages", [])
-    column_messages = column_restriction.get("violationMessages", [])
-    row_column_messages = query_restriction.get(
-        "colAndRowViolationMessages",
-        []
-    )
-    form_values = {
-        "max_columns": (
-            column_restriction.get("maxNumber")
-            if column_restriction.get("maxNumber") is not None
-            else ""
-        ),
-        "max_rows": (
-            row_restriction.get("maxNumber")
-            if row_restriction.get("maxNumber") is not None
-            else ""
-        ),
-        "too_many_rows_message": (
-            row_messages[0]
-            if row_messages
-            else ""
-        ),
-        "too_many_columns_message": (
-            column_messages[0]
-            if column_messages
-            else ""
-        ),
-        "too_many_rows_columns_message": (
-            row_column_messages[0]
-            if row_column_messages
-            else ""
-        ),
-    }
+    form_values = level2_form_values(saved_level)
+
     if request.method == "POST":
-        max_columns = request.POST.get(
-            "max_columns",
-            ""
-        ).strip()
-
-        max_rows = request.POST.get(
-            "max_rows",
-            ""
-        ).strip()
-
-        too_many_rows_message = request.POST.get(
-            "too_many_rows_message",
-            ""
-        ).strip()
-
-        too_many_columns_message = request.POST.get(
-            "too_many_columns_message",
-            ""
-        ).strip()
-
-        too_many_rows_columns_message = request.POST.get(
-            "too_many_rows_columns_message",
-            ""
-        ).strip()
-        saved_level["queryRestriction"] = {
-            "rowRestriction": {
-                "maxNumber": (
-                    int(max_rows)
-                    if max_rows.isdigit()
-                    else None
-                ),
-                "violationMessages": (
-                    [too_many_rows_message]
-                    if too_many_rows_message
-                    else []
-                ),
-            },
-            "columnRestriction": {
-                "maxNumber": (
-                    int(max_columns)
-                    if max_columns.isdigit()
-                    else None
-                ),
-                "violationMessages": (
-                    [too_many_columns_message]
-                    if too_many_columns_message
-                    else []
-                ),
-            },
-            "colAndRowViolationMessages": ([too_many_rows_columns_message] if too_many_rows_columns_message else []), }
+        saved_level["queryRestriction"] = query_restriction_from_post(request.POST)
         request.session["new_level"] = saved_level
         request.session.modified = True
+
         print("createLevel2 gespeichert:")
         print(json.dumps(saved_level, ensure_ascii=False, indent=2))
         return redirect("create_level3")
+
     return render(request, "editor/createLevel2.html", {
         "steps": steps,
         "saved_level": saved_level,

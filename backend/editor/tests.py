@@ -811,6 +811,55 @@ class GuidedLevelTests(TestCase):
                     [("Aldi",), ("Lidl",), ("Tedi",)],
                 )
 
+    def test_level_grunddaten_bleiben_beim_zurueckgehen_erhalten(self):
+        with TemporaryDirectory() as root, self.settings(BASE_DIR=Path(root)):
+            self.step("new_game", {}, "level")
+            self.client.get(reverse("create_level"))
+
+            self.step(
+                "create_level1",
+                {
+                    "level_name": "level1",
+                    "level_greeting": "Hallo",
+                    "levelPicture": SimpleUploadedFile(
+                        "bild.png", b"bild", content_type="image/png"
+                    ),
+                },
+                "create_level2",
+            )
+            self.step(
+                "create_level2",
+                {
+                    "max_rows": "5",
+                    "max_columns": "4",
+                    "too_many_rows_message": "Zu viele Zeilen",
+                    "too_many_columns_message": "Zu viele Spalten",
+                    "too_many_rows_columns_message": "Beides zu viel",
+                },
+                "create_level3",
+            )
+
+            level1 = self.client.get(reverse("create_level1"))
+            self.assertEqual(level1.context["form_values"]["level_name"], "level1")
+            self.assertEqual(level1.context["form_values"]["level_greeting"], "Hallo")
+            self.assertEqual(level1.context["form_values"]["level_picture"], "bild.png")
+
+            level2 = self.client.get(reverse("create_level2"))
+            self.assertEqual(level2.context["form_values"]["max_rows"], 5)
+            self.assertEqual(level2.context["form_values"]["max_columns"], 4)
+
+            self.step(
+                "create_level1",
+                {"level_name": "level1", "level_greeting": "Willkommen zurück"},
+                "create_level2",
+            )
+            saved = self.client.session["new_level"]
+            self.assertEqual(saved["levelPicture"], "bild.png")
+            self.assertEqual(saved["startDialog"], "Willkommen zurück")
+            self.assertEqual(
+                saved["queryRestriction"]["rowRestriction"]["maxNumber"], 5
+            )
+
 class ImportExportTests(TestCase):
     def import_files(self, files):
         response = self.client.post(reverse("upload_json"), {
