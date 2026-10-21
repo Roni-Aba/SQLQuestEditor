@@ -12,6 +12,18 @@ from .services.level_basics import (
     level2_form_values,
     query_restriction_from_post,
 )
+from .services.item_draft import (
+    clear_item_draft,
+    item_type_and_next_view,
+    clear_table_data_on_type_change)
+
+from .services.table_editor import (
+    parse_table_columns,
+    parse_table_rows,
+    persist_draft_table_rows
+)
+
+from .services.hint_editor import update_hint_field
 
 def remember_item_summary_return(request):
     if (
@@ -1254,9 +1266,7 @@ def create_level3_view(request):
 
         if return_to == "items":
             request.session["item_creation_return_to"] = "items"
-            saved_level.pop("item", None)
-            saved_level.pop("unlockCondition", None)
-            saved_level.pop("position", None)
+            clear_item_draft(saved_level)
             request.session.pop("editing_item_id", None)
             request.session.pop("item_edit_mode", None)
             request.session.pop("editing_item_section", None)
@@ -1269,9 +1279,7 @@ def create_level3_view(request):
             reset_item_draft
             and not request.session.get("item_edit_mode", False)
         ):
-            saved_level.pop("item", None)
-            saved_level.pop("unlockCondition", None)
-            saved_level.pop("position", None)
+            clear_item_draft(saved_level)
             request.session["new_level"] = saved_level
             request.session.modified = True
         elif (
@@ -1321,6 +1329,7 @@ def create_level31_view(request):
     steps = get_steps(active_step=3)
     saved_level = request.session.get("new_level", {})
     item = saved_level.get("item", {})
+
     type_options = [
         {"value": "table", "label": "Table"},
         {"value": "hint", "label": "Hint"},
@@ -1329,33 +1338,20 @@ def create_level31_view(request):
     form_values = {"item_type": item.get("type", "")}
 
     if request.method == "POST":
-        previous_item_type = item.get("type", "")
-        item_type = request.POST.get("item_type", "").strip()
-        if item_type not in ["table", "hint", "exit"]:
-            item_type = "table"
-
-        if previous_item_type == "table" and item_type != "table":
-            table_name = database.get_editor_table_key(item)
-            if not request.session.get("editing_item_id"):
-                database.remove_editor_table_rows(
-                    request,
-                    saved_level,
-                    table_name,
-                )
-            item.pop("tableName", None)
-            item.pop("columns", None)
-            item.pop("rows", None)
+        item_type, next_view = item_type_and_next_view(request.POST)
+        clear_table_data_on_type_change(
+            request,
+            saved_level,
+            item,
+            item_type,
+        )
 
         item["type"] = item_type
         saved_level["item"] = item
         request.session["new_level"] = saved_level
         request.session.modified = True
 
-        if item_type == "table":
-            return redirect("create_level3table")
-        if item_type == "hint":
-            return redirect("create_level3hint")
-        return redirect("create_level3exit")
+        return redirect(next_view)
 
     return render(
         request,
@@ -1911,223 +1907,49 @@ def create_level3table_view(request):
         request.session.get("item_creation_return_to") == "items"
     )
     steps = get_steps(active_step=3)
-
-    saved_level = request.session.get(
-        "new_level",
-        {},
-    )
-
-    item = saved_level.get(
-        "item",
-        {},
-    )
+    saved_level = request.session.get("new_level", {})
+    item = saved_level.get("item", {})
 
     data_type_options = [
-        {
-            "value": "text",
-            "label": "Text",
-        },
-        {
-            "value": "number",
-            "label": "Zahl",
-        },
-        {
-            "value": "date",
-            "label": "Datum",
-        },
-        {
-            "value": "boolean",
-            "label": "Boolean",
-        },
+        {"value": "text", "label": "Text"},
+        {"value": "number", "label": "Zahl"},
+        {"value": "date", "label": "Datum"},
+        {"value": "boolean", "label": "Boolean"},
     ]
 
     form_values = {
-        "table_name": item.get(
-            "tableName",
-            item.get("id", ""),
-        ),
-        "columns": item.get(
-            "columns",
-            [],
-        ),
-        "rows": item.get(
-            "rows",
-            [],
-        ),
+        "table_name": item.get("tableName", item.get("id", "")),
+        "columns": item.get("columns", []),
+        "rows": item.get("rows", []),
     }
-
     error_message = ""
 
     if request.method == "POST":
-        column_ids = request.POST.getlist(
-            "column_ids[]"
+        columns, error_message = parse_table_columns(
+            request.POST.getlist("column_ids[]"),
+            request.POST.getlist("column_types[]"),
         )
-
-        column_types = request.POST.getlist(
-            "column_types[]"
-        )
-
-        columns = []
-
-        for column_id, column_type in zip(
-                column_ids,
-                column_types,
-        ):
-            column_id = column_id.strip()
-            column_type = column_type.strip()
-
-            if not column_id and not column_type:
-                continue
-
-            if not column_id:
-                error_message = (
-                    "Jede Spalte benötigt einen Namen."
-                )
-                break
-
-            if column_type not in {
-                "text",
-                "number",
-                "date",
-                "boolean",
-            }:
-                error_message = (
-                    f"Der Datentyp der Spalte "
-                    f"„{column_id}“ ist ungültig."
-                )
-                break
-
-            if any(
-                    existing_column["id"].lower()
-                    == column_id.lower()
-                    for existing_column in columns
-            ):
-                error_message = (
-                    f"Der Spaltenname "
-                    f"„{column_id}“ wurde mehrfach verwendet."
-                )
-                break
-
-            columns.append(
-                {
-                    "id": column_id,
-                    "type": column_type,
-                }
-            )
 
         rows = []
-
-        raw_rows_json = request.POST.get(
-            "rows_json",
-            "[]",
-        )
+        raw_rows_json = request.POST.get("rows_json", "[]")
 
         if not error_message:
-            try:
-                submitted_rows = json.loads(
-                    raw_rows_json
-                )
-            except json.JSONDecodeError:
-                submitted_rows = []
-                error_message = (
-                    "Die Tabellendaten konnten nicht "
-                    "verarbeitet werden."
-                )
-
-        if not error_message:
-            if not isinstance(
-                    submitted_rows,
-                    list,
-            ):
-                submitted_rows = []
-
-            for submitted_row in submitted_rows:
-                if not isinstance(
-                        submitted_row,
-                        dict,
-                ):
-                    continue
-
-                cleaned_row = {}
-                row_has_value = False
-
-                for column in columns:
-                    column_id = column["id"]
-                    column_type = column["type"]
-
-                    raw_value = submitted_row.get(
-                        column_id,
-                        "",
-                    )
-
-                    cleaned_value = (
-                        utils.convert_table_cell_value(
-                            raw_value,
-                            column_type,
-                        )
-                    )
-
-                    if cleaned_value not in (
-                            "",
-                            None,
-                    ):
-                        row_has_value = True
-
-                    cleaned_row[column_id] = (
-                        cleaned_value
-                    )
-
-                if row_has_value:
-                    rows.append(cleaned_row)
+            rows, error_message = parse_table_rows(
+                raw_rows_json,
+                columns,
+            )
 
         form_values = {
-            "table_name": item.get(
-                "id",
-                "",
-            ),
+            "table_name": item.get("id", ""),
             "columns": columns,
             "rows": rows,
         }
 
         if not columns and not error_message:
-            error_message = (
-                "Lege mindestens eine Tabellenspalte an."
-            )
+            error_message = "Lege mindestens eine Tabellenspalte an."
 
         if not error_message and not request.session.get("item_edit_mode"):
-            item_name = str(item.get("id", "")).strip()
-            table_storage_key = database.get_editor_table_key(item)
-
-            saved_level["databaseName"] = utils.database_name_for_level(
-                saved_level.get("id", "")
-            )
-
-            old_table_name = ""
-            editing_item_id = request.session.get(
-                "editing_item_id",
-                "",
-            )
-            for existing_item in saved_level.get("items", []):
-                if (
-                    isinstance(existing_item, dict)
-                    and existing_item.get("id") == editing_item_id
-                    and existing_item.get("type") == "table"
-                ):
-                    old_table_name = str(
-                        existing_item.get(
-                            "tableName",
-                            existing_item.get("id", ""),
-                        )
-                    ).strip()
-                    break
-
-            database.set_editor_table_rows(
-                request,
-                saved_level,
-                table_storage_key,
-                rows,
-                old_table_name=old_table_name,
-            )
+            persist_draft_table_rows(request, saved_level, item, rows)
 
         if not error_message:
             item_name = str(item.get("id", "")).strip()
@@ -2138,24 +1960,11 @@ def create_level3table_view(request):
             item["rows"] = rows
 
             saved_level["item"] = item
-
-            request.session["new_level"] = (
-                saved_level
-            )
-
+            request.session["new_level"] = saved_level
             request.session.modified = True
 
-            print(
-                "createLevel3table gespeichert:"
-            )
-
-            print(
-                json.dumps(
-                    saved_level,
-                    ensure_ascii=False,
-                    indent=2,
-                )
-            )
+            print("createLevel3table gespeichert:")
+            print(json.dumps(saved_level, ensure_ascii=False, indent=2))
 
             return redirect_after_item_section_edit(
                 request,
@@ -2169,9 +1978,7 @@ def create_level3table_view(request):
             "steps": steps,
             "saved_level": saved_level,
             "form_values": form_values,
-            "data_type_options": (
-                data_type_options
-            ),
+            "data_type_options": data_type_options,
             "error_message": error_message,
             "is_item_edit": request.session.get("item_edit_mode", False),
             "editing_item_id": request.session.get("editing_item_id", ""),
@@ -2179,7 +1986,6 @@ def create_level3table_view(request):
             "return_to_item_summary": return_to_item_summary,
         },
     )
-
 
 def create_level7_view(request):
     steps = get_steps(active_step=7)

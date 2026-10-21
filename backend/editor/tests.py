@@ -9,7 +9,7 @@ import shutil
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
-
+from unittest.mock import patch
 
 class GuidedLevelTests(TestCase):
     def step(self, page, data, next_page):
@@ -859,6 +859,118 @@ class GuidedLevelTests(TestCase):
             self.assertEqual(
                 saved["queryRestriction"]["rowRestriction"]["maxNumber"], 5
             )
+
+    def test_wechsel_von_tabelle_zu_hinweis_entfernt_tabellendaten(self):
+        session = self.client.session
+        session["new_level"] = {
+            "id": "level1",
+            "item": {
+                "type": "table",
+                "tableName": "Heft",
+                "columns": [{"id": "ID", "type": "number"}],
+                "rows": [{"ID": 1}],
+            },
+        }
+        session.save()
+
+        with patch("editor.views.database.remove_editor_table_rows") as remove_rows:
+            response = self.client.post(
+                reverse("create_level31"),
+                {"item_type": "hint"},
+            )
+
+        self.assertRedirects(
+            response,
+            reverse("create_level3hint"),
+            fetch_redirect_response=False,
+        )
+        item = self.client.session["new_level"]["item"]
+        self.assertEqual(item["type"], "hint")
+        for key in ("tableName", "columns", "rows"):
+            self.assertNotIn(key, item)
+        remove_rows.assert_called_once()
+
+    def test_doppelter_tabellenspaltenname_wird_abgelehnt(self):
+        session = self.client.session
+        session["new_level"] = {
+            "id": "level1",
+            "items": [],
+            "item": {"id": "Heft", "type": "table"},
+        }
+        session.save()
+
+        response = self.client.post(
+            reverse("create_level3table"),
+            {
+                "column_ids[]": ["ID", "id"],
+                "column_types[]": ["number", "text"],
+                "rows_json": "[]",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "editor/createLevel3table.html")
+        self.assertContains(response, "wurde mehrfach verwendet")
+        self.assertNotIn(
+            "columns",
+            self.client.session["new_level"]["item"],
+        )
+
+    def test_ungueltige_tabellenzeilen_bleiben_im_formular(self):
+        session = self.client.session
+        session["new_level"] = {
+            "id": "level1",
+            "items": [],
+            "item": {"id": "Heft", "type": "table"},
+        }
+        session.save()
+
+        response = self.client.post(
+            reverse("create_level3table"),
+            {
+                "column_ids[]": ["ID"],
+                "column_types[]": ["number"],
+                "rows_json": "{ungueltig",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "editor/createLevel3table.html")
+        self.assertContains(
+            response,
+            "Die Tabellendaten konnten nicht verarbeitet werden.",
+        )
+        self.assertNotIn("columns", self.client.session["new_level"]["item"])
+
+    def test_hinweis_wechsel_zu_text_entfernt_bild(self):
+        session = self.client.session
+        session["new_level"] = {
+            "id": "level1",
+            "items": [],
+            "item": {
+                "id": "Stift",
+                "type": "hint",
+                "hintType": "image",
+                "imageLink": "altes_bild.png",
+                "text": "",
+            },
+        }
+        session.save()
+
+        response = self.client.post(
+            reverse("create_level3hint"),
+            {"hint_type": "text", "hint_text": "Neuer Hinweis"},
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("create_level4"),
+            fetch_redirect_response=False,
+        )
+        item = self.client.session["new_level"]["item"]
+        self.assertEqual(item["hintType"], "text")
+        self.assertEqual(item["text"], "Neuer Hinweis")
+        self.assertEqual(item["imageLink"], "")
 
 class ImportExportTests(TestCase):
     def import_files(self, files):
