@@ -997,6 +997,51 @@ class GuidedLevelTests(TestCase):
             "Stift",
         )
 
+    def test_position_bleibt_beim_erneuten_oeffnen_erhalten(self):
+        session = self.client.session
+        session["new_level"] = {
+            "levelPicture": "",
+            "item": {"id": "Heft", "type": "table"},
+        }
+        session.save()
+
+        response = self.client.post(
+            reverse("create_level51"),
+            {
+                "image_x": "10",
+                "image_y": "20",
+                "image_width": "30",
+                "image_height": "40",
+                "icon_x": "50",
+                "icon_y": "60",
+                "icon_width": "70",
+                "icon_height": "80",
+            },
+        )
+        self.assertRedirects(
+            response,
+            reverse("create_level6"),
+            fetch_redirect_response=False,
+        )
+
+        response = self.client.get(reverse("create_level51"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["form_values"],
+            {
+                "level_picture_path": "",
+                "image_x": 10,
+                "image_y": 20,
+                "image_width": 30,
+                "image_height": 40,
+                "icon_x": 50,
+                "icon_y": 60,
+                "icon_width": 70,
+                "icon_height": 80,
+            },
+        )
+
+
 class ImportExportTests(TestCase):
     def import_files(self, files):
         response = self.client.post(reverse("upload_json"), {

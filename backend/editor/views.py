@@ -28,6 +28,12 @@ from .services.table_editor import (
     persist_draft_table_rows
 )
 
+from .services.item_position import (
+    _box_from_post,
+    position_from_post,
+    position_form_values
+)
+
 from .services.hint_editor import update_hint_field, update_hint_image
 from .services.exit_editor import update_exit_fields
 
@@ -1338,133 +1344,21 @@ def create_level51_view(request):
     return_to_item_summary = remember_item_summary_return(request)
     steps = get_steps(active_step=5)
     saved_level = request.session.get("new_level", {})
-
-    position = saved_level.get("position", {})
-
-    bounding_box_image = position.get(
-        "boundingBoxImage",
-        {},
-    )
-    bounding_box_icon = position.get(
-        "boundingBoxIcon",
-        {},
-    )
-
-    level_picture = saved_level.get(
-        "levelPicture",
-        "",
-    )
-
-    if level_picture:
-        level_picture_path = (
-            f"editor/img/levels/{level_picture}"
-        )
-
-    form_values = {
-        "level_picture_path": level_picture_path,
-        "image_x": bounding_box_image.get(
-            "x",
-            "",
-        ),
-        "image_y": bounding_box_image.get(
-            "y",
-            "",
-        ),
-        "image_width": bounding_box_image.get(
-            "width",
-            "",
-        ),
-        "image_height": bounding_box_image.get(
-            "height",
-            "",
-        ),
-        "icon_x": bounding_box_icon.get(
-            "x",
-            "",
-        ),
-        "icon_y": bounding_box_icon.get(
-            "y",
-            "",
-        ),
-        "icon_width": bounding_box_icon.get(
-            "width",
-            "",
-        ),
-        "icon_height": bounding_box_icon.get(
-            "height",
-            "",
-        ),
-    }
+    form_values = position_form_values(saved_level)
 
     if request.method == "POST":
-        saved_level["position"] = {
-            "boundingBoxImage": {
-                "x": int(
-                    request.POST.get(
-                        "image_x",
-                        "0",
-                    )
-                ),
-                "y": int(
-                    request.POST.get(
-                        "image_y",
-                        "0",
-                    )
-                ),
-                "width": int(
-                    request.POST.get(
-                        "image_width",
-                        "0",
-                    )
-                ),
-                "height": int(
-                    request.POST.get(
-                        "image_height",
-                        "0",
-                    )
-                ),
-            },
-            "boundingBoxIcon": {
-                "x": int(
-                    request.POST.get(
-                        "icon_x",
-                        "0",
-                    )
-                ),
-                "y": int(
-                    request.POST.get(
-                        "icon_y",
-                        "0",
-                    )
-                ),
-                "width": int(
-                    request.POST.get(
-                        "icon_width",
-                        "0",
-                    )
-                ),
-                "height": int(
-                    request.POST.get(
-                        "icon_height",
-                        "0",
-                    )
-                ),
-            },
-        }
+        saved_level["position"] = position_from_post(request.POST)
         request.session["new_level"] = saved_level
         request.session.modified = True
+
         print("createLevel5-1 gespeichert:")
-        print(
-            json.dumps(
-                saved_level,
-                ensure_ascii=False,
-                indent=2,
-            )
-        )
+        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+
         return redirect_after_item_section_edit(
             request,
             "create_level6",
         )
+
     return render(
         request,
         "editor/createLevel51.html",
@@ -1477,7 +1371,6 @@ def create_level51_view(request):
             "return_to_item_summary": return_to_item_summary,
         },
     )
-
 
 def create_level6_view(request):
     return_to_item_summary = remember_item_summary_return(request)
