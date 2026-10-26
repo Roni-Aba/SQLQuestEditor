@@ -15,7 +15,12 @@ from .services.level_basics import (
 from .services.item_draft import (
     clear_item_draft,
     item_type_and_next_view,
-    clear_table_data_on_type_change)
+    clear_table_data_on_type_change,
+    parse_unlocked_item,
+    has_item_name_conflict,
+    set_item_requirements,
+    set_item_name_and_sync_table
+)
 
 from .services.table_editor import (
     parse_table_columns,
@@ -23,7 +28,8 @@ from .services.table_editor import (
     persist_draft_table_rows
 )
 
-from .services.hint_editor import update_hint_field
+from .services.hint_editor import update_hint_field, update_hint_image
+from .services.exit_editor import update_exit_fields
 
 def remember_item_summary_return(request):
     if (
@@ -948,72 +954,29 @@ def create_level2_view(request):
     })
 
 
-def create_level4_view(
-    request,
-):
-    steps = get_steps(
-        active_step=4
-    )
+def create_level4_view(request):
+    steps = get_steps(active_step=4)
+    saved_level = request.session.get("new_level", {})
 
-    saved_level = request.session.get(
-        "new_level",
-        {},
-    )
-
-    if not isinstance(
-        saved_level,
-        dict,
-    ):
+    if not isinstance(saved_level, dict):
         saved_level = {}
 
     if request.method == "GET":
-        return_to = request.GET.get(
-            "return_to",
-            "",
-        )
+        return_to = request.GET.get("return_to", "")
         reset_item_draft = request.session.pop(
             "reset_item_draft_on_create_level3",
             False,
         )
+
         if return_to == "items":
-            request.session[
-                "item_creation_return_to"
-            ] = "items"
+            request.session["item_creation_return_to"] = "items"
+            clear_item_draft(saved_level)
 
-            saved_level.pop(
-                "item",
-                None,
-            )
+            request.session.pop("editing_item_id", None)
+            request.session.pop("item_edit_mode", None)
+            request.session.pop("editing_item_section", None)
 
-            saved_level.pop(
-                "unlockCondition",
-                None,
-            )
-
-            saved_level.pop(
-                "position",
-                None,
-            )
-
-            request.session.pop(
-                "editing_item_id",
-                None,
-            )
-
-            request.session.pop(
-                "item_edit_mode",
-                None,
-            )
-
-            request.session.pop(
-                "editing_item_section",
-                None,
-            )
-
-            request.session[
-                "new_level"
-            ] = saved_level
-
+            request.session["new_level"] = saved_level
             request.session.modified = True
 
         elif return_to == "summary":
@@ -1021,73 +984,31 @@ def create_level4_view(
             request.session.modified = True
 
         elif (
-                reset_item_draft
-                and not request.session.get(
-                    "item_edit_mode",
-                    False,
-                )
+            reset_item_draft
+            and not request.session.get("item_edit_mode", False)
         ):
-            saved_level.pop(
-                "item",
-                None,
-            )
+            clear_item_draft(saved_level)
 
-            saved_level.pop(
-                "unlockCondition",
-                None,
-            )
-
-            saved_level.pop(
-                "position",
-                None,
-            )
-
-            request.session[
-                "new_level"
-            ] = saved_level
-
+            request.session["new_level"] = saved_level
             request.session.modified = True
 
         elif (
-                not request.session.get(
-                    "item_edit_mode",
-                    False,
-                )
-                and request.session.get(
-                    "item_creation_return_to"
-                ) not in {
-                    "items",
-                    "summary",
-                    "level8",
-                }
+            not request.session.get("item_edit_mode", False)
+            and request.session.get("item_creation_return_to")
+            not in {"items", "summary", "level8"}
         ):
-            request.session.pop(
-                "item_creation_return_to",
-                None,
-            )
-
+            request.session.pop("item_creation_return_to", None)
             request.session.modified = True
 
     return_to_item_overview = (
-        request.session.get(
-            "item_creation_return_to"
-        )
-        == "items"
+        request.session.get("item_creation_return_to") == "items"
     )
     return_to_item_summary = (
-        request.session.get("item_creation_return_to")
-        == "summary"
+        request.session.get("item_creation_return_to") == "summary"
     )
 
-    item = saved_level.get(
-        "item",
-        {},
-    )
-
-    if not isinstance(
-        item,
-        dict,
-    ):
+    item = saved_level.get("item", {})
+    if not isinstance(item, dict):
         item = {}
 
     if return_to_item_overview:
@@ -1103,71 +1024,27 @@ def create_level4_view(
             "create_level3",
         )
 
-    unlocked_items = item.get(
-        "unlockedItems",
-        [],
-    )
-
-    if not isinstance(
-        unlocked_items,
-        list,
-    ):
+    unlocked_items = item.get("unlockedItems", [])
+    if not isinstance(unlocked_items, list):
         unlocked_items = []
 
     form_values = {
-        "item_name": item.get(
-            "id",
-            "",
-        ),
+        "item_name": item.get("id", ""),
         "unlocked_items_json": json.dumps(
             unlocked_items,
             ensure_ascii=False,
         ),
     }
 
-    item_options = (
-        utils.get_item_options_for_current_level(
-            saved_level
-        )
-    )
+    item_options = utils.get_item_options_for_current_level(saved_level)
     error_message = ""
     if request.method == "POST":
-        item_name = request.POST.get(
-            "item_name",
-            "",
-        ).strip()
-        unlocked_items_raw = request.POST.get(
-            "unlocked_items",
-            "[]",
+        item_name = request.POST.get("item_name", "").strip()
+        unlocked_items = parse_unlocked_item(
+            request.POST.get("unlocked_items", "[]")
         )
-        try:
-            unlocked_items = json.loads(
-                unlocked_items_raw
-            )
-        except json.JSONDecodeError:
-            unlocked_items = []
-        if not isinstance(
-            unlocked_items,
-            list,
-        ):
-            unlocked_items = []
         editing_item_id = request.session.get("editing_item_id", "")
-        existing_items = saved_level.get("items", [])
-        name_conflict = any(
-            isinstance(existing_item, dict)
-            and existing_item.get("id") != editing_item_id
-            and (
-                str(existing_item.get("id", "")).strip() == item_name
-                or (
-                    item.get("type") == "table"
-                    and str(existing_item.get("tableName", "")).strip()
-                    == item_name
-                )
-            )
-            for existing_item in (
-                existing_items if isinstance(existing_items, list) else []
-            )
-        )
+        name_conflict = has_item_name_conflict(saved_level, item, item_name, editing_item_id)
         if name_conflict:
             error_message = (
                 f'Der Gegenstands- oder Tabellenname "{item_name}" '
@@ -1175,52 +1052,29 @@ def create_level4_view(
             )
             form_values["item_name"] = item_name
         else:
-            old_table_name = (
-                database.table_name_for(item)
-                if item.get("type") == "table"
-                else ""
-            )
-            item["id"] = item_name
-            if item.get("type") == "table":
-                item["tableName"] = item_name
-                if not request.session.get("item_edit_mode"):
-                    database.finalize_editor_table_rows(
-                        request,
-                        saved_level,
-                        item,
-                    )
-                    database.move_editor_table_rows(
-                        request,
-                        saved_level,
-                        old_table_name,
-                        item_name,
-                    )
-            item["unlockedItems"] = [str(item_id).strip() for item_id in unlocked_items if str(item_id).strip()]
-            unlock_condition = saved_level.get("unlockCondition")
-            if isinstance(unlock_condition, dict):
-                unlock_condition["requiredItems"] = item["unlockedItems"]
+            set_item_name_and_sync_table(request, saved_level, item, item_name)
+            set_item_requirements(saved_level, item, unlocked_items)
+
             saved_level["item"] = item
             request.session["new_level"] = saved_level
             request.session.modified = True
+
             if return_to_item_summary:
                 request.session.pop("item_creation_return_to", None)
                 request.session.modified = True
                 return redirect("create_level7")
-            if request.session.get(
-                "item_edit_mode",
-                False,
-            ):
-                request.session.pop(
-                    "editing_item_section",
-                    None,
-                )
+
+            if request.session.get("item_edit_mode", False):
+                request.session.pop("editing_item_section", None)
                 request.session.modified = True
                 if editing_item_id:
                     return redirect(
                         "edit_item",
                         item_id=editing_item_id,
                     )
+
             return redirect("create_level5")
+
     return render(
         request,
         "editor/createLevel4.html",
@@ -1230,28 +1084,13 @@ def create_level4_view(
             "form_values": form_values,
             "item_options": item_options,
             "error_message": error_message,
-            "is_item_edit": (
-                request.session.get(
-                    "item_edit_mode",
-                    False,
-                )
-            ),
-            "editing_item_id": (
-                request.session.get(
-                    "editing_item_id",
-                    "",
-                )
-            ),
-            "return_to_item_overview": (
-                return_to_item_overview
-            ),
-            "return_to_item_summary": (
-                return_to_item_summary
-            ),
+            "is_item_edit": request.session.get("item_edit_mode", False),
+            "editing_item_id": request.session.get("editing_item_id", ""),
+            "return_to_item_overview": return_to_item_overview,
+            "return_to_item_summary": return_to_item_summary,
             "back_url_name": back_url_name,
         },
     )
-
 
 def create_level3_view(request):
     steps = get_steps(active_step=3)
@@ -1739,35 +1578,39 @@ def create_level3exit_view(request):
     steps = get_steps(active_step=3)
     saved_level = request.session.get("new_level", {})
     item = saved_level.get("item", {})
+
     form_values = {
         "exit_success_message": item.get("exitSuccessMessage", ""),
         "next_level_id": item.get("nextLevelId", ""),
     }
+
     if request.method == "POST":
-        exit_success_message = request.POST.get("exit_success_message", "").strip()
-        next_level_id = request.POST.get("next_level_id", "").strip()
-        item = saved_level.get("item", {})
-        item["type"] = "exit"
-        item["exitSuccessMessage"] = exit_success_message
-        item["nextLevelId"] = next_level_id
+        update_exit_fields(item, request.POST)
+
         saved_level["item"] = item
         request.session["new_level"] = saved_level
         request.session.modified = True
+
         print("createLevel3exit gespeichert:")
         print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+
         return redirect_after_item_section_edit(
             request,
             "create_level4",
         )
-    return render(request, "editor/createLevel3exit.html", {
-        "steps": steps,
-        "saved_level": saved_level,
-        "form_values": form_values,
-        "is_item_edit": request.session.get("item_edit_mode", False),
-        "editing_item_id": request.session.get("editing_item_id", ""),
-        "return_to_item_overview": return_to_item_overview,
-        "return_to_item_summary": return_to_item_summary,
-    })
+    return render(
+        request,
+        "editor/createLevel3exit.html",
+        {
+            "steps": steps,
+            "saved_level": saved_level,
+            "form_values": form_values,
+            "is_item_edit": request.session.get("item_edit_mode", False),
+            "editing_item_id": request.session.get("editing_item_id", ""),
+            "return_to_item_overview": return_to_item_overview,
+            "return_to_item_summary": return_to_item_summary,
+        },
+    )
 
 
 def create_level3hint_view(request):
@@ -1776,115 +1619,39 @@ def create_level3hint_view(request):
         request.session.get("item_creation_return_to") == "items"
     )
     steps = get_steps(active_step=3)
-    saved_level = request.session.get(
-        "new_level",
-        {},
-    )
-    item = saved_level.get(
-        "item",
-        {},
-    )
-    current_hint_type = item.get(
-        "hintType",
-        "",
-    )
+    saved_level = request.session.get("new_level", {})
+    item = saved_level.get("item", {})
+
+    current_hint_type = item.get("hintType", "")
     hint_options = [
-        {
-            "value": "text",
-            "label": "Über einen Text",
-        },
-        {
-            "value": "image",
-            "label": "Über ein Bild",
-        },
-        {
-            "value": "text_image",
-            "label": "Über einen Text und ein Bild",
-        },
+        {"value": "text", "label": "Über einen Text"},
+        {"value": "image", "label": "Über ein Bild"},
+        {"value": "text_image", "label": "Über einen Text und ein Bild"},
     ]
     form_values = {
         "hint_type": current_hint_type,
-        "hint_text": item.get(
-            "text",
-            "",
-        ),
-        "hint_image": item.get(
-            "imageLink",
-            "",
-        ),
+        "hint_text": item.get("text", ""),
+        "hint_image": item.get("imageLink", ""),
     }
+
     if request.method == "POST":
-        hint_type = request.POST.get(
-            "hint_type",
-            "",
-        ).strip()
-        hint_text = request.POST.get(
-            "hint_text",
-            "",
-        ).strip()
-        uploaded_image = request.FILES.get(
-            "hint_image"
-        )
-        if hint_type not in [
-            "text",
-            "image",
-            "text_image",
-        ]:
-            hint_type = "text"
-        item = saved_level.get(
-            "item",
-            {},
-        )
-        item["type"] = "hint"
-        item["hintType"] = hint_type
-        if hint_type in [
-            "text",
-            "text_image",
-        ]:
-            item["text"] = hint_text
-        else:
-            item["text"] = ""
-        if uploaded_image:
-            upload_dir = (
-                    Path(settings.BASE_DIR)
-                    / "editor"
-                    / "static"
-                    / "editor"
-                    / "img"
-                    / "hints"
-            )
-            upload_dir.mkdir(
-                parents=True,
-                exist_ok=True,
-            )
-            storage = FileSystemStorage(
-                location=upload_dir
-            )
-            filename = storage.save(
-                uploaded_image.name,
-                uploaded_image,
-            )
-            item["imageLink"] = filename
-            saved_level.setdefault("_new_asset_sources", {})[
-                filename
-            ] = str(upload_dir / filename)
-        elif hint_type == "text":
-            item["imageLink"] = ""
+        hint_type = update_hint_field(item, request.POST)
+        uploaded_image = request.FILES.get("hint_image")
+
+        update_hint_image(item, saved_level, uploaded_image, hint_type, settings.BASE_DIR,)
+
         saved_level["item"] = item
         request.session["new_level"] = saved_level
         request.session.modified = True
+
         print("createLevel3hint gespeichert:")
-        print(
-            json.dumps(
-                saved_level,
-                ensure_ascii=False,
-                indent=2,
-            )
-        )
+        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+
         return redirect_after_item_section_edit(
             request,
             "create_level4",
         )
+
     return render(
         request,
         "editor/createLevel3hint.html",

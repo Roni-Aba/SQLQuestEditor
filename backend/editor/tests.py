@@ -972,6 +972,31 @@ class GuidedLevelTests(TestCase):
         self.assertEqual(item["text"], "Neuer Hinweis")
         self.assertEqual(item["imageLink"], "")
 
+    def test_doppelter_gegenstandsname_wird_abgelehnt(self):
+        session = self.client.session
+        session["new_level"] = {
+            "id": "level1",
+            "items": [{"id": "Heft", "type": "hint"}],
+            "item": {"id": "Stift", "type": "hint"},
+        }
+        session.save()
+
+        response = self.client.post(
+            reverse("create_level4"),
+            {
+                "item_name": "Heft",
+                "unlocked_items": "[]",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "editor/createLevel4.html")
+        self.assertContains(response, "bereits verwendet")
+        self.assertEqual(
+            self.client.session["new_level"]["item"]["id"],
+            "Stift",
+        )
+
 class ImportExportTests(TestCase):
     def import_files(self, files):
         response = self.client.post(reverse("upload_json"), {
