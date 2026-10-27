@@ -1041,6 +1041,83 @@ class GuidedLevelTests(TestCase):
             },
         )
 
+    def test_passwort_ausschalten_entfernt_alte_daten(self):
+        session = self.client.session
+        session["new_level"] = {
+            "item": {
+                "id": "Heft",
+                "unlockedItems": ["Stift"],
+            },
+            "unlockCondition": {
+                "requiredItems": ["Alt"],
+                "requiresPassword": True,
+                "passwords": ["geheim"],
+                "passwordHint": "Alter Hinweis",
+                "successMessage": "Geöffnet",
+                "showHintsOnFailure": True,
+                "failureHints": [{"numWrongAttempts": 1, "hint": "Tipp"}],
+            },
+        }
+        session.save()
+
+        response = self.client.post(
+            reverse("create_level6"),
+            {"requires_password": "false"},
+        )
+        self.assertRedirects(
+            response,
+            reverse("create_level7"),
+            fetch_redirect_response=False,
+        )
+
+        self.assertEqual(
+            self.client.session["new_level"]["unlockCondition"],
+            {
+                "requiredItems": ["Stift"],
+                "requiresPassword": False,
+                "passwords": [],
+                "passwordHint": "",
+                "successMessage": "",
+                "showHintsOnFailure": False,
+                "failureHints": [],
+            },
+        )
+
+    def test_fehlversuch_hinweise_ausschalten_entfernt_alte_hinweise(self):
+        session = self.client.session
+        session["new_level"] = {
+            "unlockCondition": {
+                "requiresPassword": True,
+                "passwords": ["alt"],
+                "showHintsOnFailure": True,
+                "failureHints": [{"numWrongAttempts": 1, "hint": "Alt"}],
+            },
+        }
+        session.save()
+        response = self.client.post(
+            reverse("create_level61"),
+            {
+                "item_passwords": "eins, zwei\n drei",
+                "password_hint": "Neuer Hinweis",
+                "success_message": "Geöffnet",
+                "show_hints": "false",
+            },
+        )
+        self.assertRedirects(
+            response,
+            reverse("create_level7"),
+            fetch_redirect_response=False,
+        )
+
+        condition = self.client.session["new_level"]["unlockCondition"]
+        self.assertEqual(condition["passwords"], ["eins", "zwei", "drei"])
+        self.assertEqual(condition["passwordHint"], "Neuer Hinweis")
+        self.assertEqual(condition["successMessage"], "Geöffnet")
+        self.assertFalse(condition["showHintsOnFailure"])
+        self.assertEqual(condition["failureHints"], [])
+
+        overview = self.client.get(reverse("create_level7"))
+        self.assertEqual(overview.context["back_url_name"], "create_level61")
 
 class ImportExportTests(TestCase):
     def import_files(self, files):

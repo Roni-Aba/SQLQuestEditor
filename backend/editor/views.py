@@ -36,6 +36,14 @@ from .services.item_position import (
 
 from .services.hint_editor import update_hint_field, update_hint_image
 from .services.exit_editor import update_exit_fields
+from .services.item_summary import get_item_summary
+from .services.item_unlock import (
+    update_password_requirement,
+    update_password_details,
+    failure_hints_from_post,
+
+)
+
 
 def remember_item_summary_return(request):
     if (
@@ -113,78 +121,6 @@ def redirect_after_item_password_edit(
         "edit_item",
         item_id=editing_item_id,
     )
-
-
-def get_item_summary(saved_level):
-    item = saved_level.get("item", {})
-    unlock_condition = saved_level.get(
-        "unlockCondition",
-        {},
-    )
-    position = saved_level.get(
-        "position",
-        {},
-    )
-
-    return {
-        "item_name": item.get("id", ""),
-        "required_items": unlock_condition.get(
-            "requiredItems",
-            item.get("unlockedItems", []),
-        ),
-        "passwords": unlock_condition.get(
-            "passwords",
-            [],
-        ),
-        "password_hint": unlock_condition.get(
-            "passwordHint",
-            "",
-        ),
-        "success_message": unlock_condition.get(
-            "successMessage",
-            "",
-        ),
-        "failure_hints": unlock_condition.get(
-            "failureHints",
-            [],
-        ),
-        "bounding_box_image": position.get(
-            "boundingBoxImage",
-            {},
-        ),
-        "bounding_box_icon": position.get(
-            "boundingBoxIcon",
-            {},
-        ),
-        "item_type": item.get(
-            "type",
-            "",
-        ),
-        "table_name": item.get(
-            "tableName",
-            "",
-        ),
-        "columns": item.get(
-            "columns",
-            [],
-        ),
-        "text": item.get(
-            "text",
-            "",
-        ),
-        "image_link": item.get(
-            "imageLink",
-            "",
-        ),
-        "exit_success_message": item.get(
-            "exitSuccessMessage",
-            "",
-        ),
-        "next_level_id": item.get(
-            "nextLevelId",
-            "",
-        ),
-    }
 
 
 def first_or_empty(values):
@@ -1217,26 +1153,11 @@ def create_level31_view(request):
 def create_level62_view(request):
     return_to_item_summary = remember_item_summary_return(request)
     steps = get_steps(active_step=6)
+    saved_level = request.session.get("new_level", {})
+    unlock_condition = saved_level.get("unlockCondition", {})
 
-    saved_level = request.session.get(
-        "new_level",
-        {},
-    )
-
-    unlock_condition = saved_level.get(
-        "unlockCondition",
-        {},
-    )
-
-    failure_hints = unlock_condition.get(
-        "failureHints",
-        [],
-    )
-
-    if not isinstance(
-            failure_hints,
-            list,
-    ):
+    failure_hints = unlock_condition.get("failureHints", [])
+    if not isinstance(failure_hints, list):
         failure_hints = []
 
     form_values = {
@@ -1244,63 +1165,16 @@ def create_level62_view(request):
     }
 
     if request.method == "POST":
-        hint_attempts = request.POST.getlist(
-            "hint_attempts[]"
+        unlock_condition["failureHints"] = failure_hints_from_post(
+            request.POST
         )
 
-        hint_texts = request.POST.getlist(
-            "hint_texts[]"
-        )
-
-        failure_hints = []
-
-        for attempts, text in zip(
-                hint_attempts,
-                hint_texts,
-        ):
-            attempts = attempts.strip()
-            text = text.strip()
-
-            if not attempts or not text:
-                continue
-
-            if not attempts.isdigit():
-                continue
-
-            failure_hints.append(
-                {
-                    "attempts": int(attempts),
-                    "message": text,
-                }
-            )
-
-        unlock_condition = saved_level.get(
-            "unlockCondition",
-            {},
-        )
-
-        unlock_condition["failureHints"] = (
-            failure_hints
-        )
-
-        saved_level["unlockCondition"] = (
-            unlock_condition
-        )
-
-        request.session["new_level"] = (
-            saved_level
-        )
-
+        saved_level["unlockCondition"] = unlock_condition
+        request.session["new_level"] = saved_level
         request.session.modified = True
 
         print("createLevel6-2 gespeichert:")
-        print(
-            json.dumps(
-                saved_level,
-                ensure_ascii=False,
-                indent=2,
-            )
-        )
+        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
 
         return redirect_after_item_password_edit(
             request,
@@ -1378,6 +1252,7 @@ def create_level6_view(request):
     saved_level = request.session.get("new_level", {})
     unlock_condition = saved_level.get("unlockCondition", {})
     selected_item = saved_level.get("item", {})
+
     required_items = unlock_condition.get(
         "requiredItems",
         selected_item.get("unlockedItems", []),
@@ -1387,34 +1262,41 @@ def create_level6_view(request):
         "required_items": required_items,
         "requires_password": "true" if requires_password else "false",
     }
-    if request.method == "POST":
-        requires_password = request.POST.get("requires_password", "false") == "true"
-        unlock_condition["requiredItems"] = selected_item.get("unlockedItems", [])
-        unlock_condition["requiresPassword"] = requires_password
 
-        if not requires_password:
-            unlock_condition["passwords"] = []
-            unlock_condition["passwordHint"] = ""
-            unlock_condition["successMessage"] = ""
-            unlock_condition["showHintsOnFailure"] = False
-            unlock_condition["failureHints"] = []
+    if request.method == "POST":
+        requires_password = update_password_requirement(
+            unlock_condition,
+            selected_item,
+            request.POST,
+        )
 
         saved_level["unlockCondition"] = unlock_condition
         request.session["new_level"] = saved_level
         request.session.modified = True
+
         print("createLevel6 gespeichert:")
         print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+
         if requires_password:
             return redirect("create_level61")
-        return redirect_after_item_password_edit(request, "create_level7")
-    return render(request, "editor/createLevel6.html", {
-        "steps": steps,
-        "saved_level": saved_level,
-        "form_values": form_values,
-        "is_item_edit": request.session.get("item_edit_mode", False),
-        "editing_item_id": request.session.get("editing_item_id", ""),
-        "return_to_item_summary": return_to_item_summary,
-    })
+
+        return redirect_after_item_password_edit(
+            request,
+            "create_level7",
+        )
+
+    return render(
+        request,
+        "editor/createLevel6.html",
+        {
+            "steps": steps,
+            "saved_level": saved_level,
+            "form_values": form_values,
+            "is_item_edit": request.session.get("item_edit_mode", False),
+            "editing_item_id": request.session.get("editing_item_id", ""),
+            "return_to_item_summary": return_to_item_summary,
+        },
+    )
 
 
 def create_level61_view(request):
@@ -1422,45 +1304,55 @@ def create_level61_view(request):
     steps = get_steps(active_step=6)
     saved_level = request.session.get("new_level", {})
     unlock_condition = saved_level.get("unlockCondition", {})
+
     passwords = unlock_condition.get("passwords", [])
     if not isinstance(passwords, list):
         passwords = []
+
     form_values = {
         "item_passwords": ", ".join(passwords),
         "password_hint": unlock_condition.get("passwordHint", ""),
         "success_message": unlock_condition.get("successMessage", ""),
-        "show_hints": "true" if unlock_condition.get("showHintsOnFailure", False) else "false",
+        "show_hints": (
+            "true"
+            if unlock_condition.get("showHintsOnFailure", False)
+            else "false"
+        ),
     }
+
     if request.method == "POST":
-        item_passwords_raw = request.POST.get("item_passwords", "").strip()
-        passwords = [
-            password.strip()
-            for password in item_passwords_raw.replace(",", "\n").splitlines()
-            if password.strip()
-        ]
-        show_hints = request.POST.get("show_hints", "false")
-        unlock_condition["passwords"] = passwords
-        unlock_condition["passwordHint"] = request.POST.get("password_hint", "").strip()
-        unlock_condition["successMessage"] = request.POST.get("success_message", "").strip()
-        unlock_condition["showHintsOnFailure"] = show_hints == "true"
-        if show_hints != "true":
-            unlock_condition["failureHints"] = []
+        show_hints = update_password_details(
+            unlock_condition,
+            request.POST,
+        )
+
         saved_level["unlockCondition"] = unlock_condition
         request.session["new_level"] = saved_level
         request.session.modified = True
+
         print("createLevel6-1 gespeichert:")
         print(json.dumps(saved_level, ensure_ascii=False, indent=2))
-        if show_hints == "true":
+
+        if show_hints:
             return redirect("create_level62")
-        return redirect_after_item_password_edit(request, "create_level7")
-    return render(request, "editor/createLevel6-1.html", {
-        "steps": steps,
-        "saved_level": saved_level,
-        "form_values": form_values,
-        "is_item_edit": request.session.get("item_edit_mode", False),
-        "editing_item_id": request.session.get("editing_item_id", ""),
-        "return_to_item_summary": return_to_item_summary,
-    })
+
+        return redirect_after_item_password_edit(
+            request,
+            "create_level7",
+        )
+
+    return render(
+        request,
+        "editor/createLevel6-1.html",
+        {
+            "steps": steps,
+            "saved_level": saved_level,
+            "form_values": form_values,
+            "is_item_edit": request.session.get("item_edit_mode", False),
+            "editing_item_id": request.session.get("editing_item_id", ""),
+            "return_to_item_summary": return_to_item_summary,
+        },
+    )
 
 
 def create_level3exit_view(request):
@@ -1653,10 +1545,13 @@ def create_level7_view(request):
         "new_level",
         {},
     )
-    requires_password = saved_level.get(
-        "unlockCondition",
-        {},
-    ).get("requiresPassword", False)
+    unlock_condition = saved_level.get("unlockCondition", {})
+    if not unlock_condition.get("requiresPassword", False):
+        back_url_name = "create_level6"
+    elif unlock_condition.get("showHintsOnFailure", False):
+        back_url_name = "create_level62"
+    else:
+        back_url_name = "create_level61"
     summary = get_item_summary(saved_level)
     if request.method == "POST":
         print("createLevel7 Übersicht:")
@@ -1675,11 +1570,7 @@ def create_level7_view(request):
             "steps": steps,
             "saved_level": saved_level,
             "summary": summary,
-            "back_url_name": (
-                "create_level62"
-                if requires_password
-                else "create_level6"
-            ),
+            "back_url_name": back_url_name,
         },
     )
 
