@@ -1,11 +1,11 @@
 from . import database, utils
+from copy import deepcopy
 import json, io, zipfile, sqlite3, tempfile, shutil
 from pathlib import Path, PurePosixPath
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
-from copy import deepcopy
 from django.views.decorators.http import require_POST
 from .services.level_basics import (
     level1_form_values,
@@ -19,8 +19,21 @@ from .services.item_draft import (
     parse_unlocked_item,
     has_item_name_conflict,
     set_item_requirements,
-    set_item_name_and_sync_table
+    set_item_name_and_sync_table,
+    remove_item_from_game_levels,
+    remove_deleted_table_rows
 )
+
+from .services.level_save import (
+    replace_or_append_level,
+    update_exit_level_references,
+    update_import_sources,
+)
+from .services.level_delete import (
+    referencing_level_ids,
+    remove_level_from_list,
+)
+from .services.game_import import select_game_json_entry, copy_uploaded_files
 
 from .services.table_editor import (
     parse_table_columns,
@@ -44,6 +57,12 @@ from .services.item_unlock import (
 
 )
 
+from .services.game_messages import (
+    DEFAULT_MESSAGES,
+    normalize_game_messages,
+    messages_form_values,
+    messages_from_post,
+)
 
 def remember_item_summary_return(request):
     if (
@@ -162,36 +181,6 @@ def clear_editor_state(request):
     ]:
         request.session.pop(session_key, None)
 
-
-def normalize_game_messages(game_json):
-    if not isinstance(game_json, dict):
-        return {}
-
-    levels = game_json.get("level", [])
-    root_messages = game_json.get("messages")
-
-    if not isinstance(root_messages, dict):
-        root_messages = None
-        if isinstance(levels, list):
-            for level in levels:
-                if not isinstance(level, dict):
-                    continue
-                level_messages = level.get("messages")
-                if isinstance(level_messages, dict):
-                    root_messages = deepcopy(level_messages)
-                    break
-
-        if root_messages is not None:
-            game_json["messages"] = root_messages
-        elif "messages" in game_json:
-            game_json["messages"] = {}
-
-    if isinstance(levels, list):
-        for level in levels:
-            if isinstance(level, dict):
-                level.pop("messages", None)
-
-    return game_json
 
 
 def get_steps(active_step):
@@ -498,27 +487,7 @@ def upload_json_view(request):
         ]
 
     uploaded_entries = list(zip(uploaded_files, relative_names))
-    json_candidates = [
-        (game_file, relative_name)
-        for game_file, relative_name in uploaded_entries
-        if PurePosixPath(
-            str(relative_name).replace("\\", "/")
-        ).suffix.lower() == ".json"
-    ]
-    preferred_json_names = {
-        "sqlspellquest.json",
-        "game.json",
-    }
-    uploaded_entry = next(
-        (
-            (game_file, relative_name)
-            for game_file, relative_name in json_candidates
-            if PurePosixPath(
-                str(relative_name).replace("\\", "/")
-            ).name.lower() in preferred_json_names
-        ),
-        json_candidates[0] if len(json_candidates) == 1 else None,
-    )
+    uploaded_entry = select_game_json_entry(uploaded_entries)
 
     if uploaded_entry is None:
         return render(
@@ -576,41 +545,7 @@ def upload_json_view(request):
     )
 
     try:
-        seen_paths = set()
-        for game_file, submitted_relative_name in uploaded_entries:
-            relative_name = str(
-                submitted_relative_name
-            ).replace("\\", "/")
-            relative_path = PurePosixPath(relative_name)
-
-            if (
-                relative_path.is_absolute()
-                or not relative_path.parts
-                or ".." in relative_path.parts
-            ):
-                raise ValueError(
-                    "Ungültiger Dateipfad im Spielordner."
-                )
-
-            normalized_path = str(relative_path).casefold()
-            if normalized_path in seen_paths:
-                raise ValueError(
-                    f'Der Dateipfad "{relative_name}" ist doppelt vorhanden.'
-                )
-            seen_paths.add(normalized_path)
-
-            target_path = workspace_path.joinpath(
-                *relative_path.parts
-            )
-            target_path.parent.mkdir(
-                parents=True,
-                exist_ok=True,
-            )
-
-            game_file.seek(0)
-            with target_path.open("xb") as target_file:
-                for chunk in game_file.chunks():
-                    target_file.write(chunk)
+        copy_uploaded_files(workspace_path, uploaded_entries)
     except (OSError, ValueError) as error:
         shutil.rmtree(workspace_path, ignore_errors=True)
         return render(
@@ -1870,245 +1805,91 @@ def export_game_view(request):
 def level_grunddaten_view(request):
     set_guided_level_creation(request, False)
     saved_level = request.session.get("new_level", {})
+    form_values = level1_form_values(saved_level)
 
     if request.method == "POST":
-        level_name = request.POST.get(
-            "level_name",
-            "",
-        ).strip()
-
-        level_greeting = request.POST.get(
-            "level_greeting",
-            "",
-        ).strip()
+        level_name = request.POST.get("level_name", "").strip()
+        level_greeting = request.POST.get("level_greeting", "").strip()
 
         if level_name_is_taken(
             request.session.get("game_json", {}),
             level_name,
             request.session.get("editing_level_id"),
         ):
+            form_values["level_name"] = level_name
+            form_values["level_greeting"] = level_greeting
             return render(
                 request,
                 "editor/levelGrunddaten.html",
                 {
-                    "form_values": {
-                        "level_name": level_name,
-                        "level_picture": saved_level.get("levelPicture", ""),
-                        "level_greeting": level_greeting,
-                    },
-                    "error_message": f'Der Levelname "{level_name}" wird bereits verwendet.',
+                    "form_values": form_values,
+                    "error_message": (
+                        f'Der Levelname "{level_name}" wird bereits verwendet.'
+                    ),
                 },
             )
 
-        uploaded_picture = request.FILES.get(
-            "levelPicture"
-        )
-
+        uploaded_picture = request.FILES.get("levelPicture")
         if uploaded_picture:
             upload_dir = (
-                    Path(settings.BASE_DIR)
-                    / "editor"
-                    / "static"
-                    / "editor"
-                    / "img"
-                    / "levels"
+                Path(settings.BASE_DIR)
+                / "editor"
+                / "static"
+                / "editor"
+                / "img"
+                / "levels"
             )
+            upload_dir.mkdir(parents=True, exist_ok=True)
 
-            upload_dir.mkdir(
-                parents=True,
-                exist_ok=True,
-            )
-
-            storage = FileSystemStorage(
-                location=upload_dir
-            )
-
+            storage = FileSystemStorage(location=upload_dir)
             level_picture_name = storage.save(
                 uploaded_picture.name,
                 uploaded_picture,
             )
-
-            saved_level["levelPicture"] = (
-                level_picture_name
-            )
+            saved_level["levelPicture"] = level_picture_name
             saved_level.setdefault("_new_asset_sources", {})[
                 level_picture_name
             ] = str(upload_dir / level_picture_name)
 
         saved_level["id"] = level_name
         saved_level["databaseName"] = utils.database_name_for_level(level_name)
+
         if not request.session.get("editing_level_id"):
             database.finalize_editor_level_rows(
                 request,
                 saved_level,
                 level_name,
             )
-        saved_level["startDialog"] = level_greeting
 
+        saved_level["startDialog"] = level_greeting
         request.session["new_level"] = saved_level
         request.session.modified = True
+
         print("Level-Grunddaten:")
-        print(
-            json.dumps(
-                saved_level,
-                ensure_ascii=False,
-                indent=2
-            )
-        )
+        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
         return redirect("auswahl_view")
 
-    form_values = {
-        "level_name": saved_level.get("id", ""),
-        "level_picture": saved_level.get(
-            "levelPicture",
-            "",
-        ),
-        "level_greeting": saved_level.get(
-            "startDialog",
-            "",
-        ),
-    }
     return render(
         request,
         "editor/levelGrunddaten.html",
-        {
-            "form_values": form_values,
-        },
+        {"form_values": form_values},
     )
 
 
 def sql_grunddaten_view(request):
     set_guided_level_creation(request, False)
     saved_level = request.session.get("new_level", {})
-
-    query_restriction = saved_level.get(
-        "queryRestriction",
-        {}
-    )
-
-    row_restriction = query_restriction.get(
-        "rowRestriction",
-        {}
-    )
-
-    column_restriction = query_restriction.get(
-        "columnRestriction",
-        {}
-    )
-
-    row_messages = row_restriction.get(
-        "violationMessages",
-        []
-    )
-
-    column_messages = column_restriction.get(
-        "violationMessages",
-        []
-    )
-
-    row_column_messages = query_restriction.get(
-        "colAndRowViolationMessages",
-        []
-    )
-
-    form_values = {
-        "max_columns": (
-            column_restriction.get("maxNumber")
-            if column_restriction.get("maxNumber") is not None
-            else ""
-        ),
-        "max_rows": (
-            row_restriction.get("maxNumber")
-            if row_restriction.get("maxNumber") is not None
-            else ""
-        ),
-        "too_many_rows_message": (
-            row_messages[0]
-            if row_messages
-            else ""
-        ),
-        "too_many_columns_message": (
-            column_messages[0]
-            if column_messages
-            else ""
-        ),
-        "too_many_rows_columns_message": (
-            row_column_messages[0]
-            if row_column_messages
-            else ""
-        ),
-    }
+    form_values = level2_form_values(saved_level)
 
     if request.method == "POST":
-        max_columns = request.POST.get(
-            "max_columns",
-            ""
-        ).strip()
-
-        max_rows = request.POST.get(
-            "max_rows",
-            ""
-        ).strip()
-
-        too_many_rows_message = request.POST.get(
-            "too_many_rows_message",
-            ""
-        ).strip()
-
-        too_many_columns_message = request.POST.get(
-            "too_many_columns_message",
-            ""
-        ).strip()
-
-        too_many_rows_columns_message = request.POST.get(
-            "too_many_rows_columns_message",
-            ""
-        ).strip()
-
-        saved_level["queryRestriction"] = {
-            "rowRestriction": {
-                "maxNumber": (
-                    int(max_rows)
-                    if max_rows.isdigit()
-                    else None
-                ),
-                "violationMessages": (
-                    [too_many_rows_message]
-                    if too_many_rows_message
-                    else []
-                ),
-            },
-            "columnRestriction": {
-                "maxNumber": (
-                    int(max_columns)
-                    if max_columns.isdigit()
-                    else None
-                ),
-                "violationMessages": (
-                    [too_many_columns_message]
-                    if too_many_columns_message
-                    else []
-                ),
-            },
-            "colAndRowViolationMessages": (
-                [too_many_rows_columns_message]
-                if too_many_rows_columns_message
-                else []
-            ),
-        }
-
+        saved_level["queryRestriction"] = query_restriction_from_post(
+            request.POST
+        )
         request.session["new_level"] = saved_level
         request.session.modified = True
 
         print("SQL-Grunddaten gespeichert:")
-        print(
-            json.dumps(
-                saved_level,
-                ensure_ascii=False,
-                indent=2
-            )
-        )
-
+        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
         return redirect("auswahl_view")
 
     return render(
@@ -2119,7 +1900,6 @@ def sql_grunddaten_view(request):
             "form_values": form_values,
         },
     )
-
 
 def gegenstand_view(
     request,
@@ -2493,223 +2273,68 @@ def cancel_item_edit_view(request):
     )
 
 
-DEFAULT_MESSAGES = {
-    "wrong_password": (
-        "Das Passwort ist nicht korrekt. "
-        "Versuche es bitte erneut."
-    ),
-    "wrong_password_new_hint": (
-        "Das Passwort ist nicht korrekt. "
-        "Ein neuer Hinweis wurde freigeschaltet."
-    ),
-    "not_a_table": (
-        "Auf %s kann keine SQL-Abfrage ausgeführt werden, "
-        "da es sich nicht um eine Tabelle handelt."
-    ),
-    "unknown_table": (
-        "Die Tabelle ist nicht bekannt. "
-        "Checke bitte den Tabellennamen."
-    ),
-    "locked_table": (
-        "Die Tabelle ist noch nicht freigeschaltet."
-    ),
-    "sql_error": (
-        "Die SQL-Abfrage konnte nicht gecallt werden. "
-        "Check bitte die Syntax und versuche es erneut."
-    ),
-    "no_result": (
-        "Die SQL-Abfrage hat kein Ergebnis geliefert."
-    ),
-    "row_restriction": (
-        "Die Abfrage liefert zu viele Zeilen. "
-        "Limitiere das Ergebnis bitte auf die notwendigen Zeilen ein."
-    ),
-    "col_restriction": (
-        "Die Abfrage liefert zu viele Spalten. "
-        "Choose bitte nur die benötigten Spalten aus."
-    ),
-    "row_and_col_restriction": (
-        "Die Abfrage liefert zu viele Zeilen und Spalten. "
-        "Limitiere das Ergebnis bitte auf die benötigten Zeilen "
-        "und Spalten ein."
-    ),
-}
-
 
 def messages_grunddaten_view(request):
     set_guided_level_creation(request, False)
-    game_json = request.session.get(
-        "game_json",
-        {},
-    )
+    game_json = request.session.get("game_json", {})
     game_json = normalize_game_messages(game_json)
 
-    saved_messages = game_json.get(
-        "messages",
-        {},
-    )
+    saved_messages = game_json.get("messages", {})
+    form_values = messages_form_values(saved_messages)
 
-    form_values = {
-        key: saved_messages.get(
-            key,
-            default_value,
-        )
-        for key, default_value
-        in DEFAULT_MESSAGES.items()
-    }
     if request.method == "POST":
-        messages = {}
-        for key, default_value in DEFAULT_MESSAGES.items():
-            value = request.POST.get(
-                key,
-                "",
-            ).strip()
-            messages[key] = (
-                value
-                if value
-                else default_value
-            )
-        game_json["messages"] = messages
+        game_json["messages"] = messages_from_post(request.POST)
         request.session["game_json"] = game_json
         request.session.modified = True
+
         print("Systemnachrichten gespeichert:")
-        print(
-            json.dumps(
-                game_json,
-                ensure_ascii=False,
-                indent=2,
-            )
-        )
-        return redirect(
-            "auswahl_view"
-        )
+        print(json.dumps(game_json, ensure_ascii=False, indent=2))
+        return redirect("auswahl_view")
 
     return render(
         request,
         "editor/messagesGrunddaten.html",
-        {
-            "form_values": form_values,
-        },
+        {"form_values": form_values},
     )
 
 
 def delete_item_view(request, item_id):
     if request.method != "POST":
-        return redirect(
-            "gegenstandVerwaltung"
-        )
+        return redirect("gegenstandVerwaltung")
 
-    saved_level = request.session.get(
-        "new_level",
-        {},
-    )
+    saved_level = request.session.get("new_level", {})
+    level_id = saved_level.get("id", "")
 
-    level_id = saved_level.get(
-        "id",
-        "",
-    )
+    remove_deleted_table_rows(request, saved_level, item_id)
 
-    deleted_item = next(
-        (
-            item
-            for item in saved_level.get("items", [])
-            if (
-                isinstance(item, dict)
-                and item.get("id") == item_id
-            )
-        ),
-        None,
-    )
-    if (
-        isinstance(deleted_item, dict)
-        and deleted_item.get("type") == "table"
-    ):
-        table_name = str(
-            deleted_item.get(
-                "tableName",
-                deleted_item.get("id", ""),
-            )
-        ).strip()
-        database.remove_editor_table_rows(
-            request,
-            saved_level,
-            table_name,
-        )
+    saved_level = utils.remove_item_from_level(saved_level, item_id)
+    save_new_level_session(request, saved_level)
 
-    saved_level = utils.remove_item_from_level(
-        saved_level,
-        item_id,
-    )
-
-    save_new_level_session(
-        request,
-        saved_level,
-    )
-    game_json = request.session.get(
-        "game_json",
-        {},
-    )
-
-    levels = game_json.get(
-        "level",
-        [],
-    )
+    game_json = request.session.get("game_json", {})
+    levels = game_json.get("level", [])
 
     if isinstance(levels, list) and level_id:
-        updated_levels = []
-
-        for level in levels:
-            if (
-                    isinstance(level, dict)
-                    and level.get("id") == level_id
-            ):
-                level = utils.remove_item_from_level(
-                    level,
-                    item_id,
-                )
-
-            updated_levels.append(level)
-
-        game_json["level"] = updated_levels
+        game_json["level"] = remove_item_from_game_levels(
+            levels,
+            level_id,
+            item_id,
+        )
         request.session["game_json"] = game_json
 
     if request.session.get("editing_item_id") == item_id:
-        request.session.pop(
-            "item_edit_mode",
-            None,
-        )
-
-        request.session.pop(
-            "editing_item_id",
-            None,
-        )
-
-        request.session.pop(
-            "editing_item_section",
-            None,
-        )
+        request.session.pop("item_edit_mode", None)
+        request.session.pop("editing_item_id", None)
+        request.session.pop("editing_item_section", None)
 
     request.session.modified = True
     print("Systemnachrichten gespeichert:")
-    print(
-        json.dumps(
-            game_json,
-            ensure_ascii=False,
-            indent=2,
-        )
-    )
-
-    return redirect(
-        "gegenstandVerwaltung"
-    )
+    print(json.dumps(game_json, ensure_ascii=False, indent=2))
+    return redirect("gegenstandVerwaltung")
 
 
 @require_POST
 def save_level_view(request):
-    saved_level = request.session.get(
-        "new_level",
-        {},
-    )
+    saved_level = request.session.get("new_level", {})
 
     if not isinstance(saved_level, dict):
         return redirect("auswahl_view")
@@ -2720,13 +2345,9 @@ def save_level_view(request):
             saved_level.pop(draft_key, None)
     else:
         saved_level = utils.save_current_item_to_new_level(saved_level)
-    level_for_json = utils.build_level_for_json(
-        saved_level
-    )
 
-    level_id = str(
-        level_for_json.get("id", "")
-    ).strip()
+    level_for_json = utils.build_level_for_json(saved_level)
+    level_id = str(level_for_json.get("id", "")).strip()
 
     if not level_id:
         return redirect("levelGrunddaten")
@@ -2737,123 +2358,60 @@ def save_level_view(request):
         return redirect("levelGrunddaten")
 
     has_table_draft = bool(saved_level.get(database.EDITOR_LEVEL_DRAFT_KEY))
-
-    database.finalize_editor_level_rows(
-        request,
-        saved_level,
-        level_id,
-    )
+    database.finalize_editor_level_rows(request, saved_level, level_id)
 
     if not isinstance(game_json, dict):
         game_json = {}
-
     game_json = normalize_game_messages(game_json)
 
-    levels = game_json.get(
-        "level",
-        [],
-    )
-
+    levels = game_json.get("level", [])
     if not isinstance(levels, list):
         levels = []
 
-    updated_levels = []
-    level_was_replaced = False
-
-    for level in levels:
-        if not isinstance(level, dict):
-            updated_levels.append(level)
-            continue
-
-        existing_level_id = level.get("id")
-
-        should_replace = (
-                editing_level_id
-                and existing_level_id == editing_level_id
-        )
-
-        if not editing_level_id:
-            should_replace = (
-                    existing_level_id == level_id
-            )
-
-        if should_replace and not level_was_replaced:
-            updated_levels.append(
-                deepcopy(level_for_json)
-            )
-            level_was_replaced = True
-        else:
-            updated_levels.append(level)
-
-    if not level_was_replaced:
-        updated_levels.append(
-            deepcopy(level_for_json)
-        )
-
-    if editing_level_id and editing_level_id != level_id:
-        for level in updated_levels:
-            if not isinstance(level, dict):
-                continue
-            for item in level.get("items", []):
-                if (
-                    isinstance(item, dict)
-                    and item.get("type") == "exit"
-                    and item.get("nextLevelId") == editing_level_id
-                ):
-                    item["nextLevelId"] = level_id
+    updated_levels = replace_or_append_level(
+        levels,
+        level_for_json,
+        editing_level_id,
+    )
+    update_exit_level_references(
+        updated_levels,
+        editing_level_id,
+        level_id,
+    )
 
     game_json["level"] = updated_levels
-
     request.session["game_json"] = game_json
 
     import_sources = request.session.get("import_sources", {})
-    if editing_level_id and editing_level_id in import_sources:
-        source = import_sources.pop(editing_level_id)
-        source["tables"] = saved_level.get("_import_table_sources", source["tables"])
-        source["assets"].update(saved_level.get("_new_asset_sources", {}))
-        source.setdefault("replacements", {}).update(
-            saved_level.get("_new_asset_sources", {})
-        )
-        import_sources[level_id] = source
+    if update_import_sources(
+        import_sources,
+        saved_level,
+        editing_level_id,
+        level_id,
+    ):
         request.session["import_sources"] = import_sources
 
     if editing_level_id and editing_level_id != level_id:
         if has_table_draft:
             database.remove_editor_level_rows(request, editing_level_id)
         else:
-            database.move_editor_level_rows(request, editing_level_id, level_id)
+            database.move_editor_level_rows(
+                request,
+                editing_level_id,
+                level_id,
+            )
 
-    request.session.pop(
-        "editing_level_id",
-        None,
-    )
-    request.session.pop(
-        "editing_item_id",
-        None,
-    )
-    request.session.pop(
-        "item_edit_mode",
-        None,
-    )
-    request.session.pop(
-        "editing_item_section",
-        None,
-    )
-    request.session.pop(
-        "new_level",
-        None,
-    )
+    request.session.pop("editing_level_id", None)
+    request.session.pop("editing_item_id", None)
+    request.session.pop("item_edit_mode", None)
+    request.session.pop("editing_item_section", None)
+    request.session.pop("new_level", None)
     request.session.pop("item_creation_return_to", None)
     request.session.pop("reset_item_draft_on_create_level3", None)
     request.session.modified = True
+
     print("Systemnachrichten gespeichert:")
-    print(
-        json.dumps(
-            game_json,
-            ensure_ascii=False,
-            indent=2,
-        )
-    )
+    print(json.dumps(game_json, ensure_ascii=False, indent=2))
     return redirect("level")
 
 
@@ -2864,21 +2422,7 @@ def delete_level_view(request, level_id):
     levels = game_json.get("level", [])
 
     if isinstance(levels, list):
-        referencing_levels = [
-            level.get("id", "")
-            for level in levels
-            if isinstance(level, dict) and level.get("id") != level_id
-            and any(
-                isinstance(item, dict)
-                and item.get("type") == "exit"
-                and item.get("nextLevelId") == level_id
-                for item in (
-                    level.get("items", [])
-                    if isinstance(level.get("items", []), list)
-                    else []
-                )
-            )
-        ]
+        referencing_levels = referencing_level_ids(levels, level_id)
         if referencing_levels:
             names = ", ".join(str(name) for name in referencing_levels)
             request.session["level_error"] = (
@@ -2888,21 +2432,7 @@ def delete_level_view(request, level_id):
             return redirect("level")
 
     if isinstance(levels, list):
-        game_json["level"] = [
-
-            level
-
-            for level in levels
-
-            if not (
-
-                    isinstance(level, dict)
-
-                    and level.get("id") == level_id
-
-            )
-
-        ]
+        game_json["level"] = remove_level_from_list(levels, level_id)
 
     request.session["game_json"] = game_json
     import_sources = request.session.get("import_sources", {})

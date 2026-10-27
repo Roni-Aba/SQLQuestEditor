@@ -704,6 +704,12 @@ class GuidedLevelTests(TestCase):
                     exported_game["level"][0]["databaseName"],
                     "level1-neu.db",
                 )
+                picture_name = saved_levels[0]["levelPicture"]
+                renamed_picture_path = f"level1-neu/assets/{picture_name}"
+                self.assertEqual(
+                    exported.read(renamed_picture_path),
+                    (example / "level1/assets" / picture_name).read_bytes(),
+                )
                 self.assertIn(
                     "level1-neu/databases/level1-neu.db",
                     exported.namelist(),
@@ -1151,6 +1157,130 @@ class GuidedLevelTests(TestCase):
         self.assertEqual(saved_item["text"], "Hallo")
         self.assertEqual(saved_session["new_level"]["item"]["id"], "Tipp")
 
+    def test_sql_shortcut_speichert_und_zeigt_restriktionen(self):
+        session = self.client.session
+        session["new_level"] = {"id": "level1", "queryRestriction": {}}
+        session.save()
+
+        response = self.client.post(
+            reverse("sql_grunddaten_view"),
+            {
+                "max_rows": "5",
+                "max_columns": "3",
+                "too_many_rows_message": "Zu viele Zeilen",
+                "too_many_columns_message": "Zu viele Spalten",
+                "too_many_rows_columns_message": "Beides zu viel",
+            },
+        )
+        self.assertRedirects(
+            response,
+            reverse("auswahl_view"),
+            fetch_redirect_response=False,
+        )
+
+        self.assertEqual(
+            self.client.session["new_level"]["queryRestriction"],
+            {
+                "rowRestriction": {
+                    "maxNumber": 5,
+                    "violationMessages": ["Zu viele Zeilen"],
+                },
+                "columnRestriction": {
+                    "maxNumber": 3,
+                    "violationMessages": ["Zu viele Spalten"],
+                },
+                "colAndRowViolationMessages": ["Beides zu viel"],
+            },
+        )
+
+        reopened = self.client.get(reverse("sql_grunddaten_view"))
+        self.assertEqual(
+            reopened.context["form_values"],
+            {
+                "max_columns": 3,
+                "max_rows": 5,
+                "too_many_rows_message": "Zu viele Zeilen",
+                "too_many_columns_message": "Zu viele Spalten",
+                "too_many_rows_columns_message": "Beides zu viel",
+            },
+        )
+
+    def test_nachrichten_shortcut_speichert_auf_spielebene(self):
+        session = self.client.session
+        session["game_json"] = {
+            "level": [{
+                "id": "level1",
+                "messages": {"wrong_password": "Alter Text"},
+            }],
+        }
+        session.save()
+
+        response = self.client.post(
+            reverse("messages_grunddaten"),
+            {
+                "wrong_password": " Neuer Text ",
+                "sql_error": "",
+            },
+        )
+        self.assertRedirects(
+            response,
+            reverse("auswahl_view"),
+            fetch_redirect_response=False,
+        )
+
+        game = self.client.session["game_json"]
+        self.assertEqual(game["messages"]["wrong_password"], "Neuer Text")
+        self.assertTrue(game["messages"]["sql_error"])
+        self.assertNotIn("messages", game["level"][0])
+
+        reopened = self.client.get(reverse("messages_grunddaten"))
+        self.assertEqual(
+            reopened.context["form_values"]["wrong_password"],
+            "Neuer Text",
+        )
+
+    def test_delete_item_updates_level_and_game(self):
+        level = {
+            "id": "level1",
+            "items": [
+                {"id": "Tipp", "type": "hint"},
+                {"id": "Ausgang", "type": "exit", "neededItems": ["Tipp"]},
+            ],
+        }
+        session = self.client.session
+        session["new_level"] = deepcopy(level)
+        session["game_json"] = {"level": [deepcopy(level)]}
+        session.save()
+
+        delete_url = reverse("delete_item", args=["Tipp"])
+
+        self.assertRedirects(
+            self.client.get(delete_url),
+            reverse("gegenstandVerwaltung"),
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(len(self.client.session["new_level"]["items"]), 2)
+
+        self.assertRedirects(
+            self.client.post(delete_url),
+            reverse("gegenstandVerwaltung"),
+            fetch_redirect_response=False,
+        )
+
+        saved_session = self.client.session
+        for saved_level in (
+                saved_session["new_level"],
+                saved_session["game_json"]["level"][0],
+        ):
+            self.assertEqual(
+                [item["id"] for item in saved_level["items"]],
+                ["Ausgang"],
+            )
+            self.assertEqual(saved_level["items"][0]["neededItems"], [])
+
+
+
+
 class ImportExportTests(TestCase):
     def import_files(self, files):
         response = self.client.post(reverse("upload_json"), {
@@ -1293,3 +1423,52 @@ class ImportExportTests(TestCase):
             image.unlink()
             response = self.client.get(reverse("export_game"))
             self.assertContains(response, "same.png", status_code=400)
+
+    def test_delete_table_item_removes_saved_rows(self):
+        with TemporaryDirectory() as workspace:
+            rows_file = Path(workspace) / ".editor-table-rows.json"
+            rows_file.write_text(
+                json.dumps({
+                    "level1": {
+                        "Heft": [{"ID": 1}],
+                        "Andere": [{"ID": 2}],
+                    }
+                }),
+                encoding="utf-8",
+            )
+
+            level = {
+                "id": "level1",
+                "items": [
+                    {"id": "Heft", "type": "table", "tableName": "Heft"},
+                    {"id": "Andere", "type": "table", "tableName": "Andere"},
+                ],
+            }
+            session = self.client.session
+            session["new_level"] = deepcopy(level)
+            session["game_json"] = {"level": [deepcopy(level)]}
+            session["game_workspace"] = workspace
+            session.save()
+
+            response = self.client.post(reverse("delete_item", args=["Heft"]))
+
+            self.assertRedirects(
+                response,
+                reverse("gegenstandVerwaltung"),
+                fetch_redirect_response=False,
+            )
+            self.assertEqual(
+                json.loads(rows_file.read_text(encoding="utf-8")),
+                {"level1": {"Andere": [{"ID": 2}]}},
+            )
+
+    def test_import_prefers_sqlspellquest_json(self):
+        expected_game = {"id": "Rundlauf", "messages": {}, "level": []}
+        other_game = {"id": "Anderes Spiel", "messages": {}, "level": []}
+
+        self.import_files({
+            "notes.json": json.dumps(other_game).encode(),
+            "SQLSpellQuest.json": json.dumps(expected_game).encode(),
+        })
+
+        self.assertEqual(self.client.session["game_json"], expected_game)

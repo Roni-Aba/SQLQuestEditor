@@ -91,3 +91,31 @@ def set_item_name_and_sync_table(request, saved_level, item, item_name):
                 old_table_name,
                 item_name,
             )
+
+def remove_item_from_game_levels(levels, level_id, item_id):
+    updated_levels = []
+
+    for level in levels:
+        if isinstance(level, dict) and level.get("id") == level_id:
+            level = utils.remove_item_from_level(level, item_id)
+        updated_levels.append(level)
+
+    return updated_levels
+
+def remove_deleted_table_rows(request, saved_level, item_id):
+    deleted_item = next(
+        (
+            item
+            for item in saved_level.get("items", [])
+            if isinstance(item, dict) and item.get("id") == item_id
+        ),
+        None,
+    )
+
+    if not isinstance(deleted_item, dict) or deleted_item.get("type") != "table":
+        return
+
+    table_name = str(
+        deleted_item.get("tableName", deleted_item.get("id", ""))
+    ).strip()
+    database.remove_editor_table_rows(request, saved_level, table_name)
