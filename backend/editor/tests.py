@@ -1119,6 +1119,38 @@ class GuidedLevelTests(TestCase):
         overview = self.client.get(reverse("create_level7"))
         self.assertEqual(overview.context["back_url_name"], "create_level61")
 
+    def test_create_level8_item_management_speichert_gegenstand(self):
+        session = self.client.session
+        session["game_json"] = {"level": []}
+        session["new_level"] = {
+            "id": "level1",
+            "items": [],
+            "item": {
+                "id": "Tipp",
+                "type": "hint",
+                "text": "Hallo",
+                "imageLink": "",
+            },
+        }
+        session.save()
+
+        response = self.client.post(
+            reverse("create_level8"),
+            {"next_action": "item_management"},
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("gegenstandVerwaltung"),
+            fetch_redirect_response=False,
+        )
+
+        saved_session = self.client.session
+        saved_item = saved_session["game_json"]["level"][0]["items"][0]
+        self.assertEqual(saved_item["id"], "Tipp")
+        self.assertEqual(saved_item["text"], "Hallo")
+        self.assertEqual(saved_session["new_level"]["item"]["id"], "Tipp")
+
 class ImportExportTests(TestCase):
     def import_files(self, files):
         response = self.client.post(reverse("upload_json"), {
