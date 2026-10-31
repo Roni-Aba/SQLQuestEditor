@@ -126,65 +126,6 @@ def edit_level_view(
     )
 
 
-def build_clean_level_session(
-    selected_level,
-):
-    if not isinstance(
-        selected_level,
-        dict,
-    ):
-        return {}
-
-    items = selected_level.get(
-        "items",
-        [],
-    )
-
-    if not isinstance(
-        items,
-        list,
-    ):
-        items = []
-
-    query_restriction = selected_level.get(
-        "queryRestriction",
-        {},
-    )
-
-    if not isinstance(
-        query_restriction,
-        dict,
-    ):
-        query_restriction = {}
-
-    clean_level = {
-        "id": selected_level.get(
-            "id",
-            "",
-        ),
-        "levelPicture": selected_level.get(
-            "levelPicture",
-            "",
-        ),
-        "databaseName": selected_level.get(
-            "databaseName",
-            "",
-        ),
-        "startDialog": selected_level.get(
-            "startDialog",
-            "",
-        ),
-        "queryRestriction": deepcopy(
-            query_restriction
-        ),
-        "items": deepcopy(
-            items
-        ),
-    }
-
-    return clean_level
-
-
 def clear_level_edit_session(request):
     database.discard_editor_level_rows(request, request.session.get("new_level"))
     session_keys = [

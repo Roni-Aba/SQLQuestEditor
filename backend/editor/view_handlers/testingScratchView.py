@@ -79,6 +79,7 @@ def auswahlsdd(request):
 def kontakt_view(request):
     return render(request, "editor/contact.html")
 
+
 def component_test_view(request):
     steps = [
         {"number": 1, "active": True},

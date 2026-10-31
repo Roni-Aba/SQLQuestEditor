@@ -7,9 +7,21 @@ from tempfile import TemporaryDirectory
 from zipfile import ZipFile
 import shutil
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 from unittest.mock import patch
+
+
+@override_settings(SESSION_ENGINE="django.contrib.sessions.backends.signed_cookies")
+class StartPageTests(SimpleTestCase):
+    def test_start_page_offers_creation_and_import(self):
+        response = self.client.get(reverse("start"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "editor/start.html")
+        self.assertContains(response, f'action="{reverse("new_game")}"')
+        self.assertContains(response, f'action="{reverse("upload_json")}"')
+
 
 class GuidedLevelTests(TestCase):
     def test_create_level_startet_mit_neuem_zustand(self):
@@ -955,7 +967,9 @@ class GuidedLevelTests(TestCase):
         }
         session.save()
 
-        with patch("editor.views.database.remove_editor_table_rows") as remove_rows:
+        with patch(
+            "editor.services.item_draft.database.remove_editor_table_rows"
+        ) as remove_rows:
             response = self.client.post(
                 reverse("create_level31"),
                 {"item_type": "hint"},
