@@ -22,6 +22,19 @@ from .shared import (
     set_guided_level_creation,
 )
 
+def auswahl_view(request):
+    set_guided_level_creation(request, False)
+    new_level = request.session.get("new_level", {})
+    print("Aktuelles Level:")
+    print(json.dumps(new_level, ensure_ascii=False, indent=2))
+    return render(
+        request,
+        "editor/auswahl.html",
+        {
+            "game_json": new_level,
+        },
+    )
+
 
 def level_grunddaten_view(request):
     set_guided_level_creation(request, False)

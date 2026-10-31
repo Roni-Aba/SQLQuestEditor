@@ -2,6 +2,18 @@ from django.shortcuts import redirect
 
 from .. import utils
 
+def clear_editor_state(request):
+    for session_key in [
+        "new_level",
+        "auto_saved_level_id",
+        "editing_level_id",
+        "editing_item_id",
+        "item_edit_mode",
+        "editing_item_section",
+        "item_creation_return_to",
+    ]:
+        request.session.pop(session_key, None)
+
 
 def level_name_is_taken(game_json, level_name, editing_level_id=None):
     levels = game_json.get("level", []) if isinstance(game_json, dict) else []

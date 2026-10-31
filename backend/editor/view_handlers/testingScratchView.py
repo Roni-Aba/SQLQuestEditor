@@ -74,3 +74,22 @@ def createlevel1sdd(request):
 
 def auswahlsdd(request):
     return render(request, "editor/auswahlsdd.html")
+
+
+def kontakt_view(request):
+    return render(request, "editor/contact.html")
+
+def component_test_view(request):
+    steps = [
+        {"number": 1, "active": True},
+        {"number": 2, "active": True},
+        {"number": 3, "active": True},
+        {"number": 4, "active": True},
+        {"number": 5, "active": False},
+        {"number": 6, "active": False},
+        {"number": 7, "active": False},
+        {"number": 8, "active": False},
+    ]
+    return render(request, "editor/test.html", {
+        "steps": steps,
+    })
