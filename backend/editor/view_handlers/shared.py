@@ -66,3 +66,11 @@ def redirect_after_item_section_edit(
         "edit_item",
         item_id=editing_item_id,
     )
+
+
+def set_guided_level_creation(request, active):
+    if active:
+        request.session["guided_level_creation"] = True
+    else:
+        request.session.pop("guided_level_creation", None)
+    request.session.modified = True

@@ -56,11 +56,13 @@ from .services.game_messages import (
 
 from .view_handlers.shared import (
     get_steps,
+    set_guided_level_creation,
     level_name_is_taken,
     save_new_level_session,
     redirect_after_item_section_edit,
 )
 
+from .view_handlers.create_level import create_level
 from .view_handlers.create_level1 import create_level1_view
 from .view_handlers.create_level2 import create_level2_view
 from .view_handlers.create_level3 import (
@@ -85,14 +87,18 @@ from .view_handlers.create_level6 import (
 )
 from .view_handlers.create_level7 import create_level7_view
 from .view_handlers.create_level8 import create_level8_view
-
-
-def set_guided_level_creation(request, active):
-    if active:
-        request.session["guided_level_creation"] = True
-    else:
-        request.session.pop("guided_level_creation", None)
-    request.session.modified = True
+from .view_handlers.testingScratchView import (
+    auswahl3,
+    auswahl3v2,
+    createlevel1agent,
+    createlevel1agentv2,
+    plugintest1,
+    plugintest2,
+    figma_overview_45_1891_view,
+    figma_levelauswahl_575_2535_view,
+    createlevel1sdd,
+    auswahlsdd,
+)
 
 
 def first_or_empty(values):
@@ -601,54 +607,6 @@ def component_test_view(request):
     return render(request, "editor/test.html", {
         "steps": steps,
     })
-
-
-def create_level(
-    request,
-):
-    set_guided_level_creation(request, True)
-    database.discard_editor_level_rows(request, request.session.get("new_level"))
-    for session_key in [
-        "auto_saved_level_id",
-        "editing_level_id",
-        "editing_item_id",
-        "item_edit_mode",
-        "editing_item_section",
-    ]:
-        request.session.pop(
-            session_key,
-            None,
-        )
-
-    request.session.pop(
-        "item_creation_return_to",
-        None,
-    )
-
-    request.session["new_level"] = {
-        "id": "",
-        "levelPicture": "",
-        "databaseName": "",
-        "startDialog": "",
-        "queryRestriction": {},
-        "items": [],
-    }
-
-    request.session[
-        "reset_item_draft_on_create_level3"
-    ] = True
-
-    request.session.modified = True
-
-    return render(
-        request,
-        "editor/createLevel.html",
-        {
-            "steps": get_steps(
-                active_step=0
-            ),
-        },
-    )
 
 
 def auswahl_view(request):
@@ -1208,72 +1166,3 @@ def delete_level_view(request, level_id):
         )
     )
     return redirect("level")
-
-
-def auswahl3(request):
-    return render(
-        request,
-        "editor/auswahl3.html",
-    )
-def auswahl3v2(request):
-    return render(
-        request,
-        "editor/auswahl3v2.html"
-    )
-
-
-def createlevel1agent(request):
-    return render(
-        request,
-        "editor/createlevel1agent.html",
-    )
-def createlevel1agentv2(request):
-    return render(
-        request,
-        "editor/createlevel1agentv2.html",
-    )
-
-def plugintest1(request):
-    return render(
-        request,
-        "editor/plugintest1.html",
-    )
-
-def plugintest2(request):
-    return render(
-        request, "editor/plugintest2.html"
-    )
-
-
-def figma_overview_45_1891_view(request):
-    return render(
-        request,
-        "editor/figma_overview_45_1891.html",
-    )
-
-
-def figma_levelauswahl_575_2535_view(request):
-    return render(
-        request,
-        "editor/figma_levelauswahl_575_2535.html",
-        {
-            "steps": [
-                {"number": number, "active": number == 1}
-                for number in range(1, 9)
-            ],
-        },
-    )
-
-
-def createlevel1sdd(request):
-    return render(
-        request,
-        "editor/createLevel1sdd.html",
-        {
-            "steps": get_steps(active_step=1),
-        },
-    )
-
-
-def auswahlsdd(request):
-    return render(request, "editor/auswahlsdd.html")

@@ -12,6 +12,55 @@ from django.urls import reverse
 from unittest.mock import patch
 
 class GuidedLevelTests(TestCase):
+    def test_create_level_startet_mit_neuem_zustand(self):
+        old_level = {"id": "AltesLevel", "items": [{"id": "Heft"}]}
+        session = self.client.session
+        session["game_json"] = {"id": "SQLSpellQuest", "level": []}
+        session["new_level"] = old_level
+        for key in (
+            "auto_saved_level_id",
+            "editing_level_id",
+            "editing_item_id",
+            "item_edit_mode",
+            "editing_item_section",
+            "item_creation_return_to",
+        ):
+            session[key] = "alt"
+        session.save()
+
+        with patch("editor.database.discard_editor_level_rows") as discard_rows:
+            response = self.client.get(reverse("create_level"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "editor/createLevel.html")
+        self.assertEqual(discard_rows.call_args.args[1], old_level)
+        current_session = self.client.session
+        self.assertTrue(current_session["guided_level_creation"])
+        self.assertTrue(current_session["reset_item_draft_on_create_level3"])
+        self.assertEqual(
+            current_session["new_level"],
+            {
+                "id": "",
+                "levelPicture": "",
+                "databaseName": "",
+                "startDialog": "",
+                "queryRestriction": {},
+                "items": [],
+            },
+        )
+        self.assertEqual(
+            current_session["game_json"], {"id": "SQLSpellQuest", "level": []}
+        )
+        for key in (
+            "auto_saved_level_id",
+            "editing_level_id",
+            "editing_item_id",
+            "item_edit_mode",
+            "editing_item_section",
+            "item_creation_return_to",
+        ):
+            self.assertNotIn(key, current_session)
+
     def step(self, page, data, next_page):
         response = self.client.post(reverse(page), data)
         self.assertRedirects(response, reverse(next_page))
