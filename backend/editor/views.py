@@ -83,6 +83,7 @@ from .view_handlers.create_level6 import (
     create_level61_view,
     create_level62_view,
 )
+from .view_handlers.create_level7 import create_level7_view
 
 
 def set_guided_level_creation(request, active):
@@ -661,42 +662,6 @@ def auswahl_view(request):
             "game_json": new_level,
         },
     )
-
-def create_level7_view(request):
-    steps = get_steps(active_step=7)
-    saved_level = request.session.get(
-        "new_level",
-        {},
-    )
-    unlock_condition = saved_level.get("unlockCondition", {})
-    if not unlock_condition.get("requiresPassword", False):
-        back_url_name = "create_level6"
-    elif unlock_condition.get("showHintsOnFailure", False):
-        back_url_name = "create_level62"
-    else:
-        back_url_name = "create_level61"
-    summary = get_item_summary(saved_level)
-    if request.method == "POST":
-        print("createLevel7 Übersicht:")
-        print(
-            json.dumps(
-                saved_level,
-                ensure_ascii=False,
-                indent=2,
-            )
-        )
-        return redirect("create_level8")
-    return render(
-        request,
-        "editor/createLevel7.html",
-        {
-            "steps": steps,
-            "saved_level": saved_level,
-            "summary": summary,
-            "back_url_name": back_url_name,
-        },
-    )
-
 
 def save_current_item_to_level(saved_level):
     item = saved_level.get("item", {})

@@ -1152,6 +1152,32 @@ class GuidedLevelTests(TestCase):
         overview = self.client.get(reverse("create_level7"))
         self.assertEqual(overview.context["back_url_name"], "create_level61")
 
+    def test_create_level7_zeigt_zusammenfassung_und_passenden_rueckweg(self):
+        cases = (
+            (False, False, "create_level6"),
+            (True, False, "create_level61"),
+            (True, True, "create_level62"),
+        )
+        for requires_password, show_hints, expected_back_url in cases:
+            with self.subTest(back_url=expected_back_url):
+                session = self.client.session
+                session["new_level"] = {
+                    "item": {"id": "Heft", "type": "hint"},
+                    "unlockCondition": {
+                        "requiresPassword": requires_password,
+                        "showHintsOnFailure": show_hints,
+                    },
+                }
+                session.save()
+
+                response = self.client.get(reverse("create_level7"))
+
+                self.assertEqual(response.status_code, 200)
+                self.assertTemplateUsed(response, "editor/createLevel7.html")
+                self.assertEqual(response.context["back_url_name"], expected_back_url)
+                self.assertEqual(response.context["summary"]["item_name"], "Heft")
+                self.assertEqual(response.context["summary"]["item_type"], "hint")
+
     def test_create_level8_item_management_speichert_gegenstand(self):
         session = self.client.session
         session["game_json"] = {"level": []}
