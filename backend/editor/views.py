@@ -84,6 +84,7 @@ from .view_handlers.create_level6 import (
     create_level62_view,
 )
 from .view_handlers.create_level7 import create_level7_view
+from .view_handlers.create_level8 import create_level8_view
 
 
 def set_guided_level_creation(request, active):
@@ -684,55 +685,6 @@ def save_current_item_to_level(saved_level):
 
     saved_level["items"] = items
     return saved_level
-
-
-def create_level8_view(request):
-    steps = get_steps(active_step=8)
-    saved_level = request.session.get("new_level", {})
-
-    if request.method == "POST":
-        next_action = request.POST.get("next_action")
-        game_json, saved_level = utils.save_new_level_to_game_json(request)
-
-        if next_action == "more_items":
-            clear_item_draft(saved_level)
-            request.session["item_creation_return_to"] = "level8"
-
-        request.session["new_level"] = saved_level
-        request.session["game_json"] = game_json
-        request.session.modified = True
-
-        if next_action == "more_items":
-            print(
-                "Gegenstand wurde in die JSON eingefügt. "
-                "Neuer Gegenstand kann erstellt werden:"
-            )
-            print(json.dumps(game_json, ensure_ascii=False, indent=2))
-            return redirect("create_level3")
-
-        if next_action == "item_management":
-            print(
-                "Gegenstand wurde in die JSON eingefügt. "
-                "Weiter zur Gegenstandsverwaltung:"
-            )
-            print(json.dumps(game_json, ensure_ascii=False, indent=2))
-            return redirect("gegenstandVerwaltung")
-
-        print(
-            "Gegenstand wurde in die JSON eingefügt. "
-            "Zurück zur Auswahl:"
-        )
-        print(json.dumps(game_json, ensure_ascii=False, indent=2))
-        return redirect("auswahl_view")
-
-    return render(
-        request,
-        "editor/createLevel8.html",
-        {
-            "steps": steps,
-            "saved_level": saved_level,
-        },
-    )
 
 
 def _build_game_export(request):
