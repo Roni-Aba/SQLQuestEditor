@@ -88,6 +88,7 @@ from .view_handlers.shared import (
 )
 
 from .view_handlers.create_level1 import create_level1_view
+from .view_handlers.create_level2 import create_level2_view
 
 def remember_item_summary_return(request):
     if (
@@ -735,27 +736,6 @@ def auswahl_view(request):
             "game_json": new_level,
         },
     )
-
-def create_level2_view(request):
-    steps = get_steps(active_step=2)
-    saved_level = request.session.get("new_level", {})
-    form_values = level2_form_values(saved_level)
-
-    if request.method == "POST":
-        saved_level["queryRestriction"] = query_restriction_from_post(request.POST)
-        request.session["new_level"] = saved_level
-        request.session.modified = True
-
-        print("createLevel2 gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
-        return redirect("create_level3")
-
-    return render(request, "editor/createLevel2.html", {
-        "steps": steps,
-        "saved_level": saved_level,
-        "form_values": form_values,
-    })
-
 
 def create_level4_view(request):
     steps = get_steps(active_step=4)
