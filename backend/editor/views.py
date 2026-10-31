@@ -46,20 +46,12 @@ from .services.game_export import (
     write_imported_files,
 )
 
-from .services.table_editor import (
-    parse_table_columns,
-    parse_table_rows,
-    persist_draft_table_rows
-)
-
 from .services.item_position import (
     _box_from_post,
     position_from_post,
     position_form_values
 )
 
-from .services.hint_editor import update_hint_field, update_hint_image
-from .services.exit_editor import update_exit_fields
 from .services.item_summary import get_item_summary
 from .services.item_unlock import (
     update_password_requirement,
@@ -79,7 +71,8 @@ from .view_handlers.shared import (
     get_steps,
     level_name_is_taken,
     save_new_level_session,
-    remember_item_summary_return
+    remember_item_summary_return,
+    redirect_after_item_section_edit,
 )
 
 from .view_handlers.create_level1 import create_level1_view
@@ -87,6 +80,9 @@ from .view_handlers.create_level2 import create_level2_view
 from .view_handlers.create_level3 import (
     create_level3_view,
     create_level31_view,
+    create_level3exit_view,
+    create_level3hint_view,
+    create_level3table_view,
 )
 
 from .view_handlers.create_level4 import (
@@ -100,36 +96,6 @@ def set_guided_level_creation(request, active):
     else:
         request.session.pop("guided_level_creation", None)
     request.session.modified = True
-
-
-def redirect_after_item_section_edit(
-        request,
-        default_view_name,
-):
-    if not request.session.get("item_edit_mode"):
-        if request.session.get("item_creation_return_to") == "summary":
-            request.session.pop("item_creation_return_to", None)
-            request.session.modified = True
-            return redirect("create_level7")
-        return redirect(default_view_name)
-
-    editing_item_id = request.session.get(
-        "editing_item_id"
-    )
-
-    request.session.pop(
-        "editing_item_section",
-        None,
-    )
-    request.session.modified = True
-
-    if not editing_item_id:
-        return redirect(default_view_name)
-
-    return redirect(
-        "edit_item",
-        item_id=editing_item_id,
-    )
 
 
 def redirect_after_item_password_edit(
@@ -931,190 +897,6 @@ def create_level61_view(request):
         },
     )
 
-
-def create_level3exit_view(request):
-    return_to_item_summary = remember_item_summary_return(request)
-    return_to_item_overview = (
-        request.session.get("item_creation_return_to") == "items"
-    )
-    steps = get_steps(active_step=3)
-    saved_level = request.session.get("new_level", {})
-    item = saved_level.get("item", {})
-
-    form_values = {
-        "exit_success_message": item.get("exitSuccessMessage", ""),
-        "next_level_id": item.get("nextLevelId", ""),
-    }
-
-    if request.method == "POST":
-        update_exit_fields(item, request.POST)
-
-        saved_level["item"] = item
-        request.session["new_level"] = saved_level
-        request.session.modified = True
-
-        print("createLevel3exit gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
-
-        return redirect_after_item_section_edit(
-            request,
-            "create_level4",
-        )
-    return render(
-        request,
-        "editor/createLevel3exit.html",
-        {
-            "steps": steps,
-            "saved_level": saved_level,
-            "form_values": form_values,
-            "is_item_edit": request.session.get("item_edit_mode", False),
-            "editing_item_id": request.session.get("editing_item_id", ""),
-            "return_to_item_overview": return_to_item_overview,
-            "return_to_item_summary": return_to_item_summary,
-        },
-    )
-
-
-def create_level3hint_view(request):
-    return_to_item_summary = remember_item_summary_return(request)
-    return_to_item_overview = (
-        request.session.get("item_creation_return_to") == "items"
-    )
-    steps = get_steps(active_step=3)
-    saved_level = request.session.get("new_level", {})
-    item = saved_level.get("item", {})
-
-    current_hint_type = item.get("hintType", "")
-    hint_options = [
-        {"value": "text", "label": "Über einen Text"},
-        {"value": "image", "label": "Über ein Bild"},
-        {"value": "text_image", "label": "Über einen Text und ein Bild"},
-    ]
-    form_values = {
-        "hint_type": current_hint_type,
-        "hint_text": item.get("text", ""),
-        "hint_image": item.get("imageLink", ""),
-    }
-
-    if request.method == "POST":
-        hint_type = update_hint_field(item, request.POST)
-        uploaded_image = request.FILES.get("hint_image")
-
-        update_hint_image(item, saved_level, uploaded_image, hint_type, settings.BASE_DIR,)
-
-        saved_level["item"] = item
-        request.session["new_level"] = saved_level
-        request.session.modified = True
-
-        print("createLevel3hint gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
-
-        return redirect_after_item_section_edit(
-            request,
-            "create_level4",
-        )
-
-    return render(
-        request,
-        "editor/createLevel3hint.html",
-        {
-            "steps": steps,
-            "saved_level": saved_level,
-            "form_values": form_values,
-            "hint_options": hint_options,
-            "is_item_edit": request.session.get("item_edit_mode", False),
-            "editing_item_id": request.session.get("editing_item_id", ""),
-            "return_to_item_overview": return_to_item_overview,
-            "return_to_item_summary": return_to_item_summary,
-        },
-    )
-
-
-def create_level3table_view(request):
-    return_to_item_summary = remember_item_summary_return(request)
-    return_to_item_overview = (
-        request.session.get("item_creation_return_to") == "items"
-    )
-    steps = get_steps(active_step=3)
-    saved_level = request.session.get("new_level", {})
-    item = saved_level.get("item", {})
-
-    data_type_options = [
-        {"value": "text", "label": "Text"},
-        {"value": "number", "label": "Zahl"},
-        {"value": "date", "label": "Datum"},
-        {"value": "boolean", "label": "Boolean"},
-    ]
-
-    form_values = {
-        "table_name": item.get("tableName", item.get("id", "")),
-        "columns": item.get("columns", []),
-        "rows": item.get("rows", []),
-    }
-    error_message = ""
-
-    if request.method == "POST":
-        columns, error_message = parse_table_columns(
-            request.POST.getlist("column_ids[]"),
-            request.POST.getlist("column_types[]"),
-        )
-
-        rows = []
-        raw_rows_json = request.POST.get("rows_json", "[]")
-
-        if not error_message:
-            rows, error_message = parse_table_rows(
-                raw_rows_json,
-                columns,
-            )
-
-        form_values = {
-            "table_name": item.get("id", ""),
-            "columns": columns,
-            "rows": rows,
-        }
-
-        if not columns and not error_message:
-            error_message = "Lege mindestens eine Tabellenspalte an."
-
-        if not error_message and not request.session.get("item_edit_mode"):
-            persist_draft_table_rows(request, saved_level, item, rows)
-
-        if not error_message:
-            item_name = str(item.get("id", "")).strip()
-
-            item["type"] = "table"
-            item["tableName"] = item_name
-            item["columns"] = columns
-            item["rows"] = rows
-
-            saved_level["item"] = item
-            request.session["new_level"] = saved_level
-            request.session.modified = True
-
-            print("createLevel3table gespeichert:")
-            print(json.dumps(saved_level, ensure_ascii=False, indent=2))
-
-            return redirect_after_item_section_edit(
-                request,
-                "create_level4",
-            )
-
-    return render(
-        request,
-        "editor/createLevel3table.html",
-        {
-            "steps": steps,
-            "saved_level": saved_level,
-            "form_values": form_values,
-            "data_type_options": data_type_options,
-            "error_message": error_message,
-            "is_item_edit": request.session.get("item_edit_mode", False),
-            "editing_item_id": request.session.get("editing_item_id", ""),
-            "return_to_item_overview": return_to_item_overview,
-            "return_to_item_summary": return_to_item_summary,
-        },
-    )
 
 def create_level7_view(request):
     steps = get_steps(active_step=7)

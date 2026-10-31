@@ -1,3 +1,6 @@
+from django.shortcuts import redirect
+
+
 def level_name_is_taken(game_json, level_name, editing_level_id=None):
     levels = game_json.get("level", []) if isinstance(game_json, dict) else []
     if not isinstance(levels, list):
@@ -32,4 +35,34 @@ def remember_item_summary_return(request):
     return (
         request.session.get("item_creation_return_to")
         == "summary"
+    )
+
+
+def redirect_after_item_section_edit(
+        request,
+        default_view_name,
+):
+    if not request.session.get("item_edit_mode"):
+        if request.session.get("item_creation_return_to") == "summary":
+            request.session.pop("item_creation_return_to", None)
+            request.session.modified = True
+            return redirect("create_level7")
+        return redirect(default_view_name)
+
+    editing_item_id = request.session.get(
+        "editing_item_id"
+    )
+
+    request.session.pop(
+        "editing_item_section",
+        None,
+    )
+    request.session.modified = True
+
+    if not editing_item_id:
+        return redirect(default_view_name)
+
+    return redirect(
+        "edit_item",
+        item_id=editing_item_id,
     )
