@@ -1,5 +1,7 @@
 from django.shortcuts import redirect
 
+from .. import utils
+
 
 def level_name_is_taken(game_json, level_name, editing_level_id=None):
     levels = game_json.get("level", []) if isinstance(game_json, dict) else []
@@ -74,3 +76,22 @@ def set_guided_level_creation(request, active):
     else:
         request.session.pop("guided_level_creation", None)
     request.session.modified = True
+
+
+def current_level_origin_id(request, saved_level):
+    origin_id = (
+        request.session.get("editing_level_id")
+        or request.session.get("auto_saved_level_id")
+    )
+    if origin_id:
+        return origin_id
+
+    game_json = request.session.get("game_json", {})
+    levels = game_json.get("level", []) if isinstance(game_json, dict) else []
+    if not isinstance(levels, list):
+        return None
+
+    draft = utils.build_level_for_json(saved_level)
+    if draft.get("id") and draft in levels:
+        return draft["id"]
+    return None

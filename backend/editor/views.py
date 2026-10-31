@@ -3,15 +3,9 @@ from copy import deepcopy
 import json, io, zipfile, sqlite3, tempfile, shutil
 from pathlib import Path, PurePosixPath
 from django.conf import settings
-from django.core.files.storage import FileSystemStorage
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
-from .services.level_basics import (
-    level1_form_values,
-    level2_form_values,
-    query_restriction_from_post,
-)
 from .services.item_draft import (
     clear_item_draft,
     remove_item_from_game_levels,
@@ -50,12 +44,11 @@ from .services.item_summary import get_item_summary
 from .services.game_messages import (
     DEFAULT_MESSAGES,
     normalize_game_messages,
-    messages_form_values,
-    messages_from_post,
 )
 
 from .view_handlers.shared import (
     get_steps,
+    current_level_origin_id,
     set_guided_level_creation,
     level_name_is_taken,
     save_new_level_session,
@@ -87,6 +80,11 @@ from .view_handlers.create_level6 import (
 )
 from .view_handlers.create_level7 import create_level7_view
 from .view_handlers.create_level8 import create_level8_view
+from .view_handlers.shortcut import (
+    level_grunddaten_view,
+    sql_grunddaten_view,
+    messages_grunddaten_view,
+)
 from .view_handlers.testingScratchView import (
     auswahl3,
     auswahl3v2,
@@ -110,27 +108,6 @@ def parse_optional_int(value):
     if value.isdigit():
         return int(value)
     return None
-
-
-def current_level_origin_id(request, saved_level):
-    origin_id = (
-        request.session.get("editing_level_id")
-        or request.session.get("auto_saved_level_id")
-    )
-    if origin_id:
-        return origin_id
-
-    game_json = request.session.get("game_json", {})
-    levels = game_json.get("level", []) if isinstance(game_json, dict) else []
-    if not isinstance(levels, list):
-        return None
-
-    draft = utils.build_level_for_json(saved_level)
-    if draft.get("id") and draft in levels:
-        return draft["id"]
-    return None
-
-
 
 
 def clear_editor_state(request):
@@ -702,105 +679,6 @@ def export_game_view(request):
             "error_message": f"Export fehlgeschlagen: {error}",
         }, status=400)
 
-def level_grunddaten_view(request):
-    set_guided_level_creation(request, False)
-    saved_level = request.session.get("new_level", {})
-    form_values = level1_form_values(saved_level)
-
-    if request.method == "POST":
-        level_name = request.POST.get("level_name", "").strip()
-        level_greeting = request.POST.get("level_greeting", "").strip()
-
-        if level_name_is_taken(
-            request.session.get("game_json", {}),
-            level_name,
-            current_level_origin_id(request, saved_level),
-        ):
-            form_values["level_name"] = level_name
-            form_values["level_greeting"] = level_greeting
-            return render(
-                request,
-                "editor/levelGrunddaten.html",
-                {
-                    "form_values": form_values,
-                    "error_message": (
-                        f'Der Levelname "{level_name}" wird bereits verwendet.'
-                    ),
-                },
-            )
-
-        uploaded_picture = request.FILES.get("levelPicture")
-        if uploaded_picture:
-            upload_dir = (
-                Path(settings.BASE_DIR)
-                / "editor"
-                / "static"
-                / "editor"
-                / "img"
-                / "levels"
-            )
-            upload_dir.mkdir(parents=True, exist_ok=True)
-
-            storage = FileSystemStorage(location=upload_dir)
-            level_picture_name = storage.save(
-                uploaded_picture.name,
-                uploaded_picture,
-            )
-            saved_level["levelPicture"] = level_picture_name
-            saved_level.setdefault("_new_asset_sources", {})[
-                level_picture_name
-            ] = str(upload_dir / level_picture_name)
-
-        saved_level["id"] = level_name
-        saved_level["databaseName"] = utils.database_name_for_level(level_name)
-
-        if not request.session.get("editing_level_id"):
-            database.finalize_editor_level_rows(
-                request,
-                saved_level,
-                level_name,
-            )
-
-        saved_level["startDialog"] = level_greeting
-        request.session["new_level"] = saved_level
-        request.session.modified = True
-
-        print("Level-Grunddaten:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
-        return redirect("auswahl_view")
-
-    return render(
-        request,
-        "editor/levelGrunddaten.html",
-        {"form_values": form_values},
-    )
-
-
-def sql_grunddaten_view(request):
-    set_guided_level_creation(request, False)
-    saved_level = request.session.get("new_level", {})
-    form_values = level2_form_values(saved_level)
-
-    if request.method == "POST":
-        saved_level["queryRestriction"] = query_restriction_from_post(
-            request.POST
-        )
-        request.session["new_level"] = saved_level
-        request.session.modified = True
-
-        print("SQL-Grunddaten gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
-        return redirect("auswahl_view")
-
-    return render(
-        request,
-        "editor/sqlGrunddaten.html",
-        {
-            "saved_level": saved_level,
-            "form_values": form_values,
-        },
-    )
-
 def gegenstand_view(
     request,
 ):
@@ -978,30 +856,6 @@ def cancel_item_edit_view(request):
         "gegenstandVerwaltung"
     )
 
-
-
-def messages_grunddaten_view(request):
-    set_guided_level_creation(request, False)
-    game_json = request.session.get("game_json", {})
-    game_json = normalize_game_messages(game_json)
-
-    saved_messages = game_json.get("messages", {})
-    form_values = messages_form_values(saved_messages)
-
-    if request.method == "POST":
-        game_json["messages"] = messages_from_post(request.POST)
-        request.session["game_json"] = game_json
-        request.session.modified = True
-
-        print("Systemnachrichten gespeichert:")
-        print(json.dumps(game_json, ensure_ascii=False, indent=2))
-        return redirect("auswahl_view")
-
-    return render(
-        request,
-        "editor/messagesGrunddaten.html",
-        {"form_values": form_values},
-    )
 
 
 def delete_item_view(request, item_id):
