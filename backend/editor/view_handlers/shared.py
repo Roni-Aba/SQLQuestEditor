@@ -20,3 +20,16 @@ def get_steps(active_step):
     for number in range(0, 9):
         steps.append({"number": number, "active": number <= active_step})
     return steps
+
+def remember_item_summary_return(request):
+    if (
+            request.method == "GET"
+            and request.GET.get("return_to") == "summary"
+    ):
+        request.session["item_creation_return_to"] = "summary"
+        request.session.modified = True
+
+    return (
+        request.session.get("item_creation_return_to")
+        == "summary"
+    )
