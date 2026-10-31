@@ -708,6 +708,7 @@ def save_new_level_to_game_json(
         return game_json, saved_level
 
     new_level = build_level_for_json(saved_level)
+    auto_saved_level_id = request.session.get("auto_saved_level_id", level_id)
 
     if request.session.get("editing_level_id"):
         request.session["new_level"] = saved_level
@@ -742,7 +743,7 @@ def save_new_level_to_game_json(
 
         if level.get(
             "id"
-        ) == level_id:
+        ) == auto_saved_level_id:
             existing_index = index
             break
 
@@ -762,6 +763,7 @@ def save_new_level_to_game_json(
     request.session["new_level"] = (
         saved_level
     )
+    request.session["auto_saved_level_id"] = level_id
 
     request.session.modified = True
 

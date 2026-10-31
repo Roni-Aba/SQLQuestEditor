@@ -23,6 +23,13 @@ from .services.item_draft import (
     remove_item_from_game_levels,
     remove_deleted_table_rows
 )
+from .services.item_edit import (
+    find_item,
+    load_item_draft,
+    preserve_original_item_fields,
+    sync_edited_table_rows,
+    replace_item_and_update_references,
+)
 
 from .services.level_save import (
     replace_or_append_level,
@@ -33,7 +40,17 @@ from .services.level_delete import (
     referencing_level_ids,
     remove_level_from_list,
 )
-from .services.game_import import select_game_json_entry, copy_uploaded_files
+from .services.game_import import (
+    select_game_json_entry,
+    copy_uploaded_files,
+    build_import_sources,
+    build_import_manifest,
+)
+from .services.game_export import (
+    write_level_databases,
+    write_prepared_assets,
+    write_imported_files,
+)
 
 from .services.table_editor import (
     parse_table_columns,
@@ -165,6 +182,25 @@ def level_name_is_taken(game_json, level_name, editing_level_id=None):
     )
 
 
+def current_level_origin_id(request, saved_level):
+    origin_id = (
+        request.session.get("editing_level_id")
+        or request.session.get("auto_saved_level_id")
+    )
+    if origin_id:
+        return origin_id
+
+    game_json = request.session.get("game_json", {})
+    levels = game_json.get("level", []) if isinstance(game_json, dict) else []
+    if not isinstance(levels, list):
+        return None
+
+    draft = utils.build_level_for_json(saved_level)
+    if draft.get("id") and draft in levels:
+        return draft["id"]
+    return None
+
+
 def save_new_level_session(request, saved_level):
     request.session["new_level"] = saved_level
     request.session.modified = True
@@ -173,6 +209,7 @@ def save_new_level_session(request, saved_level):
 def clear_editor_state(request):
     for session_key in [
         "new_level",
+        "auto_saved_level_id",
         "editing_level_id",
         "editing_item_id",
         "item_edit_mode",
@@ -388,6 +425,7 @@ def clear_level_edit_session(request):
     database.discard_editor_level_rows(request, request.session.get("new_level"))
     session_keys = [
         "new_level",
+        "auto_saved_level_id",
         "editing_level_id",
         "editing_item_id",
         "item_edit_mode",
@@ -620,58 +658,12 @@ def upload_json_view(request):
                 ),
             },
         )
-    import_sources = {}
-    for level in game_json.get("level", []):
-        if not isinstance(level, dict):
-            continue
-        level_id = str(level.get("id", ""))
-        database_path = database.get_level_database_path(request, level)
-        level_folder = utils.sanitize_export_name(level_id, "level")
-        asset_paths = {}
-        level_items = level.get("items", [])
-        if not isinstance(level_items, list):
-            level_items = []
-        for reference in [level.get("levelPicture", ""), *[
-            item.get("imageLink", "") for item in level_items
-            if isinstance(item, dict)
-        ]]:
-            if not reference:
-                continue
-            filename = utils.sanitize_export_name(reference)
-            source = utils.find_export_asset(filename, [
-                game_root / level_folder / "assets",
-                game_root / "assets",
-                game_root,
-            ])
-            if source is not None:
-                asset_paths[filename] = str(source)
-            else:
-                asset_paths[filename] = str(
-                    game_root / level_folder / "assets" / filename
-                )
-        import_sources[level_id] = {
-            "folder": level_folder,
-            "database": str(database_path) if database_path else "",
-            "tables": {
-                database.table_name_for(item): database.table_name_for(item)
-                for item in level_items
-                if isinstance(item, dict) and item.get("type") == "table"
-            },
-            "assets": asset_paths,
-        }
+    import_sources = build_import_sources(request, game_json, game_root)
     request.session["import_sources"] = import_sources
     request.session["import_json_path"] = str(game_root / json_relative_path.name)
-    request.session["import_manifest"] = {
-        "files": [
-            path.relative_to(game_root).as_posix()
-            for path in game_root.rglob("*") if path.is_file()
-        ],
-        "folders": [source["folder"] for source in import_sources.values()],
-        "databases": [
-            source["database"] for source in import_sources.values()
-            if source["database"]
-        ],
-    }
+    request.session["import_manifest"] = build_import_manifest(
+        game_root, import_sources
+    )
     clear_editor_state(request)
     request.session["game_json"] = game_json
 
@@ -703,6 +695,7 @@ def create_level(
     set_guided_level_creation(request, True)
     database.discard_editor_level_rows(request, request.session.get("new_level"))
     for session_key in [
+        "auto_saved_level_id",
         "editing_level_id",
         "editing_item_id",
         "item_edit_mode",
@@ -1583,20 +1576,11 @@ def create_level8_view(request):
 
 
 def _build_game_export(request):
-    game_json = request.session.get(
-        "game_json",
-        {},
-    )
-    if not isinstance(
-        game_json,
-        dict,
-    ):
+    game_json = request.session.get("game_json", {})
+    if not isinstance(game_json, dict):
         game_json = {}
 
-    (
-        export_game_json,
-        asset_files,
-    ) = utils.prepare_game_json_for_export(
+    export_game_json, asset_files = utils.prepare_game_json_for_export(
         game_json,
         settings.BASE_DIR,
         request.session.get("game_root"),
@@ -1607,186 +1591,32 @@ def _build_game_export(request):
     managed_archive_paths = {"SQLSpellQuest.json"}
 
     with tempfile.TemporaryDirectory() as temp_directory:
-        temp_directory = Path(
-            temp_directory
-        )
         with zipfile.ZipFile(
-            zip_buffer,
-            "w",
-            zipfile.ZIP_DEFLATED,
+            zip_buffer, "w", zipfile.ZIP_DEFLATED
         ) as zip_file:
-            levels = export_game_json.get(
-                "level",
-                [],
-            )
-            if not isinstance(
-                levels,
-                list,
-            ):
-                levels = []
-
-            for level_index, level in enumerate(
-                levels
-            ):
-                if not isinstance(
-                    level,
-                    dict,
-                ):
-                    continue
-                level_id = level.get(
-                    "id",
-                    f"level{level_index}",
-                )
-                level_folder = level.pop(
-                    "_exportFolder",
-                    utils.sanitize_export_name(
-                        level_id,
-                        fallback=(
-                            f"level{level_index}"
-                        ),
-                    ),
-                )
-                safe_level_id = (
-                    utils.sanitize_export_name(
-                        level_id,
-                        fallback=(
-                            f"level{level_index}"
-                        ),
-                    )
-                )
-                sql_archive_path = (
-                    f"{level_folder}/databases/"
-                    f"create_{safe_level_id}.sql"
-                )
-                database_archive_path = (
-                    f"{level_folder}/databases/"
-                    f"{level['databaseName']}"
-                )
-                managed_archive_paths.update(
-                    (sql_archive_path, database_archive_path)
-                )
-                database_path = (
-                    temp_directory
-                    / (
-                        f"{safe_level_id}_"
-                        f"{level_index}.db"
-                    )
-                )
-                level_table_rows = database.get_export_table_rows(
-                    request,
-                    level,
-                )
-                source = request.session.get("import_sources", {}).get(
-                    str(level_id), {}
-                )
-                if source and not source.get("database"):
-                    raise FileNotFoundError(
-                        f'Die Level-Datenbank für "{level_id}" wurde nicht gefunden.'
-                    )
-                database.create_level_database(
-                    database_path,
-                    level,
-                    level_table_rows,
-                    source_database=source.get("database"),
-                    source_tables=source.get("tables"),
-                )
-
-                level_sql = database.database_dump(database_path)
-                zip_file.writestr(
-                    sql_archive_path,
-                    level_sql,
-                )
-
-                zip_file.write(
-                    database_path,
-                    database_archive_path,
-                )
-            json_string = json.dumps(
+            write_level_databases(
+                request,
+                zip_file,
                 export_game_json,
-                ensure_ascii=False,
-                indent=2,
+                Path(temp_directory),
+                managed_archive_paths,
             )
-            zip_file.writestr(
-                "SQLSpellQuest.json",
-                json_string,
+            json_string = json.dumps(
+                export_game_json, ensure_ascii=False, indent=2
             )
-            for (
-                archive_path,
-                source_path,
-            ) in asset_files.items():
-                zip_file.write(
-                    source_path,
-                    archive_path,
-                )
-            game_root_value = request.session.get("game_root")
-            if game_root_value:
-                game_root = Path(game_root_value)
-                if not game_root.is_dir():
-                    raise FileNotFoundError("Der importierte Spielordner fehlt.")
-                imported_sources = request.session.get("import_sources", {})
-                manifest = request.session.get("import_manifest", {})
-                managed_input_paths = {
-                    Path(path) for path in manifest.get("databases", [])
-                }
-                imported_json = request.session.get("import_json_path")
-                if imported_json:
-                    managed_input_paths.add(Path(imported_json))
-                active_folders = {
-                    source["folder"]: utils.sanitize_export_name(level_id)
-                    for level_id, source in imported_sources.items()
-                    if source.get("folder")
-                }
-                deliberate_replacements = {
-                    f'{utils.sanitize_export_name(level_id)}/assets/{filename}': Path(path)
-                    for level_id, source in imported_sources.items()
-                    for filename, path in source.get("replacements", {}).items()
-                }
-                all_folders = set(manifest.get("folders", []))
-                input_files = set(manifest.get("files", []))
-                input_files.update(
-                    path.relative_to(game_root).as_posix()
-                    for path in game_root.rglob("*") if path.is_file()
-                )
-                for relative_name in sorted(input_files):
-                    input_path = game_root / relative_name
-                    parts = PurePosixPath(relative_name).parts
-                    if parts and parts[0] in all_folders and parts[0] not in active_folders:
-                        continue
-                    if not input_path.is_file():
-                        raise FileNotFoundError(
-                            f'Die importierte Datei "{relative_name}" fehlt.'
-                        )
-                    if input_path in managed_input_paths:
-                        continue
-                    if parts and parts[0] in active_folders:
-                        archive_path = PurePosixPath(
-                            active_folders[parts[0]], *parts[1:]
-                        ).as_posix()
-                    else:
-                        archive_path = relative_name
-                    if archive_path in managed_archive_paths:
-                        continue
-                    if archive_path in asset_files:
-                        if Path(asset_files[archive_path]) != input_path:
-                            if deliberate_replacements.get(archive_path) == Path(
-                                asset_files[archive_path]
-                            ):
-                                continue
-                            raise ValueError(
-                                f'Die Datei "{archive_path}" würde im Export überschrieben.'
-                            )
-                        continue
-                    zip_file.write(input_path, archive_path)
+            zip_file.writestr("SQLSpellQuest.json", json_string)
+            write_prepared_assets(zip_file, asset_files)
+            write_imported_files(
+                request, zip_file, asset_files, managed_archive_paths
+            )
+
     zip_buffer.seek(0)
     response = HttpResponse(
         zip_buffer.getvalue(),
         content_type="application/zip",
     )
-    response[
-        "Content-Disposition"
-    ] = (
-        'attachment; '
-        'filename="SQLSpellQuest_export.zip"'
+    response["Content-Disposition"] = (
+        'attachment; filename="SQLSpellQuest_export.zip"'
     )
     return response
 
@@ -1814,7 +1644,7 @@ def level_grunddaten_view(request):
         if level_name_is_taken(
             request.session.get("game_json", {}),
             level_name,
-            request.session.get("editing_level_id"),
+            current_level_origin_id(request, saved_level),
         ):
             form_values["level_name"] = level_name
             form_values["level_greeting"] = level_greeting
@@ -1948,204 +1778,38 @@ def gegenstand_view(
 
 def edit_item_view(request, item_id):
     set_guided_level_creation(request, False)
-    saved_level = request.session.get(
-        "new_level",
-        {},
-    )
+    saved_level = request.session.get("new_level", {})
 
-    currently_edited_item = (
-        request.session.get(
-            "editing_item_id"
-        )
-    )
-
+    currently_edited_item = request.session.get("editing_item_id")
     if currently_edited_item != item_id:
-        selected_item_data = next(
-            (
-                item
-                for item in saved_level.get("items", [])
-                if (
-                    isinstance(item, dict)
-                    and item.get("id") == item_id
-                )
-            ),
-            None,
-        )
-        table_rows = None
-        if (
-            isinstance(selected_item_data, dict)
-            and selected_item_data.get("type") == "table"
-        ):
-            table_name = str(
-                selected_item_data.get(
-                    "tableName",
-                    selected_item_data.get("id", ""),
-                )
-            ).strip()
-            table_rows = database.get_editor_table_rows(
-                request,
-                saved_level,
-                table_name,
-            )
-
-        selected_item = (
-            utils.load_item_for_editing(
-                saved_level,
-                item_id,
-                table_rows=table_rows,
-            )
-        )
-
+        selected_item = load_item_draft(request, saved_level, item_id)
         if selected_item is None:
-            print(
-                f"Gegenstand '{item_id}' "
-                "wurde nicht gefunden."
-            )
+            print(f"Gegenstand '{item_id}' wurde nicht gefunden.")
+            return redirect("gegenstandVerwaltung")
 
-            return redirect(
-                "gegenstandVerwaltung"
-            )
-
-        request.session["new_level"] = (
-            saved_level
-        )
-        request.session[
-            "editing_item_id"
-        ] = item_id
-
+        request.session["new_level"] = saved_level
+        request.session["editing_item_id"] = item_id
         request.session.modified = True
 
-    summary = get_item_summary(
-        saved_level
-    )
+    summary = get_item_summary(saved_level)
 
     if request.method == "POST":
-        old_item_id = (
-            request.session.get(
-                "editing_item_id",
-                item_id,
-            )
+        old_item_id = request.session.get("editing_item_id", item_id)
+        current_item = utils.build_item_for_json(saved_level)
+        items = saved_level.get("items", [])
+        original_item = find_item(items, old_item_id)
+
+        preserve_original_item_fields(
+            current_item, original_item, saved_level
+        )
+        sync_edited_table_rows(
+            request, saved_level, current_item, original_item
+        )
+        saved_level["items"] = replace_item_and_update_references(
+            items, old_item_id, current_item
         )
 
-        current_item = (
-            utils.build_item_for_json(
-                saved_level
-            )
-        )
-
-        items = saved_level.get(
-            "items",
-            [],
-        )
-
-        original_item = next(
-            (
-                existing_item
-                for existing_item in items
-                if (
-                    isinstance(existing_item, dict)
-                    and existing_item.get("id") == old_item_id
-                )
-            ),
-            None,
-        )
-
-        if isinstance(original_item, dict):
-            if (
-                current_item.get("type") == "exit"
-                and "nextLevelId" in original_item
-                and "nextLevelId" not in current_item
-            ):
-                current_item["nextLevelId"] = saved_level.get("item", {}).get(
-                    "nextLevelId", ""
-                )
-            supported_fields = {
-                "id", "password", "neededItems", "type", "unlocked",
-                "boundingBoxImage", "boundingBoxIcon", "unlockHints",
-                "nextDialog", "tableName", "description", "imageLink",
-                "text", "nextLevelId",
-            }
-            for key, value in original_item.items():
-                if key not in supported_fields:
-                    current_item.setdefault(key, deepcopy(value))
-            for key in ("password", "nextDialog", "boundingBoxImage", "boundingBoxIcon"):
-                old_values = original_item.get(key)
-                new_values = current_item.get(key)
-                if isinstance(old_values, dict) and isinstance(new_values, dict):
-                    for nested_key, value in old_values.items():
-                        new_values.setdefault(nested_key, deepcopy(value))
-
-        old_table_name = (
-            database.table_name_for(original_item)
-            if isinstance(original_item, dict)
-            and original_item.get("type") == "table"
-            else ""
-        )
-        if current_item.get("type") == "table":
-            table_name = database.table_name_for(current_item)
-            table_sources = saved_level.get("_import_table_sources", {})
-            if old_table_name and old_table_name != table_name:
-                original_name = table_sources.pop(old_table_name, None)
-                if original_name:
-                    table_sources[table_name] = original_name
-            saved_level["_import_table_sources"] = table_sources
-            draft_rows = saved_level.get("item", {}).get("rows")
-            if not isinstance(draft_rows, list):
-                draft_rows = database.get_editor_table_rows(
-                    request, saved_level, old_table_name
-                )
-            database.set_editor_table_rows(
-                request,
-                saved_level,
-                table_name,
-                draft_rows,
-                old_table_name=old_table_name,
-            )
-        elif old_table_name:
-            database.remove_editor_table_rows(
-                request, saved_level, old_table_name
-            )
-
-        updated_items = []
-        item_replaced = False
-
-        for existing_item in items:
-            if (
-                    existing_item.get("id")
-                    == old_item_id
-            ):
-                updated_items.append(
-                    current_item
-                )
-                item_replaced = True
-            else:
-                updated_items.append(
-                    existing_item
-                )
-
-        if not item_replaced:
-            updated_items.append(
-                current_item
-            )
-
-        if old_item_id != current_item.get("id"):
-            for dependent in updated_items:
-                if not isinstance(dependent, dict):
-                    continue
-                needed_items = dependent.get("neededItems")
-                if isinstance(needed_items, list):
-                    dependent["neededItems"] = [
-                        current_item["id"] if needed == old_item_id else needed
-                        for needed in needed_items
-                    ]
-
-        saved_level["items"] = (
-            updated_items
-        )
-
-        request.session["new_level"] = (
-            saved_level
-        )
+        request.session["new_level"] = saved_level
         request.session.modified = True
 
         if request.session.get("editing_level_id"):
@@ -2153,47 +1817,19 @@ def edit_item_view(request, item_id):
         else:
             game_json, saved_level = utils.save_new_level_to_game_json(request)
 
-        for draft_key in ("item", "unlockCondition", "position"):
-            saved_level.pop(draft_key, None)
+        clear_item_draft(saved_level)
+        request.session["new_level"] = saved_level
+        request.session["game_json"] = game_json
 
-        request.session["new_level"] = (
-            saved_level
-        )
-        request.session["game_json"] = (
-            game_json
-        )
-
-        request.session.pop(
-            "item_edit_mode",
-            None,
-        )
-        request.session.pop(
-            "editing_item_id",
-            None,
-        )
-        request.session.pop(
-            "editing_item_section",
-            None,
-        )
+        request.session.pop("item_edit_mode", None)
+        request.session.pop("editing_item_id", None)
+        request.session.pop("editing_item_section", None)
         request.session.pop("item_creation_return_to", None)
-
         request.session.modified = True
 
-        print(
-            "Bearbeiteter Gegenstand "
-            "gespeichert:"
-        )
-        print(
-            json.dumps(
-                current_item,
-                ensure_ascii=False,
-                indent=2,
-            )
-        )
-
-        return redirect(
-            "gegenstandVerwaltung"
-        )
+        print("Bearbeiteter Gegenstand gespeichert:")
+        print(json.dumps(current_item, ensure_ascii=False, indent=2))
+        return redirect("gegenstandVerwaltung")
 
     return render(
         request,
@@ -2352,7 +1988,7 @@ def save_level_view(request):
     if not level_id:
         return redirect("levelGrunddaten")
 
-    editing_level_id = request.session.get("editing_level_id")
+    editing_level_id = current_level_origin_id(request, saved_level)
     game_json = request.session.get("game_json", {})
     if level_name_is_taken(game_json, level_id, editing_level_id):
         return redirect("levelGrunddaten")
@@ -2402,6 +2038,7 @@ def save_level_view(request):
             )
 
     request.session.pop("editing_level_id", None)
+    request.session.pop("auto_saved_level_id", None)
     request.session.pop("editing_item_id", None)
     request.session.pop("item_edit_mode", None)
     request.session.pop("editing_item_section", None)

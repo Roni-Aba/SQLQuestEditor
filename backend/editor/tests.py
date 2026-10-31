@@ -197,6 +197,8 @@ class GuidedLevelTests(TestCase):
                     "auswahl_view" if last_item else "create_level3",
                 )
 
+            self.step("save_level", {}, "level")
+
             response = self.client.get(reverse("export_game"))
             self.assertEqual(response.status_code, 200)
 
@@ -229,6 +231,31 @@ class GuidedLevelTests(TestCase):
                     f"{level['id']}/databases/{level['databaseName']}",
                     exported.namelist(),
                 )
+
+    def test_save_level_from_existing_guided_session(self):
+        with TemporaryDirectory() as root, self.settings(BASE_DIR=Path(root)):
+            self.step("new_game", {}, "level")
+            self.client.get(reverse("create_level"))
+            self.step(
+                "create_level1",
+                {"level_name": "level1", "level_greeting": "Hallo"},
+                "create_level2",
+            )
+            self.step(
+                "create_level8",
+                {"next_action": "level_management"},
+                "auswahl_view",
+            )
+
+            session = self.client.session
+            session.pop("auto_saved_level_id", None)
+            session.save()
+
+            self.step("save_level", {}, "level")
+            self.assertEqual(
+                [level["id"] for level in self.client.session["game_json"]["level"]],
+                ["level1"],
+            )
 
     def test_save_imported_level_without_changes(self):
         example = Path(__file__).parent / "tests/data/SQLSpellQuest_export-24"
