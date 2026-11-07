@@ -1,13 +1,16 @@
 import json
-from pathlib import Path
 
 from django.conf import settings
-from django.core.files.storage import FileSystemStorage
 from django.shortcuts import redirect, render
 
-from .. import database, utils
-from ..services.level_basics import level1_form_values
-from .shared import get_steps, level_name_is_taken, save_new_level_session
+from .. import database
+from ..services.level_basics import (
+    level1_form_values,
+    level_name_is_taken,
+    update_level_basics,
+    update_level_picture,
+)
+from .shared import get_steps, save_new_level_session
 
 def create_level1_view(request):
     steps = get_steps(active_step=1)
@@ -29,27 +32,15 @@ def create_level1_view(request):
                 "error_message": f'Der Levelname "{level_id}" wird bereits verwendet.',
             })
 
-        saved_level["id"] = level_id
-        saved_level["databaseName"] = utils.database_name_for_level(level_id)
+        update_level_basics(saved_level, level_id, start_dialog)
         database.finalize_editor_level_rows(
             request,
             saved_level,
             level_id,
         )
-        saved_level["startDialog"] = start_dialog
-        uploaded_picture = request.FILES.get("levelPicture")
-        if uploaded_picture:
-            upload_dir = (Path(settings.BASE_DIR) / "editor" / "static" / "editor" / "img" / "levels")
-            upload_dir.mkdir(parents=True, exist_ok=True)
-            storage = FileSystemStorage(location=upload_dir)
-            level_picture_name = storage.save(
-                uploaded_picture.name,
-                uploaded_picture
-            )
-            saved_level["levelPicture"] = level_picture_name
-            saved_level.setdefault("_new_asset_sources", {})[
-                level_picture_name
-            ] = str(upload_dir / level_picture_name)
+        update_level_picture(
+            saved_level, request.FILES.get("levelPicture"), settings.BASE_DIR
+        )
         save_new_level_session(request, saved_level)
         print("createLevel1 gespeichert:")
         print(json.dumps(saved_level, ensure_ascii=False, indent=2))

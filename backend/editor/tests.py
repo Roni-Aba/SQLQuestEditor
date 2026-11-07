@@ -954,6 +954,61 @@ class GuidedLevelTests(TestCase):
                 saved["queryRestriction"]["rowRestriction"]["maxNumber"], 5
             )
 
+    def test_level_shortcut_picture_replacement_survives_export(self):
+        example = Path(__file__).parent / "tests/data/SQLSpellQuest_export-24"
+        picture_name = "replacement.png"
+        picture_bytes = b"new level picture"
+
+        with TemporaryDirectory() as root, self.settings(BASE_DIR=Path(root)):
+            self.import_example_game(example)
+            self.client.get(reverse("edit_level", args=["level1"]))
+
+            upload_dir = Path(root) / "editor/static/editor/img/levels"
+            upload_dir.mkdir(parents=True)
+            existing_picture = upload_dir / picture_name
+            existing_picture.write_bytes(b"existing picture")
+
+            self.step("levelGrunddaten", {
+                "level_name": "level1",
+                "level_greeting": "Neue Begrüßung",
+                "levelPicture": SimpleUploadedFile(
+                    picture_name, picture_bytes, content_type="image/png"
+                ),
+            }, "auswahl_view")
+
+            saved = self.client.session["new_level"]
+            saved_picture_name = saved["levelPicture"]
+            self.assertNotEqual(saved_picture_name, picture_name)
+            self.assertEqual(existing_picture.read_bytes(), b"existing picture")
+            self.assertEqual(
+                (upload_dir / saved_picture_name).read_bytes(), picture_bytes
+            )
+            self.assertEqual(
+                saved["_new_asset_sources"][saved_picture_name],
+                str(upload_dir / saved_picture_name),
+            )
+
+            self.step("levelGrunddaten", {
+                "level_name": "level1",
+                "level_greeting": "Neue Begrüßung",
+            }, "auswahl_view")
+            self.assertEqual(
+                self.client.session["new_level"]["levelPicture"],
+                saved_picture_name,
+            )
+            self.step("save_level", {}, "level")
+
+            response = self.client.get(reverse("export_game"))
+            self.assertEqual(response.status_code, 200)
+            with ZipFile(BytesIO(response.content)) as archive:
+                exported_level = json.loads(archive.read("SQLSpellQuest.json"))["level"][0]
+                self.assertEqual(exported_level["levelPicture"], saved_picture_name)
+                self.assertEqual(exported_level["databaseName"], "level1.db")
+                self.assertEqual(exported_level["startDialog"], "Neue Begrüßung")
+                self.assertEqual(
+                    archive.read(f"level1/assets/{saved_picture_name}"), picture_bytes
+                )
+
     def test_wechsel_von_tabelle_zu_hinweis_entfernt_tabellendaten(self):
         session = self.client.session
         session["new_level"] = {

@@ -6,6 +6,7 @@ from django.views.decorators.http import require_POST
 
 from .. import database, utils
 from ..services.game_messages import normalize_game_messages
+from ..services.level_basics import level_name_is_taken
 from ..services.level_delete import referencing_level_ids, remove_level_from_list
 from ..services.level_save import (
     replace_or_append_level,
@@ -14,7 +15,6 @@ from ..services.level_save import (
 )
 from .shared import (
     current_level_origin_id,
-    level_name_is_taken,
     set_guided_level_creation,
 )
 

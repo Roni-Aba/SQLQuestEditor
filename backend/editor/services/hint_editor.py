@@ -1,5 +1,4 @@
-from pathlib import Path
-from django.core.files.storage import FileSystemStorage
+from .assets import save_uploaded_image
 
 def update_hint_field(item, post_data):
     hint_type = post_data.get("hint_type","").strip()
@@ -17,17 +16,11 @@ def update_hint_field(item, post_data):
 
 def update_hint_image(item, saved_level, uploaded_image, hint_type, base_dir):
     if uploaded_image:
-        upload_dir = (
-            Path(base_dir) / "editor" / "static" / "editor" / "img" / "hints"
-        )
-        upload_dir.mkdir(parents=True, exist_ok=True)
-
-        storage = FileSystemStorage(location=upload_dir)
-        filename = storage.save(uploaded_image.name, uploaded_image)
+        filename, source_path = save_uploaded_image(uploaded_image, base_dir, "hints")
 
         item["imageLink"] = filename
         saved_level.setdefault("_new_asset_sources", {})[
             filename
-        ] = str(upload_dir / filename)
+        ] = source_path
     elif hint_type == "text":
         item["imageLink"] = ""

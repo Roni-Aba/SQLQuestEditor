@@ -1,11 +1,9 @@
 import json
-from pathlib import Path
 
 from django.conf import settings
-from django.core.files.storage import FileSystemStorage
 from django.shortcuts import redirect, render
 
-from .. import database, utils
+from .. import database
 from ..services.game_messages import (
     normalize_game_messages,
     messages_form_values,
@@ -15,10 +13,12 @@ from ..services.level_basics import (
     level1_form_values,
     level2_form_values,
     query_restriction_from_post,
+    level_name_is_taken,
+    update_level_basics,
+    update_level_picture,
 )
 from .shared import (
     current_level_origin_id,
-    level_name_is_taken,
     set_guided_level_creation,
 )
 
@@ -63,30 +63,10 @@ def level_grunddaten_view(request):
                 },
             )
 
-        uploaded_picture = request.FILES.get("levelPicture")
-        if uploaded_picture:
-            upload_dir = (
-                Path(settings.BASE_DIR)
-                / "editor"
-                / "static"
-                / "editor"
-                / "img"
-                / "levels"
-            )
-            upload_dir.mkdir(parents=True, exist_ok=True)
-
-            storage = FileSystemStorage(location=upload_dir)
-            level_picture_name = storage.save(
-                uploaded_picture.name,
-                uploaded_picture,
-            )
-            saved_level["levelPicture"] = level_picture_name
-            saved_level.setdefault("_new_asset_sources", {})[
-                level_picture_name
-            ] = str(upload_dir / level_picture_name)
-
-        saved_level["id"] = level_name
-        saved_level["databaseName"] = utils.database_name_for_level(level_name)
+        update_level_picture(
+            saved_level, request.FILES.get("levelPicture"), settings.BASE_DIR
+        )
+        update_level_basics(saved_level, level_name, level_greeting)
 
         if not request.session.get("editing_level_id"):
             database.finalize_editor_level_rows(
@@ -95,7 +75,6 @@ def level_grunddaten_view(request):
                 level_name,
             )
 
-        saved_level["startDialog"] = level_greeting
         request.session["new_level"] = saved_level
         request.session.modified = True
 
