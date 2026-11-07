@@ -1,4 +1,8 @@
+{% load static %}
 <form
+  data-submit-button-id="{{ submit_button_id }}"
+  data-has-existing-picture="{% if form_values.level_picture %}true{% else %}false{% endif %}"
+  data-require-picture="{% if require_picture %}true{% else %}false{% endif %}"
   action="{{ form_action }}"
   method="post"
   enctype="multipart/form-data"
@@ -150,63 +154,4 @@
   </nav>
 </form>
 
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const pictureInput = document.getElementById(
-      "level-picture-input"
-    );
-
-    const pictureFeedback = document.getElementById(
-      "level-picture-feedback"
-    );
-
-    const submitButton = document.getElementById(
-      "{{ submit_button_id }}"
-    );
-
-    if (!pictureInput || !pictureFeedback || !submitButton) {
-      return;
-    }
-
-    const hasExistingPicture =
-      {% if form_values.level_picture %}true{% else %}false{% endif %};
-
-    const requirePicture =
-      {% if require_picture %}true{% else %}false{% endif %};
-
-    const existingPictureText =
-      pictureFeedback.textContent.trim();
-
-    const updateSubmitButton = (hasPicture) => {
-      if (!requirePicture) {
-        return;
-      }
-
-      submitButton.disabled = !hasPicture;
-    };
-
-    const updatePictureFeedback = (selectedFile) => {
-      if (selectedFile) {
-        pictureFeedback.textContent =
-          `Neu ausgewählt: ${selectedFile.name}`;
-
-        updateSubmitButton(true);
-        return;
-      }
-
-      pictureFeedback.textContent = hasExistingPicture
-        ? existingPictureText
-        : "Noch kein Bild ausgewählt";
-
-      updateSubmitButton(hasExistingPicture);
-    };
-
-    updateSubmitButton(hasExistingPicture);
-
-    pictureInput.addEventListener("change", () => {
-      const selectedFile = pictureInput.files[0] ?? null;
-
-      updatePictureFeedback(selectedFile);
-    });
-  });
-</script>
+<script src="{% static 'editor/js/levelGrunddatenForm.js' %}" defer></script>
