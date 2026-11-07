@@ -35,6 +35,49 @@ def parse_table_columns(column_ids, column_types):
 
     return columns, error_message
 
+def convert_table_cell_value(
+    raw_value,
+    column_type,
+):
+    if raw_value is None:
+        return None
+
+    if column_type == "boolean":
+        if isinstance(raw_value, bool):
+            return raw_value
+
+        normalized_value = str(
+            raw_value
+        ).strip().lower()
+
+        return normalized_value in {
+            "true",
+            "1",
+            "yes",
+            "on",
+            "ja",
+        }
+
+    normalized_value = str(
+        raw_value
+    ).strip()
+
+    if column_type == "number":
+        if normalized_value == "":
+            return ""
+
+        try:
+            if "." in normalized_value:
+                return float(normalized_value)
+
+            return int(normalized_value)
+
+        except ValueError:
+            return normalized_value
+
+    return normalized_value
+
+
 def parse_table_rows(raw_rows_json, columns):
     try:
         submitted_rows = json.loads(raw_rows_json)
@@ -57,7 +100,7 @@ def parse_table_rows(raw_rows_json, columns):
             column_id = column["id"]
             column_type = column["type"]
             raw_value = submitted_row.get(column_id, "")
-            cleaned_value = utils.convert_table_cell_value(
+            cleaned_value = convert_table_cell_value(
                 raw_value,
                 column_type,
             )

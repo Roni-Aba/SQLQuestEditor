@@ -336,49 +336,6 @@ def _reserve_asset_filename(
 
         counter += 1
 
-def convert_table_cell_value(
-    raw_value,
-    column_type,
-):
-    if raw_value is None:
-        return None
-
-    if column_type == "boolean":
-        if isinstance(raw_value, bool):
-            return raw_value
-
-        normalized_value = str(
-            raw_value
-        ).strip().lower()
-
-        return normalized_value in {
-            "true",
-            "1",
-            "yes",
-            "on",
-            "ja",
-        }
-
-    normalized_value = str(
-        raw_value
-    ).strip()
-
-    if column_type == "number":
-        if normalized_value == "":
-            return ""
-
-        try:
-            if "." in normalized_value:
-                return float(normalized_value)
-
-            return int(normalized_value)
-
-        except ValueError:
-            return normalized_value
-
-    return normalized_value
-
-
 def build_item_for_json(saved_level):
     item_data = saved_level.get(
         "item",
