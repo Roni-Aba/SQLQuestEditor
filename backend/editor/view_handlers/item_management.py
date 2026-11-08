@@ -5,6 +5,7 @@ from django.shortcuts import redirect, render
 
 from .. import utils
 from ..services.item_service import (
+    build_item_for_json,
     clear_item_draft,
     remove_item_from_level,
     remove_item_from_game_levels,
@@ -85,7 +86,7 @@ def edit_item_view(request, item_id):
 
     if request.method == "POST":
         old_item_id = request.session.get("editing_item_id", item_id)
-        current_item = utils.build_item_for_json(saved_level)
+        current_item = build_item_for_json(saved_level)
         items = saved_level.get("items", [])
         original_item = find_item(items, old_item_id)
 

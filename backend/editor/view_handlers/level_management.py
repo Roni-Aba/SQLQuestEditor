@@ -6,6 +6,7 @@ from django.views.decorators.http import require_POST
 
 from .. import database, utils
 from ..services.game_messages import normalize_game_messages
+from ..services.item_service import save_current_item_to_new_level
 from ..services.level_basics import level_name_is_taken
 from ..services.level_delete import referencing_level_ids, remove_level_from_list
 from ..services.level_save import (
@@ -213,7 +214,7 @@ def save_level_view(request):
         for draft_key in ("item", "unlockCondition", "position"):
             saved_level.pop(draft_key, None)
     else:
-        saved_level = utils.save_current_item_to_new_level(saved_level)
+        saved_level = save_current_item_to_new_level(saved_level)
 
     level_for_json = utils.build_level_for_json(saved_level)
     level_id = str(level_for_json.get("id", "")).strip()

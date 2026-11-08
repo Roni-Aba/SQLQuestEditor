@@ -1,5 +1,254 @@
-from .. import database
 import json
+
+from .. import database
+from ..database import EDITOR_TO_JSON_TYPES
+
+def build_item_for_json(saved_level):
+    item_data = saved_level.get(
+        "item",
+        {},
+    )
+
+    unlock_condition = saved_level.get(
+        "unlockCondition",
+        {},
+    )
+
+    position = saved_level.get(
+        "position",
+        {},
+    )
+
+    required_items = item_data.get(
+        "unlockedItems",
+        unlock_condition.get("requiredItems", []),
+    )
+
+    failure_hints = unlock_condition.get(
+        "failureHints",
+        [],
+    )
+
+    unlock_hints = []
+
+    requires_password = unlock_condition.get(
+        "requiresPassword",
+        False,
+    )
+
+    for hint in failure_hints:
+        attempts = hint.get(
+            "attempts"
+        )
+
+        message = hint.get(
+            "message",
+            "",
+        )
+
+        if attempts is None or not message:
+            continue
+
+        unlock_hints.append(
+            {
+                "numWrongAttempts": attempts,
+                "hint": message,
+            }
+        )
+
+    item = {
+        "id": item_data.get(
+            "id",
+            "",
+        ),
+        "password": {
+            "unlockPasswords": unlock_condition.get(
+                "passwords",
+                [],
+            ),
+            "passwordHint": unlock_condition.get(
+                "passwordHint",
+                "",
+            ),
+        },
+        "neededItems": required_items,
+        "type": item_data.get(
+            "type",
+            "",
+        ),
+        "unlocked": not requires_password,
+        "boundingBoxImage": position.get(
+            "boundingBoxImage",
+            {
+                "x": 0,
+                "y": 0,
+                "width": 0,
+                "height": 0,
+            },
+        ),
+        "boundingBoxIcon": position.get(
+            "boundingBoxIcon",
+            {
+                "x": 0,
+                "y": 0,
+                "width": 0,
+                "height": 0,
+            },
+        ),
+        "unlockHints": unlock_hints,
+        "nextDialog": {
+            "afterUnlock": unlock_condition.get(
+                "successMessage",
+                "",
+            ),
+            "afterQuery": unlock_condition.get("afterQuery", ""),
+        },
+    }
+
+    if item["type"] == "exit" and item_data.get("nextLevelId"):
+        item["nextLevelId"] = item_data["nextLevelId"]
+
+    if item["type"] == "table":
+        table_name = str(
+            item_data.get(
+                "tableName",
+                "",
+            )
+        ).strip()
+        if not table_name:
+            table_name = str(
+                item_data.get(
+                    "id",
+                    "",
+                )
+            ).strip()
+        item["tableName"] = table_name
+
+        description = []
+
+        columns = item_data.get(
+            "columns",
+            [],
+        )
+
+        if not isinstance(
+            columns,
+            list,
+        ):
+            columns = []
+
+        for column in columns:
+            if not isinstance(
+                column,
+                dict,
+            ):
+                continue
+
+            column_id = str(
+                column.get(
+                    "id",
+                    "",
+                )
+            ).strip()
+
+            column_type = str(
+                column.get(
+                    "type",
+                    "",
+                )
+            ).strip()
+
+            if not column_id or not column_type:
+                continue
+
+            json_type = EDITOR_TO_JSON_TYPES.get(
+                column_type,
+                column_type,
+            )
+
+            description.append(
+                f"{column_id} ({json_type})"
+            )
+
+        item["description"] = description
+
+    if item["type"] == "hint":
+        item["imageLink"] = item_data.get(
+            "imageLink",
+            "",
+        )
+
+        item["text"] = item_data.get(
+            "text",
+            "",
+        )
+
+    if item["type"] == "exit":
+        item["nextDialog"]["afterUnlock"] = (
+            item_data.get(
+                "exitSuccessMessage",
+                unlock_condition.get(
+                    "successMessage",
+                    "",
+                ),
+            )
+        )
+    return item
+
+
+def save_current_item_to_new_level(
+    saved_level,
+):
+    new_item = build_item_for_json(
+        saved_level
+    )
+
+    if not new_item.get(
+        "id"
+    ):
+        return saved_level
+
+    items = saved_level.get(
+        "items",
+        [],
+    )
+
+    if not isinstance(
+        items,
+        list,
+    ):
+        items = []
+
+    existing_index = None
+
+    for index, item in enumerate(
+        items
+    ):
+        if not isinstance(
+            item,
+            dict,
+        ):
+            continue
+
+        if item.get(
+            "id"
+        ) == new_item.get(
+            "id"
+        ):
+            existing_index = index
+            break
+
+    if existing_index is not None:
+        items[existing_index] = new_item
+    else:
+        items.append(
+            new_item
+        )
+
+    saved_level["items"] = items
+
+    return saved_level
+
 
 def clear_item_draft(saved_level):
     for key in ("item", "unlockCondition", "position"):
