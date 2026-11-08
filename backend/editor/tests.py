@@ -1643,3 +1643,62 @@ class ImportExportTests(TestCase):
         })
 
         self.assertEqual(self.client.session["game_json"], expected_game)
+
+class TableSchemaTests(SimpleTestCase):
+    def test_imported_column_types_remain_editable(self):
+        from .utils import load_item_for_editing
+
+        description = [
+            " ID (INTEGER) ", "Titel (VARCHAR)", "Menge (number)",
+            "Datum (date)", "Aktiv (BOOL)", "Notiz", "Preis (decimal)",
+            "Wert (extra) (int)", "", " (varchar)",
+        ]
+        level = {"items": [{
+            "id": "Tabelle", "type": "table", "description": description,
+        }]}
+
+        load_item_for_editing(level, "Tabelle")
+
+        self.assertEqual(level["item"]["columns"], [
+            {"id": "ID", "type": "number"},
+            {"id": "Titel", "type": "text"},
+            {"id": "Menge", "type": "number"},
+            {"id": "Datum", "type": "date"},
+            {"id": "Aktiv", "type": "boolean"},
+            {"id": "Notiz", "type": "text"},
+            {"id": "Preis", "type": "decimal"},
+            {"id": "Wert (extra)", "type": "number"},
+        ])
+        self.assertEqual(level["items"][0]["description"], description)
+
+    def test_database_types_and_boolean_null_values_survive_round_trip(self):
+        from .database import create_level_database, read_table_rows
+
+        item = {
+            "id": "Tabelle", "type": "table",
+            "description": [
+                "ID (integer)", "Titel (varchar)", "Datum (date)",
+                "Menge (number)", "Aktiv (bool)", "Preis (decimal)",
+            ],
+        }
+        rows = [
+            {"ID": 7, "Titel": "Aldi", "Datum": "2026-01-01",
+             "Menge": 3, "Aktiv": True, "Preis": "2.50"},
+            {"ID": 42, "Titel": None, "Datum": None,
+             "Menge": 0, "Aktiv": None, "Preis": ""},
+        ]
+
+        with TemporaryDirectory() as root:
+            database_path = Path(root) / "level1.db"
+            create_level_database(
+                database_path, {"items": [item]}, {"Tabelle": rows}
+            )
+
+            self.assertEqual(read_table_rows(database_path, item), rows)
+            with sqlite3.connect(database_path) as connection:
+                columns = connection.execute('PRAGMA table_info("Tabelle")').fetchall()
+            self.assertEqual(
+                [(column[1], column[2]) for column in columns],
+                [("ID", "INTEGER"), ("Titel", "TEXT"), ("Datum", "TEXT"),
+                 ("Menge", "INTEGER"), ("Aktiv", "INTEGER"), ("Preis", "TEXT")],
+            )

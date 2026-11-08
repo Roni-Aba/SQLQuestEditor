@@ -1,5 +1,8 @@
 from pathlib import Path
 from copy import deepcopy
+
+from .table_schema import EDITOR_TO_JSON_TYPES, editor_columns_from_description
+
 def prepare_game_json_for_export(
     game_json,
     base_dir,
@@ -457,13 +460,6 @@ def build_item_for_json(saved_level):
             ).strip()
         item["tableName"] = table_name
 
-        type_mapping = {
-            "text": "varchar",
-            "number": "int",
-            "date": "date",
-            "boolean": "bool",
-        }
-
         description = []
 
         columns = item_data.get(
@@ -501,7 +497,7 @@ def build_item_for_json(saved_level):
             if not column_id or not column_type:
                 continue
 
-            json_type = type_mapping.get(
+            json_type = EDITOR_TO_JSON_TYPES.get(
                 column_type,
                 column_type,
             )
@@ -912,7 +908,7 @@ def load_item_for_editing(
         item_data["tableName"] = table_name
 
         item_data["columns"] = (
-            parse_table_description(
+            editor_columns_from_description(
                 selected_item.get(
                     "description",
                     [],
@@ -1033,82 +1029,6 @@ def load_item_for_editing(
     }
 
     return selected_item
-
-
-def parse_table_description(
-    description,
-):
-    type_mapping = {
-        "varchar": "text",
-        "text": "text",
-        "int": "number",
-        "integer": "number",
-        "number": "number",
-        "date": "date",
-        "bool": "boolean",
-        "boolean": "boolean",
-    }
-
-    columns = []
-
-    if not isinstance(
-        description,
-        list,
-    ):
-        return columns
-
-    for entry in description:
-        entry = str(
-            entry
-        ).strip()
-
-        if not entry:
-            continue
-
-        if (
-            "(" not in entry
-            or not entry.endswith(
-                ")"
-            )
-        ):
-            columns.append(
-                {
-                    "id": entry,
-                    "type": "text",
-                }
-            )
-
-            continue
-
-        column_id, raw_type = (
-            entry.rsplit(
-                "(",
-                1,
-            )
-        )
-
-        column_id = column_id.strip()
-
-        raw_type = (
-            raw_type[:-1]
-            .strip()
-            .lower()
-        )
-
-        if not column_id:
-            continue
-
-        columns.append(
-            {
-                "id": column_id,
-                "type": type_mapping.get(
-                    raw_type,
-                    raw_type,
-                ),
-            }
-        )
-
-    return columns
 
 
 def remove_item_from_level(

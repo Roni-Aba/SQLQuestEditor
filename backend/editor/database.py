@@ -5,6 +5,8 @@ import uuid
 from copy import deepcopy
 from pathlib import Path
 
+from .table_schema import JSON_TO_SQL_TYPES, parse_description_columns
+
 
 EDITOR_TABLE_ROWS_FILENAME = ".editor-table-rows.json"
 EDITOR_LEVEL_DRAFT_KEY = "_editor_table_rows_key"
@@ -13,18 +15,6 @@ EDITOR_TABLE_DRAFT_KEY = "_editor_table_rows_table_key"
 
 class EditorTableDataError(sqlite3.DatabaseError):
     """Raised when table data referenced by a game cannot be loaded."""
-
-
-TYPE_MAPPING = {
-    "text": "TEXT",
-    "varchar": "TEXT",
-    "date": "TEXT",
-    "number": "INTEGER",
-    "int": "INTEGER",
-    "integer": "INTEGER",
-    "boolean": "INTEGER",
-    "bool": "INTEGER",
-}
 
 
 def quote_identifier(identifier):
@@ -145,30 +135,6 @@ def _read_only_connection(database_path):
     return sqlite3.connect(database_uri, uri=True)
 
 
-def _description_columns(description):
-    if not isinstance(description, list):
-        return []
-
-    columns = []
-    for entry in description:
-        normalized_entry = str(entry).strip()
-        if not normalized_entry:
-            continue
-
-        if "(" in normalized_entry and normalized_entry.endswith(")"):
-            column_name, raw_type = normalized_entry.rsplit("(", 1)
-            column_name = column_name.strip()
-            column_type = raw_type[:-1].strip().lower()
-        else:
-            column_name = normalized_entry
-            column_type = "text"
-
-        if column_name:
-            columns.append({"id": column_name, "type": column_type})
-
-    return columns
-
-
 def read_table_rows(database_path, table_item):
     table_name = table_name_for(table_item)
     if not table_name or database_path is None:
@@ -187,7 +153,7 @@ def read_table_rows(database_path, table_item):
             f"SELECT * FROM {quote_identifier(table_name)}"
         ).fetchall()
 
-    description_columns = _description_columns(
+    description_columns = parse_description_columns(
         table_item.get("description", [])
     )
     requested_columns = [column["id"] for column in description_columns]
@@ -531,7 +497,7 @@ def _create_table(connection, table_item, rows):
     if not table_name:
         return
 
-    columns = _description_columns(table_item.get("description", []))
+    columns = parse_description_columns(table_item.get("description", []))
     column_definitions = []
     has_id_column = False
 
@@ -543,7 +509,7 @@ def _create_table(connection, table_item, rows):
                 f"{quote_identifier(column_name)} INTEGER PRIMARY KEY AUTOINCREMENT"
             )
         else:
-            sql_type = TYPE_MAPPING.get(column["type"], "TEXT")
+            sql_type = JSON_TO_SQL_TYPES.get(column["type"], "TEXT")
             nullable = any(
                 isinstance(row, dict) and row.get(column_name) is None
                 for row in (rows if isinstance(rows, list) else [])
@@ -644,7 +610,7 @@ def create_level_database(
                     f"ALTER TABLE {quote_identifier(original_name)} "
                     f"RENAME TO {quote_identifier(table_name)}"
                 )
-            columns = _description_columns(item.get("description", []))
+            columns = parse_description_columns(item.get("description", []))
             requested = [column["id"] for column in columns]
             if not any(name.lower() == "id" for name in requested):
                 requested.insert(0, "ID")
