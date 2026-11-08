@@ -49,98 +49,45 @@ def build_game_export(request, base_dir):
 
 
 def prepare_game_json_for_export(
-    game_json,
-    base_dir,
-    game_root=None,
-    import_sources=None,
+    game_json, base_dir, game_root=None, import_sources=None
 ):
-    if not isinstance(
-        game_json,
-        dict,
-    ):
+    if not isinstance(game_json, dict):
         game_json = {}
 
-    export_game_json = deepcopy(
-        game_json
-    )
-
+    export_game_json = deepcopy(game_json)
     asset_files = {}
-
-    base_dir = Path(
-        base_dir
-    )
+    base_dir = Path(base_dir)
     game_root = Path(game_root) if game_root else None
 
     level_image_directories = [
-        (
-            base_dir
-            / "editor"
-            / "static"
-            / "editor"
-            / "img"
-            / "levels"
-        ),
+        base_dir / "editor" / "static" / "editor" / "img" / "levels",
+    ]
+    item_image_directories = [
+        base_dir / "editor" / "static" / "editor" / "img" / "hints",
+        base_dir / "editor" / "static" / "editor" / "img" / "items",
+        base_dir / "editor" / "static" / "editor" / "img",
     ]
 
-    item_image_directories = [
-        (
-            base_dir
-            / "editor"
-            / "static"
-            / "editor"
-            / "img"
-            / "hints"
-        ),
-        (
-            base_dir
-            / "editor"
-            / "static"
-            / "editor"
-            / "img"
-            / "items"
-        ),
-        (
-            base_dir
-            / "editor"
-            / "static"
-            / "editor"
-            / "img"
-        ),
-    ]
-    levels = export_game_json.get(
-        "level",
-        [],
-    )
-    if not isinstance(
-        levels,
-        list,
-    ):
+    levels = export_game_json.get("level", [])
+    if not isinstance(levels, list):
         levels = []
         export_game_json["level"] = levels
+
     used_level_names = set()
-    for level_index, level in enumerate(
-        levels
-    ):
-        if not isinstance(
-            level,
-            dict,
-        ):
+    for level_index, level in enumerate(levels):
+        if not isinstance(level, dict):
             continue
-        requested_level_id = level.get(
-            "id",
-            f"level{level_index}",
-        )
+
+        requested_level_id = level.get("id", f"level{level_index}")
         level_folder = sanitize_export_name(
-            requested_level_id,
-            fallback=f"level{level_index}",
+            requested_level_id, fallback=f"level{level_index}"
         )
         if level_folder.casefold() in used_level_names:
             raise ValueError(
                 f'Die Levelnamen erzeugen denselben Exportordner "{level_folder}".'
             )
-        used_level_names.add(
-            level_folder.casefold()
-        )
+        used_level_names.add(level_folder.casefold())
+
         original_level_folder = level_folder
         imported_source = (import_sources or {}).get(str(requested_level_id), {})
         imported_assets = imported_source.get("assets", {})
@@ -151,123 +98,63 @@ def prepare_game_json_for_export(
                 game_root / "assets",
                 game_root,
             ]
+
         level_asset_names = {}
-        level_picture = level.get(
-            "levelPicture",
-            "",
-        )
-
+        level_picture = level.get("levelPicture", "")
         if level_picture:
-            clean_level_picture = (
-                sanitize_export_name(
-                    level_picture,
-                    fallback="level_background",
-                )
+            clean_level_picture = sanitize_export_name(
+                level_picture, fallback="level_background"
             )
-
-            level["levelPicture"] = (
-                clean_level_picture
-            )
-
+            level["levelPicture"] = clean_level_picture
             source_path = resolve_export_asset(
-                clean_level_picture, imported_assets,
+                clean_level_picture,
+                imported_assets,
                 level_image_directories + imported_image_directories,
             )
-
             if source_path is not None:
-                exported_filename = (
-                    _reserve_asset_filename(
-                        clean_level_picture,
-                        source_path,
-                        level_asset_names,
-                    )
+                exported_filename = _reserve_asset_filename(
+                    clean_level_picture, source_path, level_asset_names
                 )
+                archive_path = f"{level_folder}/assets/{exported_filename}"
+                asset_files[archive_path] = source_path
+                level["levelPicture"] = exported_filename
 
-                archive_path = (
-                    f"{level_folder}/assets/"
-                    f"{exported_filename}"
-                )
-
-                asset_files[
-                    archive_path
-                ] = source_path
-                level["levelPicture"] = (
-                    exported_filename
-                )
         database_filename = database_name_for_level(
-            requested_level_id,
-            fallback=f"level{level_index}",
+            requested_level_id, fallback=f"level{level_index}"
         )
+        level["databaseName"] = database_filename
 
-        level["databaseName"] = (
-            database_filename
-        )
-
-        items = level.get(
-            "items",
-            [],
-        )
-
-        if not isinstance(
-            items,
-            list,
-        ):
+        items = level.get("items", [])
+        if not isinstance(items, list):
             items = []
             level["items"] = items
 
         for item in items:
-            if not isinstance(
-                item,
-                dict,
-            ):
+            if not isinstance(item, dict):
                 continue
 
             item.pop("data", None)
-
-            image_link = item.get(
-                "imageLink",
-                "",
-            )
-
+            image_link = item.get("imageLink", "")
             if not image_link:
                 continue
 
-            clean_image_link = (sanitize_export_name(image_link,fallback="hint_image",))
-            item["imageLink"] = (clean_image_link)
+            clean_image_link = sanitize_export_name(image_link, fallback="hint_image")
+            item["imageLink"] = clean_image_link
             source_path = resolve_export_asset(
-                clean_image_link, imported_assets,
+                clean_image_link,
+                imported_assets,
                 item_image_directories + imported_image_directories,
             )
-
-            exported_filename = (
-                _reserve_asset_filename(
-                    clean_image_link,
-                    source_path,
-                    level_asset_names,
-                )
+            exported_filename = _reserve_asset_filename(
+                clean_image_link, source_path, level_asset_names
             )
+            archive_path = f"{level_folder}/assets/{exported_filename}"
+            asset_files[archive_path] = source_path
+            item["imageLink"] = exported_filename
 
-            archive_path = (
-                f"{level_folder}/assets/"
-                f"{exported_filename}"
-            )
+        level["_exportFolder"] = level_folder
 
-            asset_files[
-                archive_path
-            ] = source_path
-
-            item["imageLink"] = (
-                exported_filename
-            )
-
-        level["_exportFolder"] = (
-            level_folder
-        )
-
-    return (
-        export_game_json,
-        asset_files,
-    )
+    return export_game_json, asset_files
 
 
 def resolve_export_asset(filename, imported_assets, possible_directories):
