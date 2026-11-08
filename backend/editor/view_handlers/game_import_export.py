@@ -10,8 +10,9 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 
-from .. import database, utils
+from .. import database
 from ..services.game_export import (
+    prepare_game_json_for_export,
     write_level_databases,
     write_prepared_assets,
     write_imported_files,
@@ -209,7 +210,7 @@ def _build_game_export(request):
     if not isinstance(game_json, dict):
         game_json = {}
 
-    export_game_json, asset_files = utils.prepare_game_json_for_export(
+    export_game_json, asset_files = prepare_game_json_for_export(
         game_json,
         settings.BASE_DIR,
         request.session.get("game_root"),
