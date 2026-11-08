@@ -1,6 +1,7 @@
 from copy import deepcopy
 
-from .. import database, utils
+from .. import database
+from ..database import editor_columns_from_description
 
 
 SUPPORTED_ITEM_FIELDS = {
@@ -22,6 +23,95 @@ def find_item(items, item_id):
     )
 
 
+def load_item_for_editing(saved_level, item_id, table_rows=None):
+    items = saved_level.get("items", [])
+    if not isinstance(items, list):
+        return None
+
+    selected_item = find_item(items, item_id)
+    if selected_item is None:
+        return None
+
+    unlock_hints = selected_item.get("unlockHints", [])
+    if not isinstance(unlock_hints, list):
+        unlock_hints = []
+
+    failure_hints = []
+    for hint in unlock_hints:
+        if not isinstance(hint, dict):
+            continue
+
+        attempts = hint.get("numWrongAttempts")
+        message = hint.get("hint", "")
+        if attempts is None or not message:
+            continue
+
+        failure_hints.append({"attempts": attempts, "message": message})
+
+    password_data = selected_item.get("password", {})
+    if not isinstance(password_data, dict):
+        password_data = {}
+
+    next_dialog = selected_item.get("nextDialog", {})
+    if not isinstance(next_dialog, dict):
+        next_dialog = {}
+
+    item_data = {
+        "id": selected_item.get("id", ""),
+        "type": selected_item.get("type", ""),
+        "unlockedItems": selected_item.get("neededItems", []),
+    }
+    item_type = selected_item.get("type", "")
+
+    if item_type == "table":
+        table_name = str(selected_item.get("tableName", "")).strip()
+        if not table_name:
+            table_name = str(selected_item.get("id", "")).strip()
+        item_data["tableName"] = table_name
+        item_data["columns"] = editor_columns_from_description(
+            selected_item.get("description", [])
+        )
+        item_data["rows"] = table_rows if isinstance(table_rows, list) else []
+
+    elif item_type == "hint":
+        item_data["text"] = selected_item.get("text", "")
+        item_data["imageLink"] = selected_item.get("imageLink", "")
+        has_text = bool(item_data["text"])
+        has_image = bool(item_data["imageLink"])
+
+        if has_text and has_image:
+            item_data["hintType"] = "text_image"
+        elif has_image:
+            item_data["hintType"] = "image"
+        else:
+            item_data["hintType"] = "text"
+
+    elif item_type == "exit":
+        item_data["exitSuccessMessage"] = next_dialog.get("afterUnlock", "")
+        item_data["nextLevelId"] = selected_item.get("nextLevelId", "")
+
+    saved_level["item"] = item_data
+    saved_level["unlockCondition"] = {
+        "requiredItems": selected_item.get("neededItems", []),
+        "requiresPassword": not selected_item.get("unlocked", True),
+        "passwords": password_data.get("unlockPasswords", []),
+        "passwordHint": password_data.get("passwordHint", ""),
+        "successMessage": next_dialog.get("afterUnlock", ""),
+        "afterQuery": next_dialog.get("afterQuery", ""),
+        "failureHints": failure_hints,
+        "showHintsOnFailure": bool(failure_hints),
+    }
+    saved_level["position"] = {
+        "boundingBoxImage": selected_item.get(
+            "boundingBoxImage", {"x": 0, "y": 0, "width": 0, "height": 0}
+        ),
+        "boundingBoxIcon": selected_item.get(
+            "boundingBoxIcon", {"x": 0, "y": 0, "width": 0, "height": 0}
+        ),
+    }
+    return selected_item
+
+
 def load_item_draft(request, saved_level, item_id):
     selected_item = find_item(saved_level.get("items", []), item_id)
     table_rows = None
@@ -33,7 +123,7 @@ def load_item_draft(request, saved_level, item_id):
             request, saved_level, table_name
         )
 
-    return utils.load_item_for_editing(
+    return load_item_for_editing(
         saved_level, item_id, table_rows=table_rows
     )
 

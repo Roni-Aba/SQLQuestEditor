@@ -5,22 +5,84 @@ import uuid
 from copy import deepcopy
 from pathlib import Path
 
-from .table_schema import JSON_TO_SQL_TYPES, parse_description_columns
-
 
 EDITOR_TABLE_ROWS_FILENAME = ".editor-table-rows.json"
+
 EDITOR_LEVEL_DRAFT_KEY = "_editor_table_rows_key"
+
 EDITOR_TABLE_DRAFT_KEY = "_editor_table_rows_table_key"
+
+EDITOR_TO_JSON_TYPES = {
+    "text": "varchar",
+    "number": "int",
+    "date": "date",
+    "boolean": "bool"
+}
+
+JSON_TO_EDITOR_TYPES = {
+    "varchar": "text",
+    "text": "text",
+    "int": "number",
+    "integer": "number",
+    "number": "number",
+    "date": "date",
+    "bool": "boolean",
+    "boolean": "boolean"
+}
+
+JSON_TO_SQL_TYPES = {
+    "text": "TEXT",
+    "varchar": "TEXT",
+    "date": "TEXT",
+    "number": "INTEGER",
+    "int": "INTEGER",
+    "integer": "INTEGER",
+    "boolean": "INTEGER",
+    "bool": "INTEGER"
+}
 
 
 class EditorTableDataError(sqlite3.DatabaseError):
     """Raised when table data referenced by a game cannot be loaded."""
 
 
-def quote_identifier(identifier):
-    normalized_identifier = str(identifier).replace('"', '""')
-    return f'"{normalized_identifier}"'
+# Spaltenbeschreibungen und Datentypen
 
+def parse_description_columns(description):
+    if not isinstance(description, list):
+        return []
+
+    columns = []
+    for entry in description:
+        normalized_entry = str(entry).strip()
+        if not normalized_entry:
+            continue
+
+        if "(" in normalized_entry and normalized_entry.endswith(")"):
+            column_name, raw_type = normalized_entry.rsplit("(", 1)
+            column_name = column_name.strip()
+            column_type = raw_type[:-1].strip().lower()
+        else:
+            column_name = normalized_entry
+            column_type = "text"
+
+        if column_name:
+            columns.append({"id": column_name, "type": column_type})
+
+    return columns
+
+
+def editor_columns_from_description(description):
+    return [
+        {
+            "id": column["id"],
+            "type": JSON_TO_EDITOR_TYPES.get(column["type"], column["type"]),
+        }
+        for column in parse_description_columns(description)
+    ]
+
+
+# Arbeitsverzeichnisse und Dateipfade
 
 def sanitize_path_component(value, fallback):
     clean_value = Path(str(value or "")).name.strip() or fallback
@@ -31,66 +93,31 @@ def sanitize_path_component(value, fallback):
     return clean_value
 
 
-def table_name_for(table_item):
-    return str(
-        table_item.get(
-            "tableName",
-            table_item.get("id", ""),
-        )
-    ).strip()
-
-
-def get_editor_table_key(table_item):
-    """Return a stable internal key while a table item has no name yet."""
-    table_name = table_name_for(table_item)
-    if table_name:
-        return table_name
-
-    draft_key = str(
-        table_item.get(EDITOR_TABLE_DRAFT_KEY, "")
-    ).strip()
-    if draft_key:
-        return draft_key
-
-    draft_key = f"table-{uuid.uuid4().hex}"
-    table_item[EDITOR_TABLE_DRAFT_KEY] = draft_key
-    return draft_key
-
-
-def start_new_editor_workspace(request):
+def create_editor_workspace(session):
     workspace_path = Path(
         tempfile.mkdtemp(prefix="sql-quest-editor-")
     )
-    request.session["game_workspace"] = str(workspace_path)
-    request.session["game_root"] = str(workspace_path)
-    clear_editor_table_rows(request)
+    session["game_workspace"] = str(workspace_path)
+    session["game_root"] = str(workspace_path)
 
 
-def _editor_workspace_path(request):
-    workspace_value = request.session.get("game_workspace", "")
+def get_editor_workspace_path(session):
+    workspace_value = session.get("game_workspace", "")
     workspace_path = Path(workspace_value) if workspace_value else None
 
     if workspace_path is None or not workspace_path.is_dir():
         workspace_path = Path(
             tempfile.mkdtemp(prefix="sql-quest-editor-")
         )
-        request.session["game_workspace"] = str(workspace_path)
-        request.session.setdefault("game_root", str(workspace_path))
-        request.session.modified = True
+        session["game_workspace"] = str(workspace_path)
+        session.setdefault("game_root", str(workspace_path))
+        session.modified = True
 
     return workspace_path
 
 
-def _editor_table_rows_path(request):
-    return _editor_workspace_path(request) / EDITOR_TABLE_ROWS_FILENAME
-
-
-def clear_editor_table_rows(request):
-    _save_editor_table_rows(request, {})
-
-
-def get_level_database_path(request, level):
-    game_root_value = request.session.get("game_root", "")
+def get_level_database_path(session, level):
+    game_root_value = session.get("game_root", "")
     game_root = Path(game_root_value) if game_root_value else None
 
     if game_root is None or not game_root.is_dir():
@@ -128,6 +155,47 @@ def get_level_database_path(request, level):
             len(candidate.parts),
         ),
     )
+
+
+# Tabellenzeilen und SQLite-Verarbeitung
+
+def quote_identifier(identifier):
+    normalized_identifier = str(identifier).replace('"', '""')
+    return f'"{normalized_identifier}"'
+
+
+def table_name_for(table_item):
+    return str(
+        table_item.get(
+            "tableName",
+            table_item.get("id", ""),
+        )
+    ).strip()
+
+
+def get_editor_table_key(table_item):
+    """Return a stable internal key while a table item has no name yet."""
+    table_name = table_name_for(table_item)
+    if table_name:
+        return table_name
+
+    draft_key = str(
+        table_item.get(EDITOR_TABLE_DRAFT_KEY, "")
+    ).strip()
+    if draft_key:
+        return draft_key
+
+    draft_key = f"table-{uuid.uuid4().hex}"
+    table_item[EDITOR_TABLE_DRAFT_KEY] = draft_key
+    return draft_key
+
+
+def _editor_table_rows_path(request):
+    return get_editor_workspace_path(request.session) / EDITOR_TABLE_ROWS_FILENAME
+
+
+def clear_editor_table_rows(request):
+    _save_editor_table_rows(request, {})
 
 
 def _read_only_connection(database_path):
@@ -450,7 +518,7 @@ def initialize_editor_table_rows(request, game_json):
         if not isinstance(level, dict):
             continue
 
-        database_path = get_level_database_path(request, level)
+        database_path = get_level_database_path(request.session, level)
         items = level.get("items", [])
         if not isinstance(items, list):
             continue

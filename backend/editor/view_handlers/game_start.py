@@ -26,7 +26,8 @@ def new_game_view(request):
     request.session.pop("import_sources", None)
     request.session.pop("import_json_path", None)
     request.session.pop("import_manifest", None)
-    database.start_new_editor_workspace(request)
+    database.create_editor_workspace(request.session)
+    database.clear_editor_table_rows(request)
     clear_editor_state(request)
     request.session.modified = True
 

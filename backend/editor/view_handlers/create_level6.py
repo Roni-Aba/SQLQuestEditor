@@ -7,33 +7,11 @@ from ..services.item_unlock import (
     update_password_details,
     failure_hints_from_post,
 )
-from .shared import get_steps, remember_item_summary_return
-
-
-def redirect_after_item_password_edit(
-        request,
-        default_view_name,
-):
-    if not request.session.get("item_edit_mode"):
-        if request.session.get("item_creation_return_to") == "summary":
-            request.session.pop("item_creation_return_to", None)
-            request.session.modified = True
-            return redirect("create_level7")
-        return redirect(default_view_name)
-    editing_item_id = request.session.get(
-        "editing_item_id"
-    )
-    request.session.pop(
-        "editing_item_section",
-        None,
-    )
-    request.session.modified = True
-    if not editing_item_id:
-        return redirect(default_view_name)
-    return redirect(
-        "edit_item",
-        item_id=editing_item_id,
-    )
+from .shared import (
+    get_steps,
+    redirect_after_item_section_edit,
+    remember_item_summary_return,
+)
 
 
 def create_level6_view(request):
@@ -70,7 +48,7 @@ def create_level6_view(request):
         if requires_password:
             return redirect("create_level61")
 
-        return redirect_after_item_password_edit(
+        return redirect_after_item_section_edit(
             request,
             "create_level7",
         )
@@ -126,7 +104,7 @@ def create_level61_view(request):
         if show_hints:
             return redirect("create_level62")
 
-        return redirect_after_item_password_edit(
+        return redirect_after_item_section_edit(
             request,
             "create_level7",
         )
@@ -171,7 +149,7 @@ def create_level62_view(request):
         print("createLevel6-2 gespeichert:")
         print(json.dumps(saved_level, ensure_ascii=False, indent=2))
 
-        return redirect_after_item_password_edit(
+        return redirect_after_item_section_edit(
             request,
             "create_level7",
         )

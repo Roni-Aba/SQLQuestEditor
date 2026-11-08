@@ -62,7 +62,7 @@ def build_import_sources(request, game_json, game_root):
             continue
 
         level_id = str(level.get("id", ""))
-        database_path = database.get_level_database_path(request, level)
+        database_path = database.get_level_database_path(request.session, level)
         level_folder = utils.sanitize_export_name(level_id, "level")
         asset_paths = {}
         level_items = level.get("items", [])

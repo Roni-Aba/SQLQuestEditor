@@ -1646,7 +1646,7 @@ class ImportExportTests(TestCase):
 
 class TableSchemaTests(SimpleTestCase):
     def test_imported_column_types_remain_editable(self):
-        from .utils import load_item_for_editing
+        from .services.item_edit import load_item_for_editing
 
         description = [
             " ID (INTEGER) ", "Titel (VARCHAR)", "Menge (number)",
@@ -1702,3 +1702,30 @@ class TableSchemaTests(SimpleTestCase):
                 [("ID", "INTEGER"), ("Titel", "TEXT"), ("Datum", "TEXT"),
                  ("Menge", "INTEGER"), ("Aktiv", "INTEGER"), ("Preis", "TEXT")],
             )
+
+
+class WorkspaceTests(SimpleTestCase):
+    def test_recreating_workspace_preserves_imported_game_root(self):
+        from types import SimpleNamespace
+        from django.contrib.sessions.backends.signed_cookies import SessionStore
+        from . import database
+
+        with TemporaryDirectory() as root:
+            imported_root = Path(root) / "imported-game"
+            imported_root.mkdir()
+            session = SessionStore()
+            session["game_root"] = str(imported_root)
+            session["game_workspace"] = str(Path(root) / "missing-workspace")
+            request = SimpleNamespace(session=session)
+
+            rows = database.get_editor_table_rows(request, {"id": "level1"}, "Heft")
+
+            workspace = Path(session["game_workspace"])
+            self.addCleanup(shutil.rmtree, workspace, ignore_errors=True)
+            self.assertEqual(rows, [])
+            self.assertTrue(workspace.is_dir())
+            self.assertEqual(session["game_root"], str(imported_root))
+            self.assertTrue(session.modified)
+
+            database.get_editor_table_rows(request, {"id": "level1"}, "Heft")
+            self.assertEqual(session["game_workspace"], str(workspace))
