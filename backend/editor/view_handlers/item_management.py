@@ -3,7 +3,7 @@ from copy import deepcopy
 
 from django.shortcuts import redirect, render
 
-from .. import utils
+from ..services.level_save import save_new_level_to_game_json
 from ..services.item_service import (
     build_item_for_json,
     clear_item_draft,
@@ -106,7 +106,7 @@ def edit_item_view(request, item_id):
         if request.session.get("editing_level_id"):
             game_json = request.session.get("game_json", {})
         else:
-            game_json, saved_level = utils.save_new_level_to_game_json(request)
+            game_json, saved_level = save_new_level_to_game_json(request)
 
         clear_item_draft(saved_level)
         request.session["new_level"] = saved_level

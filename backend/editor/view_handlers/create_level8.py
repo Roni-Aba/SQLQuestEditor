@@ -2,7 +2,7 @@ import json
 
 from django.shortcuts import redirect, render
 
-from .. import utils
+from ..services.level_save import save_new_level_to_game_json
 from ..services.item_service import clear_item_draft
 from .shared import get_steps
 
@@ -13,7 +13,7 @@ def create_level8_view(request):
 
     if request.method == "POST":
         next_action = request.POST.get("next_action")
-        game_json, saved_level = utils.save_new_level_to_game_json(request)
+        game_json, saved_level = save_new_level_to_game_json(request)
 
         if next_action == "more_items":
             clear_item_draft(saved_level)
