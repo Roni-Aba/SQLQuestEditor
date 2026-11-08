@@ -1023,7 +1023,7 @@ class GuidedLevelTests(TestCase):
         session.save()
 
         with patch(
-            "editor.services.item_draft.database.remove_editor_table_rows"
+            "editor.services.item_service.database.remove_editor_table_rows"
         ) as remove_rows:
             response = self.client.post(
                 reverse("create_level31"),

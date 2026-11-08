@@ -5,7 +5,7 @@ from django.shortcuts import redirect, render
 
 from ..services.exit_editor import update_exit_fields
 from ..services.hint_editor import update_hint_field, update_hint_image
-from ..services.item_draft import (
+from ..services.item_service import (
     clear_table_data_on_type_change,
     item_type_and_next_view,
 )

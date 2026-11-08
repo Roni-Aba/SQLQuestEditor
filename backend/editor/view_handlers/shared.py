@@ -1,7 +1,7 @@
 from django.shortcuts import redirect
 
 from .. import utils
-from ..services.item_draft import clear_item_draft
+from ..services.item_service import clear_item_draft
 
 def clear_editor_state(request):
     for session_key in [

@@ -4,8 +4,9 @@ from copy import deepcopy
 from django.shortcuts import redirect, render
 
 from .. import utils
-from ..services.item_draft import (
+from ..services.item_service import (
     clear_item_draft,
+    remove_item_from_level,
     remove_item_from_game_levels,
     remove_deleted_table_rows,
 )
@@ -207,7 +208,7 @@ def delete_item_view(request, item_id):
 
     remove_deleted_table_rows(request, saved_level, item_id)
 
-    saved_level = utils.remove_item_from_level(saved_level, item_id)
+    saved_level = remove_item_from_level(saved_level, item_id)
     save_new_level_session(request, saved_level)
 
     game_json = request.session.get("game_json", {})

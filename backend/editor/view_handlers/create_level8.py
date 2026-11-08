@@ -3,7 +3,7 @@ import json
 from django.shortcuts import redirect, render
 
 from .. import utils
-from ..services.item_draft import clear_item_draft
+from ..services.item_service import clear_item_draft
 from .shared import get_steps
 
 
