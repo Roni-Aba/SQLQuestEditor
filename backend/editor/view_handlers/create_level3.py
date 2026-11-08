@@ -6,7 +6,6 @@ from django.shortcuts import redirect, render
 from ..services.exit_editor import update_exit_fields
 from ..services.hint_editor import update_hint_field, update_hint_image
 from ..services.item_draft import (
-    clear_item_draft,
     clear_table_data_on_type_change,
     item_type_and_next_view,
 )
@@ -17,6 +16,7 @@ from ..services.table_editor import (
 )
 from .shared import (
     get_steps,
+    prepare_item_creation_navigation,
     redirect_after_item_section_edit,
     remember_item_summary_return,
 )
@@ -26,38 +26,7 @@ def create_level3_view(request):
     steps = get_steps(active_step=3)
     saved_level = request.session.get("new_level", {})
 
-    if request.method == "GET":
-        return_to = request.GET.get("return_to", "")
-        reset_item_draft = request.session.pop(
-            "reset_item_draft_on_create_level3",
-            False,
-        )
-
-        if return_to == "items":
-            request.session["item_creation_return_to"] = "items"
-            clear_item_draft(saved_level)
-            request.session.pop("editing_item_id", None)
-            request.session.pop("item_edit_mode", None)
-            request.session.pop("editing_item_section", None)
-            request.session["new_level"] = saved_level
-            request.session.modified = True
-        elif return_to == "summary":
-            request.session["item_creation_return_to"] = "summary"
-            request.session.modified = True
-        elif (
-            reset_item_draft
-            and not request.session.get("item_edit_mode", False)
-        ):
-            clear_item_draft(saved_level)
-            request.session["new_level"] = saved_level
-            request.session.modified = True
-        elif (
-            not request.session.get("item_edit_mode", False)
-            and request.session.get("item_creation_return_to")
-            not in {"items", "summary", "level8"}
-        ):
-            request.session.pop("item_creation_return_to", None)
-            request.session.modified = True
+    prepare_item_creation_navigation(request, saved_level)
 
     return_to_item_summary = (
         request.session.get("item_creation_return_to") == "summary"

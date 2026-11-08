@@ -4,13 +4,12 @@ from django.shortcuts import redirect, render
 
 from .. import utils
 from ..services.item_draft import (
-    clear_item_draft,
     has_item_name_conflict,
     parse_unlocked_item,
     set_item_name_and_sync_table,
     set_item_requirements,
 )
-from .shared import get_steps
+from .shared import get_steps, prepare_item_creation_navigation
 
 def create_level4_view(request):
     steps = get_steps(active_step=4)
@@ -19,44 +18,7 @@ def create_level4_view(request):
     if not isinstance(saved_level, dict):
         saved_level = {}
 
-    if request.method == "GET":
-        return_to = request.GET.get("return_to", "")
-        reset_item_draft = request.session.pop(
-            "reset_item_draft_on_create_level3",
-            False,
-        )
-
-        if return_to == "items":
-            request.session["item_creation_return_to"] = "items"
-            clear_item_draft(saved_level)
-
-            request.session.pop("editing_item_id", None)
-            request.session.pop("item_edit_mode", None)
-            request.session.pop("editing_item_section", None)
-
-            request.session["new_level"] = saved_level
-            request.session.modified = True
-
-        elif return_to == "summary":
-            request.session["item_creation_return_to"] = "summary"
-            request.session.modified = True
-
-        elif (
-            reset_item_draft
-            and not request.session.get("item_edit_mode", False)
-        ):
-            clear_item_draft(saved_level)
-
-            request.session["new_level"] = saved_level
-            request.session.modified = True
-
-        elif (
-            not request.session.get("item_edit_mode", False)
-            and request.session.get("item_creation_return_to")
-            not in {"items", "summary", "level8"}
-        ):
-            request.session.pop("item_creation_return_to", None)
-            request.session.modified = True
+    prepare_item_creation_navigation(request, saved_level)
 
     return_to_item_overview = (
         request.session.get("item_creation_return_to") == "items"

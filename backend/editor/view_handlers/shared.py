@@ -1,6 +1,7 @@
 from django.shortcuts import redirect
 
 from .. import utils
+from ..services.item_draft import clear_item_draft
 
 def clear_editor_state(request):
     for session_key in [
@@ -25,6 +26,41 @@ def get_steps(active_step):
     for number in range(0, 9):
         steps.append({"number": number, "active": number <= active_step})
     return steps
+
+def prepare_item_creation_navigation(request, saved_level):
+    if request.method == "GET":
+        return_to = request.GET.get("return_to", "")
+        reset_item_draft = request.session.pop(
+            "reset_item_draft_on_create_level3",
+            False,
+        )
+
+        if return_to == "items":
+            request.session["item_creation_return_to"] = "items"
+            clear_item_draft(saved_level)
+            request.session.pop("editing_item_id", None)
+            request.session.pop("item_edit_mode", None)
+            request.session.pop("editing_item_section", None)
+            request.session["new_level"] = saved_level
+            request.session.modified = True
+        elif return_to == "summary":
+            request.session["item_creation_return_to"] = "summary"
+            request.session.modified = True
+        elif (
+            reset_item_draft
+            and not request.session.get("item_edit_mode", False)
+        ):
+            clear_item_draft(saved_level)
+            request.session["new_level"] = saved_level
+            request.session.modified = True
+        elif (
+            not request.session.get("item_edit_mode", False)
+            and request.session.get("item_creation_return_to")
+            not in {"items", "summary", "level8"}
+        ):
+            request.session.pop("item_creation_return_to", None)
+            request.session.modified = True
+
 
 def remember_item_summary_return(request):
     if (
