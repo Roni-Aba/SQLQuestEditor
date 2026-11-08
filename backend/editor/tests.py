@@ -1550,6 +1550,11 @@ class ImportExportTests(TestCase):
 
             response = self.client.get(reverse("export_game"))
             self.assertEqual(response.status_code, 200)
+            self.assertEqual(response["Content-Type"], "application/zip")
+            self.assertEqual(
+                response["Content-Disposition"],
+                'attachment; filename="SQLSpellQuest_export.zip"',
+            )
             with ZipFile(BytesIO(response.content)) as archive:
                 exported = {name: archive.read(name) for name in archive.namelist()}
 

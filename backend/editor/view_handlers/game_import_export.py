@@ -1,9 +1,7 @@
-import io
 import json
 import shutil
 import sqlite3
 import tempfile
-import zipfile
 from pathlib import Path, PurePosixPath
 
 from django.conf import settings
@@ -11,12 +9,7 @@ from django.http import HttpResponse
 from django.shortcuts import redirect, render
 
 from .. import database
-from ..services.game_export import (
-    prepare_game_json_for_export,
-    write_level_databases,
-    write_prepared_assets,
-    write_imported_files,
-)
+from ..services.game_export import build_game_export
 from ..services.game_import import (
     select_game_json_entry,
     copy_uploaded_files,
@@ -205,55 +198,17 @@ def upload_json_view(request):
     )
 
 
-def _build_game_export(request):
-    game_json = request.session.get("game_json", {})
-    if not isinstance(game_json, dict):
-        game_json = {}
-
-    export_game_json, asset_files = prepare_game_json_for_export(
-        game_json,
-        settings.BASE_DIR,
-        request.session.get("game_root"),
-        request.session.get("import_sources", {}),
-    )
-
-    zip_buffer = io.BytesIO()
-    managed_archive_paths = {"SQLSpellQuest.json"}
-
-    with tempfile.TemporaryDirectory() as temp_directory:
-        with zipfile.ZipFile(
-            zip_buffer, "w", zipfile.ZIP_DEFLATED
-        ) as zip_file:
-            write_level_databases(
-                request,
-                zip_file,
-                export_game_json,
-                Path(temp_directory),
-                managed_archive_paths,
-            )
-            json_string = json.dumps(
-                export_game_json, ensure_ascii=False, indent=2
-            )
-            zip_file.writestr("SQLSpellQuest.json", json_string)
-            write_prepared_assets(zip_file, asset_files)
-            write_imported_files(
-                request, zip_file, asset_files, managed_archive_paths
-            )
-
-    zip_buffer.seek(0)
-    response = HttpResponse(
-        zip_buffer.getvalue(),
-        content_type="application/zip",
-    )
-    response["Content-Disposition"] = (
-        'attachment; filename="SQLSpellQuest_export.zip"'
-    )
-    return response
-
-
 def export_game_view(request):
     try:
-        return _build_game_export(request)
+        archive_bytes = build_game_export(request, settings.BASE_DIR)
+        response = HttpResponse(
+            archive_bytes,
+            content_type="application/zip",
+        )
+        response["Content-Disposition"] = (
+            'attachment; filename="SQLSpellQuest_export.zip"'
+        )
+        return response
     except (OSError, sqlite3.Error, ValueError) as error:
         game_json = request.session.get("game_json", {})
         levels = game_json.get("level", []) if isinstance(game_json, dict) else []
