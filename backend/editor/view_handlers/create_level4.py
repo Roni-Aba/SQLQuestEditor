@@ -2,8 +2,8 @@ import json
 
 from django.shortcuts import redirect, render
 
-from .. import utils
 from ..services.item_draft import (
+    get_item_options_for_current_level,
     has_item_name_conflict,
     parse_unlocked_item,
     set_item_name_and_sync_table,
@@ -56,7 +56,7 @@ def create_level4_view(request):
         ),
     }
 
-    item_options = utils.get_item_options_for_current_level(saved_level)
+    item_options = get_item_options_for_current_level(saved_level)
     error_message = ""
     if request.method == "POST":
         item_name = request.POST.get("item_name", "").strip()

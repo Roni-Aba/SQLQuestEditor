@@ -723,57 +723,6 @@ def save_new_level_to_game_json(
     return game_json, saved_level
 
 
-def get_item_options_for_current_level(
-    saved_level,
-):
-    item_options = []
-    seen_item_ids = set()
-
-    items = saved_level.get(
-        "items",
-        [],
-    )
-
-    if not isinstance(
-        items,
-        list,
-    ):
-        return item_options
-
-    for item in items:
-        if not isinstance(
-            item,
-            dict,
-        ):
-            continue
-
-        item_id = str(
-            item.get(
-                "id",
-                "",
-            )
-        ).strip()
-
-        if not item_id:
-            continue
-
-        if item_id in seen_item_ids:
-            continue
-
-        item_options.append(
-            {
-                "value": item_id,
-                "label": item_id,
-            }
-        )
-
-        seen_item_ids.add(
-            item_id
-        )
-
-    return item_options
-
-
 def remove_item_from_level(
     level_data,
     item_id,
