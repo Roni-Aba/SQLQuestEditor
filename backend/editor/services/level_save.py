@@ -1,7 +1,9 @@
 from copy import deepcopy
 
+from .. import database
 from ..utils import database_name_for_level
 from . import item_service
+from .game_messages import normalize_game_messages
 
 def build_level_edit_session(selected_level):
     if not isinstance(
@@ -256,3 +258,64 @@ def update_import_sources(
     source.setdefault("replacements", {}).update(new_assets)
     import_sources[level_id] = source
     return True
+
+
+def save_level_to_game_json(request, saved_level, level_for_json, editing_level_id):
+    """Commit a validated level draft and finish the editing session."""
+    game_json = request.session.get("game_json", {})
+    level_id = str(level_for_json.get("id", "")).strip()
+
+    has_table_draft = bool(saved_level.get(database.EDITOR_LEVEL_DRAFT_KEY))
+    database.finalize_editor_level_rows(request, saved_level, level_id)
+
+    if not isinstance(game_json, dict):
+        game_json = {}
+    game_json = normalize_game_messages(game_json)
+
+    levels = game_json.get("level", [])
+    if not isinstance(levels, list):
+        levels = []
+
+    updated_levels = replace_or_append_level(
+        levels,
+        level_for_json,
+        editing_level_id,
+    )
+    update_exit_level_references(
+        updated_levels,
+        editing_level_id,
+        level_id,
+    )
+
+    game_json["level"] = updated_levels
+    request.session["game_json"] = game_json
+
+    import_sources = request.session.get("import_sources", {})
+    if update_import_sources(
+        import_sources,
+        saved_level,
+        editing_level_id,
+        level_id,
+    ):
+        request.session["import_sources"] = import_sources
+
+    if editing_level_id and editing_level_id != level_id:
+        if has_table_draft:
+            database.remove_editor_level_rows(request, editing_level_id)
+        else:
+            database.move_editor_level_rows(
+                request,
+                editing_level_id,
+                level_id,
+            )
+
+    request.session.pop("editing_level_id", None)
+    request.session.pop("auto_saved_level_id", None)
+    request.session.pop("editing_item_id", None)
+    request.session.pop("item_edit_mode", None)
+    request.session.pop("editing_item_section", None)
+    request.session.pop("new_level", None)
+    request.session.pop("item_creation_return_to", None)
+    request.session.pop("reset_item_draft_on_create_level3", None)
+    request.session.modified = True
+    return game_json

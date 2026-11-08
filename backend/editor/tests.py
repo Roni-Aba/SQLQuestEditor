@@ -318,6 +318,40 @@ class GuidedLevelTests(TestCase):
                 ["level1"],
             )
 
+    def test_invalid_level_name_keeps_draft_and_table_rows(self):
+        for level_name in ("", "existing"):
+            with self.subTest(level_name=level_name), TemporaryDirectory() as root:
+                game = {"id": "Spiel", "level": [{"id": "existing", "items": []}]}
+                draft = {
+                    "id": level_name, "items": [], "queryRestriction": {},
+                    "_editor_table_rows_key": "draft-check",
+                }
+                rows_file = Path(root) / ".editor-table-rows.json"
+                rows_file.write_text(json.dumps({
+                    "draft-check": {"Heft": [{"ID": 1}]},
+                    "source": {"Heft": [{"ID": 7}]},
+                }), encoding="utf-8")
+                original_rows = rows_file.read_bytes()
+                session = self.client.session
+                session["game_json"] = deepcopy(game)
+                session["new_level"] = deepcopy(draft)
+                session["editing_level_id"] = "source"
+                session["item_creation_return_to"] = "summary"
+                session["game_workspace"] = root
+                session.save()
+
+                response = self.client.post(reverse("save_level"))
+
+                self.assertRedirects(
+                    response, reverse("levelGrunddaten"), fetch_redirect_response=False
+                )
+                saved = self.client.session
+                self.assertEqual(saved["game_json"], game)
+                self.assertEqual(saved["new_level"], draft)
+                self.assertEqual(saved["editing_level_id"], "source")
+                self.assertEqual(saved["item_creation_return_to"], "summary")
+                self.assertEqual(rows_file.read_bytes(), original_rows)
+
     def test_save_imported_level_without_changes(self):
         example = Path(__file__).parent / "tests/data/SQLSpellQuest_export-24"
         expected = json.loads(

@@ -5,16 +5,13 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
 from .. import database
-from ..services.game_messages import normalize_game_messages
 from ..services.item_service import save_current_item_to_new_level
 from ..services.level_basics import level_name_is_taken
 from ..services.level_delete import referencing_level_ids, remove_level_from_list
 from ..services.level_save import (
     build_level_edit_session,
     build_level_for_json,
-    replace_or_append_level,
-    update_exit_level_references,
-    update_import_sources,
+    save_level_to_game_json,
 )
 from .shared import (
     current_level_origin_id,
@@ -174,59 +171,9 @@ def save_level_view(request):
     if level_name_is_taken(game_json, level_id, editing_level_id):
         return redirect("levelGrunddaten")
 
-    has_table_draft = bool(saved_level.get(database.EDITOR_LEVEL_DRAFT_KEY))
-    database.finalize_editor_level_rows(request, saved_level, level_id)
-
-    if not isinstance(game_json, dict):
-        game_json = {}
-    game_json = normalize_game_messages(game_json)
-
-    levels = game_json.get("level", [])
-    if not isinstance(levels, list):
-        levels = []
-
-    updated_levels = replace_or_append_level(
-        levels,
-        level_for_json,
-        editing_level_id,
+    game_json = save_level_to_game_json(
+        request, saved_level, level_for_json, editing_level_id
     )
-    update_exit_level_references(
-        updated_levels,
-        editing_level_id,
-        level_id,
-    )
-
-    game_json["level"] = updated_levels
-    request.session["game_json"] = game_json
-
-    import_sources = request.session.get("import_sources", {})
-    if update_import_sources(
-        import_sources,
-        saved_level,
-        editing_level_id,
-        level_id,
-    ):
-        request.session["import_sources"] = import_sources
-
-    if editing_level_id and editing_level_id != level_id:
-        if has_table_draft:
-            database.remove_editor_level_rows(request, editing_level_id)
-        else:
-            database.move_editor_level_rows(
-                request,
-                editing_level_id,
-                level_id,
-            )
-
-    request.session.pop("editing_level_id", None)
-    request.session.pop("auto_saved_level_id", None)
-    request.session.pop("editing_item_id", None)
-    request.session.pop("item_edit_mode", None)
-    request.session.pop("editing_item_section", None)
-    request.session.pop("new_level", None)
-    request.session.pop("item_creation_return_to", None)
-    request.session.pop("reset_item_draft_on_create_level3", None)
-    request.session.modified = True
 
     print("Systemnachrichten gespeichert:")
     print(json.dumps(game_json, ensure_ascii=False, indent=2))
