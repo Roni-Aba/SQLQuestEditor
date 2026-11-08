@@ -1583,6 +1583,62 @@ class ImportExportTests(TestCase):
             self.import_files(exported)
             self.assertEqual(self.client.session["game_json"], imported_game)
 
+    def test_invalid_import_keeps_existing_game(self):
+        with TemporaryDirectory() as root:
+            self.import_files(self.example_files(root))
+            previous_session = dict(self.client.session)
+            rows_file = Path(previous_session["game_workspace"]) / ".editor-table-rows.json"
+            previous_rows = rows_file.read_bytes()
+
+            for content, message in (
+                (b"\xff", "UTF-8"),
+                (b"{", "keine gültige JSON-Datei"),
+                (b"[]", "JSON-Objekt"),
+                (b'{"level": {}}', 'muss eine Liste enthalten'),
+            ):
+                with self.subTest(content=content):
+                    response = self.client.post(reverse("upload_json"), {
+                        "json_file": SimpleUploadedFile("Game.json", content),
+                    })
+                    self.assertContains(response, message)
+                    self.assertTemplateUsed(response, "editor/start.html")
+                    self.assertEqual(dict(self.client.session), previous_session)
+                    self.assertEqual(rows_file.read_bytes(), previous_rows)
+
+    def test_database_import_failure_restores_previous_workspace(self):
+        with TemporaryDirectory() as root:
+            files = self.example_files(root)
+            for has_previous_game in (False, True):
+                with self.subTest(has_previous_game=has_previous_game):
+                    self.client = self.client_class()
+                    if has_previous_game:
+                        self.import_files(files)
+                    previous_session = dict(self.client.session)
+                    rows_file = (
+                        Path(previous_session["game_workspace"]) / ".editor-table-rows.json"
+                        if has_previous_game else None
+                    )
+                    previous_rows = rows_file.read_bytes() if rows_file else None
+                    failed_workspace = Path(root) / "failed-import"
+                    failed_workspace.mkdir()
+                    broken_files = dict(files)
+                    broken_files["level1/databases/level1.db"] = b"not a SQLite database"
+
+                    with patch("tempfile.mkdtemp", return_value=str(failed_workspace)):
+                        response = self.client.post(reverse("upload_json"), {
+                            "game_files": [
+                                SimpleUploadedFile(Path(name).name, content)
+                                for name, content in broken_files.items()
+                            ],
+                            "game_relative_paths": [f"Spiel/{name}" for name in broken_files],
+                        })
+
+                    self.assertContains(response, "Die Level-Datenbank konnte nicht gelesen werden")
+                    self.assertEqual(dict(self.client.session), previous_session)
+                    self.assertFalse(failed_workspace.exists())
+                    if rows_file:
+                        self.assertEqual(rows_file.read_bytes(), previous_rows)
+
     def test_duplicate_upload_path_is_rejected(self):
         game = {"id": "Rundlauf", "messages": {}, "level": []}
         response = self.client.post(reverse("upload_json"), {

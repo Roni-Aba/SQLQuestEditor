@@ -1,6 +1,81 @@
-from pathlib import PurePosixPath
+import json
+import shutil
+import sqlite3
+import tempfile
+from pathlib import Path, PurePosixPath
 
 from .. import database, utils
+from .game_messages import normalize_game_messages
+
+
+class GameImportError(ValueError):
+    """An expected import failure with a message for the start page."""
+
+
+def import_game(request, uploaded_entries):
+    uploaded_entry = select_game_json_entry(uploaded_entries)
+    if uploaded_entry is None:
+        raise GameImportError(
+            "Im Spielordner wurde keine eindeutige JSON-Datei "
+            "gefunden. Benenne sie bitte SQLSpellQuest.json "
+            "oder Game.json."
+        )
+    uploaded_file, json_relative_name = uploaded_entry
+
+    try:
+        file_content = uploaded_file.read().decode("utf-8")
+        game_json = json.loads(file_content)
+    except UnicodeDecodeError:
+        raise GameImportError("Die Datei konnte nicht als UTF-8 gelesen werden.")
+    except json.JSONDecodeError:
+        raise GameImportError("Die Datei ist keine gültige JSON-Datei.")
+
+    workspace_path = Path(tempfile.mkdtemp(prefix="sql-quest-game-"))
+    json_relative_path = PurePosixPath(str(json_relative_name).replace("\\", "/"))
+    try:
+        copy_uploaded_files(workspace_path, uploaded_entries)
+    except (OSError, ValueError) as error:
+        shutil.rmtree(workspace_path, ignore_errors=True)
+        raise GameImportError(str(error))
+
+    if not isinstance(game_json, dict):
+        shutil.rmtree(workspace_path, ignore_errors=True)
+        raise GameImportError("Die JSON-Datei muss ein JSON-Objekt enthalten.")
+
+    levels = game_json.get("level", [])
+    if not isinstance(levels, list):
+        shutil.rmtree(workspace_path, ignore_errors=True)
+        raise GameImportError('Der Schlüssel "level" muss eine Liste enthalten.')
+
+    previous_workspace = request.session.get("game_workspace")
+    previous_game_root = request.session.get("game_root")
+    request.session["game_workspace"] = str(workspace_path)
+    game_root = workspace_path.joinpath(*json_relative_path.parent.parts)
+    request.session["game_root"] = str(game_root)
+    try:
+        game_json = database.initialize_editor_table_rows(
+            request, normalize_game_messages(game_json)
+        )
+    except sqlite3.Error as error:
+        shutil.rmtree(workspace_path, ignore_errors=True)
+        if previous_workspace is None:
+            request.session.pop("game_workspace", None)
+        else:
+            request.session["game_workspace"] = previous_workspace
+        if previous_game_root is None:
+            request.session.pop("game_root", None)
+        else:
+            request.session["game_root"] = previous_game_root
+        request.session.modified = True
+        raise GameImportError(
+            f"Die Level-Datenbank konnte nicht gelesen werden: {error}"
+        )
+
+    import_sources = build_import_sources(request, game_json, game_root)
+    request.session["import_sources"] = import_sources
+    request.session["import_json_path"] = str(game_root / json_relative_path.name)
+    request.session["import_manifest"] = build_import_manifest(game_root, import_sources)
+    return game_json
 
 
 def select_game_json_entry(uploaded_entries):

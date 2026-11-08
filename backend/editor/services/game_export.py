@@ -56,16 +56,16 @@ def prepare_game_json_for_export(
 
     export_game_json = deepcopy(game_json)
     asset_files = {}
-    base_dir = Path(base_dir)
+    image_root = Path(base_dir) / "editor" / "static" / "editor" / "img"
     game_root = Path(game_root) if game_root else None
 
     level_image_directories = [
-        base_dir / "editor" / "static" / "editor" / "img" / "levels",
+        image_root / "levels",
     ]
     item_image_directories = [
-        base_dir / "editor" / "static" / "editor" / "img" / "hints",
-        base_dir / "editor" / "static" / "editor" / "img" / "items",
-        base_dir / "editor" / "static" / "editor" / "img",
+        image_root / "hints",
+        image_root / "items",
+        image_root,
     ]
 
     levels = export_game_json.get("level", [])
@@ -88,13 +88,12 @@ def prepare_game_json_for_export(
             )
         used_level_names.add(level_folder.casefold())
 
-        original_level_folder = level_folder
         imported_source = (import_sources or {}).get(str(requested_level_id), {})
         imported_assets = imported_source.get("assets", {})
         imported_image_directories = []
         if game_root is not None:
             imported_image_directories = [
-                game_root / original_level_folder / "assets",
+                game_root / level_folder / "assets",
                 game_root / "assets",
                 game_root,
             ]
@@ -111,13 +110,12 @@ def prepare_game_json_for_export(
                 imported_assets,
                 level_image_directories + imported_image_directories,
             )
-            if source_path is not None:
-                exported_filename = _reserve_asset_filename(
-                    clean_level_picture, source_path, level_asset_names
-                )
-                archive_path = f"{level_folder}/assets/{exported_filename}"
-                asset_files[archive_path] = source_path
-                level["levelPicture"] = exported_filename
+            exported_filename = _reserve_asset_filename(
+                clean_level_picture, source_path, level_asset_names
+            )
+            archive_path = f"{level_folder}/assets/{exported_filename}"
+            asset_files[archive_path] = source_path
+            level["levelPicture"] = exported_filename
 
         database_filename = database_name_for_level(
             requested_level_id, fallback=f"level{level_index}"
