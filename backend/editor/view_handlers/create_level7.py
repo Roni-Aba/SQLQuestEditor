@@ -1,7 +1,7 @@
 from django.shortcuts import redirect, render
 
 # from ..utils import log_editor_state
-from ..services.item_summary import get_item_summary
+from ..services.item_service import get_item_summary
 from .shared import get_steps
 
 

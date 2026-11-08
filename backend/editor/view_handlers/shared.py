@@ -1,6 +1,6 @@
 from django.shortcuts import redirect
 
-from ..services.level_save import build_level_for_json
+from ..services.level_service import build_level_for_json
 from ..services.item_service import clear_item_draft
 
 def clear_editor_state(request):

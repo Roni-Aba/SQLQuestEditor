@@ -4,22 +4,20 @@ from copy import deepcopy
 from django.shortcuts import redirect, render
 
 # from ..utils import log_editor_state
-from ..services.level_save import save_new_level_to_game_json
+from ..services.level_service import save_new_level_to_game_json
 from ..services.item_service import (
     build_item_for_json,
     clear_item_draft,
-    remove_item_from_level,
-    remove_item_from_game_levels,
-    remove_deleted_table_rows,
-)
-from ..services.item_edit import (
     find_item,
+    get_item_summary,
     load_item_draft,
     preserve_original_item_fields,
-    sync_edited_table_rows,
+    remove_deleted_table_rows,
+    remove_item_from_game_levels,
+    remove_item_from_level,
     replace_item_and_update_references,
+    sync_edited_table_rows,
 )
-from ..services.item_summary import get_item_summary
 from .shared import get_steps, save_new_level_session, set_guided_level_creation
 
 

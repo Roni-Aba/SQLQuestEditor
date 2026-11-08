@@ -1,7 +1,7 @@
 from django.shortcuts import redirect, render
 
 # from ..utils import log_editor_state
-from ..services.level_basics import (
+from ..services.level_service import (
     level2_form_values,
     query_restriction_from_post,
 )

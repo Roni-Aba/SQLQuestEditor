@@ -2,13 +2,14 @@ from django.conf import settings
 from django.shortcuts import redirect, render
 
 # from ..utils import log_editor_state
-from ..services.exit_editor import update_exit_fields
-from ..services.hint_editor import update_hint_field, update_hint_image
 from ..services.item_service import (
     clear_table_data_on_type_change,
     item_type_and_next_view,
+    update_exit_fields,
+    update_hint_field,
+    update_hint_image,
 )
-from ..services.table_editor import (
+from ..services.table_service import (
     parse_table_columns,
     parse_table_rows,
     persist_draft_table_rows,

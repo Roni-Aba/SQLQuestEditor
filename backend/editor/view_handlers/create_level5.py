@@ -1,7 +1,7 @@
 from django.shortcuts import redirect, render
 
 # from ..utils import log_editor_state
-from ..services.item_position import position_form_values, position_from_post
+from ..services.item_service import position_form_values, position_from_post
 from .shared import (
     get_steps,
     redirect_after_item_section_edit,

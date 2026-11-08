@@ -1741,7 +1741,7 @@ class ImportExportTests(TestCase):
 
 class TableSchemaTests(SimpleTestCase):
     def test_imported_column_types_remain_editable(self):
-        from .services.item_edit import load_item_for_editing
+        from .services.item_service import load_item_for_editing
 
         description = [
             " ID (INTEGER) ", "Titel (VARCHAR)", "Menge (number)",

@@ -8,7 +8,7 @@ from ..services.game_messages import (
     messages_form_values,
     messages_from_post,
 )
-from ..services.level_basics import (
+from ..services.level_service import (
     level1_form_values,
     level2_form_values,
     query_restriction_from_post,

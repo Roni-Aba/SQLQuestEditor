@@ -1,7 +1,7 @@
 from django.shortcuts import redirect, render
 
 # from ..utils import log_editor_state
-from ..services.item_unlock import (
+from ..services.item_service import (
     update_password_requirement,
     update_password_details,
     failure_hints_from_post,

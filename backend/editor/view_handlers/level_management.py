@@ -6,11 +6,12 @@ from django.views.decorators.http import require_POST
 # from ..utils import log_editor_state
 from .. import database
 from ..services.item_service import save_current_item_to_new_level
-from ..services.level_basics import level_name_is_taken
-from ..services.level_delete import referencing_level_ids, remove_level_from_list
-from ..services.level_save import (
+from ..services.level_service import (
     build_level_edit_session,
     build_level_for_json,
+    level_name_is_taken,
+    referencing_level_ids,
+    remove_level_from_list,
     save_level_to_game_json,
 )
 from .shared import (
