@@ -1,6 +1,6 @@
 from django.shortcuts import redirect
 
-from .. import utils
+from ..services.level_save import build_level_for_json
 from ..services.item_service import clear_item_draft
 
 def clear_editor_state(request):
@@ -127,7 +127,7 @@ def current_level_origin_id(request, saved_level):
     if not isinstance(levels, list):
         return None
 
-    draft = utils.build_level_for_json(saved_level)
+    draft = build_level_for_json(saved_level)
     if draft.get("id") and draft in levels:
         return draft["id"]
     return None

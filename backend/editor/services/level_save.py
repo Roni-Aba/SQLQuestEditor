@@ -3,6 +3,61 @@ from copy import deepcopy
 from ..utils import database_name_for_level
 from . import item_service
 
+def build_level_edit_session(selected_level):
+    if not isinstance(
+        selected_level,
+        dict,
+    ):
+        return {}
+
+    query_restriction = selected_level.get(
+        "queryRestriction",
+        {},
+    )
+
+    if not isinstance(
+        query_restriction,
+        dict,
+    ):
+        query_restriction = {}
+
+    items = selected_level.get(
+        "items",
+        [],
+    )
+
+    if not isinstance(
+        items,
+        list,
+    ):
+        items = []
+
+    return {
+        "id": selected_level.get(
+            "id",
+            "",
+        ),
+        "levelPicture": selected_level.get(
+            "levelPicture",
+            "",
+        ),
+        "databaseName": selected_level.get(
+            "databaseName",
+            "",
+        ),
+        "startDialog": selected_level.get(
+            "startDialog",
+            "",
+        ),
+        "queryRestriction": deepcopy(
+            query_restriction
+        ),
+        "items": deepcopy(
+            items
+        ),
+    }
+
+
 def build_level_for_json(saved_level):
     database_name = database_name_for_level(saved_level.get("id", ""))
 

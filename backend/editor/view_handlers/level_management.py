@@ -10,6 +10,7 @@ from ..services.item_service import save_current_item_to_new_level
 from ..services.level_basics import level_name_is_taken
 from ..services.level_delete import referencing_level_ids, remove_level_from_list
 from ..services.level_save import (
+    build_level_edit_session,
     build_level_for_json,
     replace_or_append_level,
     update_exit_level_references,
@@ -146,61 +147,6 @@ def clear_level_edit_session(request):
         )
 
     request.session.modified = True
-
-
-def build_level_edit_session(selected_level):
-    if not isinstance(
-        selected_level,
-        dict,
-    ):
-        return {}
-
-    query_restriction = selected_level.get(
-        "queryRestriction",
-        {},
-    )
-
-    if not isinstance(
-        query_restriction,
-        dict,
-    ):
-        query_restriction = {}
-
-    items = selected_level.get(
-        "items",
-        [],
-    )
-
-    if not isinstance(
-        items,
-        list,
-    ):
-        items = []
-
-    return {
-        "id": selected_level.get(
-            "id",
-            "",
-        ),
-        "levelPicture": selected_level.get(
-            "levelPicture",
-            "",
-        ),
-        "databaseName": selected_level.get(
-            "databaseName",
-            "",
-        ),
-        "startDialog": selected_level.get(
-            "startDialog",
-            "",
-        ),
-        "queryRestriction": deepcopy(
-            query_restriction
-        ),
-        "items": deepcopy(
-            items
-        ),
-    }
 
 
 @require_POST
