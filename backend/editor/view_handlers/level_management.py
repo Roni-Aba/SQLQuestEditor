@@ -1,9 +1,9 @@
-import json
 from copy import deepcopy
 
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
+# from ..utils import log_editor_state
 from .. import database
 from ..services.item_service import save_current_item_to_new_level
 from ..services.level_basics import level_name_is_taken
@@ -45,85 +45,37 @@ def level_view(request):
     )
 
 
-def edit_level_view(
-    request,
-    level_id,
-):
-    game_json = request.session.get(
-        "game_json",
-        {},
-    )
+def edit_level_view(request, level_id):
+    game_json = request.session.get("game_json", {})
+    if not isinstance(game_json, dict):
+        return redirect("level")
 
-    if not isinstance(
-        game_json,
-        dict,
-    ):
-        return redirect(
-            "level"
-        )
-
-    levels = game_json.get(
-        "level",
-        [],
-    )
-
-    if not isinstance(
-        levels,
-        list,
-    ):
-        return redirect(
-            "level"
-        )
+    levels = game_json.get("level", [])
+    if not isinstance(levels, list):
+        return redirect("level")
 
     selected_level = next(
         (
             level
             for level in levels
-            if (
-                isinstance(
-                    level,
-                    dict,
-                )
-                and str(
-                    level.get(
-                        "id",
-                        "",
-                    )
-                ) == str(
-                    level_id
-                )
-            )
+            if isinstance(level, dict) and str(level.get("id", "")) == str(level_id)
         ),
         None,
     )
-
     if selected_level is None:
-        return redirect(
-            "level"
-        )
+        return redirect("level")
 
-    clear_level_edit_session(
-        request
-    )
+    clear_level_edit_session(request)
 
     level_draft = build_level_edit_session(selected_level)
     source = request.session.get("import_sources", {}).get(str(level_id), {})
     level_draft["_import_table_sources"] = deepcopy(source.get("tables", {}))
     database.begin_editor_level_rows(request, level_draft)
     request.session["new_level"] = level_draft
-
-    request.session[
-        "editing_level_id"
-    ] = selected_level.get(
-        "id",
-        level_id,
-    )
-
+    request.session["editing_level_id"] = selected_level.get("id", level_id)
     request.session.modified = True
 
-    return redirect(
-        "auswahl_view"
-    )
+    return redirect("auswahl_view")
 
 
 def clear_level_edit_session(request):
@@ -175,8 +127,7 @@ def save_level_view(request):
         request, saved_level, level_for_json, editing_level_id
     )
 
-    print("Systemnachrichten gespeichert:")
-    print(json.dumps(game_json, ensure_ascii=False, indent=2))
+    # log_editor_state('Systemnachrichten gespeichert:', game_json)
     return redirect("level")
 
 
@@ -215,12 +166,5 @@ def delete_level_view(request, level_id):
         request.session.pop("new_level", None)
 
     request.session.modified = True
-    print("Systemnachrichten gespeichert:")
-    print(
-        json.dumps(
-            game_json,
-            ensure_ascii=False,
-            indent=2,
-        )
-    )
+    # log_editor_state('Systemnachrichten gespeichert:', game_json)
     return redirect("level")

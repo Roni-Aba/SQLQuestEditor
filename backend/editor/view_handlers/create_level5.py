@@ -1,7 +1,6 @@
-import json
-
 from django.shortcuts import redirect, render
 
+# from ..utils import log_editor_state
 from ..services.item_position import position_form_values, position_from_post
 from .shared import (
     get_steps,
@@ -18,8 +17,7 @@ def create_level5_view(request):
         "item_type": item_type,
     }
     if request.method == "POST":
-        print("createLevel5 gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        # log_editor_state('createLevel5 gespeichert:', saved_level)
         return redirect("create_level51")
     return render(request, "editor/createLevel5.html", {
         "steps": steps,
@@ -40,8 +38,7 @@ def create_level51_view(request):
         request.session["new_level"] = saved_level
         request.session.modified = True
 
-        print("createLevel5-1 gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        # log_editor_state('createLevel5-1 gespeichert:', saved_level)
 
         return redirect_after_item_section_edit(
             request,

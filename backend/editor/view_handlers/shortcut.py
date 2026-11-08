@@ -1,8 +1,7 @@
-import json
-
 from django.conf import settings
 from django.shortcuts import redirect, render
 
+# from ..utils import log_editor_state
 from .. import database
 from ..services.game_messages import (
     normalize_game_messages,
@@ -25,8 +24,7 @@ from .shared import (
 def auswahl_view(request):
     set_guided_level_creation(request, False)
     new_level = request.session.get("new_level", {})
-    print("Aktuelles Level:")
-    print(json.dumps(new_level, ensure_ascii=False, indent=2))
+    # log_editor_state('Aktuelles Level:', new_level)
     return render(
         request,
         "editor/auswahl.html",
@@ -78,8 +76,7 @@ def level_grunddaten_view(request):
         request.session["new_level"] = saved_level
         request.session.modified = True
 
-        print("Level-Grunddaten:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        # log_editor_state('Level-Grunddaten:', saved_level)
         return redirect("auswahl_view")
 
     return render(
@@ -101,8 +98,7 @@ def sql_grunddaten_view(request):
         request.session["new_level"] = saved_level
         request.session.modified = True
 
-        print("SQL-Grunddaten gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        # log_editor_state('SQL-Grunddaten gespeichert:', saved_level)
         return redirect("auswahl_view")
 
     return render(
@@ -128,8 +124,7 @@ def messages_grunddaten_view(request):
         request.session["game_json"] = game_json
         request.session.modified = True
 
-        print("Systemnachrichten gespeichert:")
-        print(json.dumps(game_json, ensure_ascii=False, indent=2))
+        # log_editor_state('Systemnachrichten gespeichert:', game_json)
         return redirect("auswahl_view")
 
     return render(

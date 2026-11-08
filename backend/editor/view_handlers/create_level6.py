@@ -1,7 +1,6 @@
-import json
-
 from django.shortcuts import redirect, render
 
+# from ..utils import log_editor_state
 from ..services.item_unlock import (
     update_password_requirement,
     update_password_details,
@@ -42,8 +41,7 @@ def create_level6_view(request):
         request.session["new_level"] = saved_level
         request.session.modified = True
 
-        print("createLevel6 gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        # log_editor_state('createLevel6 gespeichert:', saved_level)
 
         if requires_password:
             return redirect("create_level61")
@@ -98,8 +96,7 @@ def create_level61_view(request):
         request.session["new_level"] = saved_level
         request.session.modified = True
 
-        print("createLevel6-1 gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        # log_editor_state('createLevel6-1 gespeichert:', saved_level)
 
         if show_hints:
             return redirect("create_level62")
@@ -146,8 +143,7 @@ def create_level62_view(request):
         request.session["new_level"] = saved_level
         request.session.modified = True
 
-        print("createLevel6-2 gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        # log_editor_state('createLevel6-2 gespeichert:', saved_level)
 
         return redirect_after_item_section_edit(
             request,

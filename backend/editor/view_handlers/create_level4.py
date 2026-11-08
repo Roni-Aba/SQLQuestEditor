@@ -11,6 +11,7 @@ from ..services.item_service import (
 )
 from .shared import get_steps, prepare_item_creation_navigation
 
+
 def create_level4_view(request):
     steps = get_steps(active_step=4)
     saved_level = request.session.get("new_level", {})
@@ -20,12 +21,8 @@ def create_level4_view(request):
 
     prepare_item_creation_navigation(request, saved_level)
 
-    return_to_item_overview = (
-        request.session.get("item_creation_return_to") == "items"
-    )
-    return_to_item_summary = (
-        request.session.get("item_creation_return_to") == "summary"
-    )
+    return_to_item_overview = request.session.get("item_creation_return_to") == "items"
+    return_to_item_summary = request.session.get("item_creation_return_to") == "summary"
 
     item = saved_level.get("item", {})
     if not isinstance(item, dict):
@@ -39,10 +36,7 @@ def create_level4_view(request):
             "hint": "create_level3hint",
             "exit": "create_level3exit",
         }
-        back_url_name = back_urls.get(
-            item.get("type", ""),
-            "create_level3",
-        )
+        back_url_name = back_urls.get(item.get("type", ""), "create_level3")
 
     unlocked_items = item.get("unlockedItems", [])
     if not isinstance(unlocked_items, list):
@@ -50,21 +44,18 @@ def create_level4_view(request):
 
     form_values = {
         "item_name": item.get("id", ""),
-        "unlocked_items_json": json.dumps(
-            unlocked_items,
-            ensure_ascii=False,
-        ),
+        "unlocked_items_json": json.dumps(unlocked_items, ensure_ascii=False),
     }
 
     item_options = get_item_options_for_current_level(saved_level)
     error_message = ""
     if request.method == "POST":
         item_name = request.POST.get("item_name", "").strip()
-        unlocked_items = parse_unlocked_item(
-            request.POST.get("unlocked_items", "[]")
-        )
+        unlocked_items = parse_unlocked_item(request.POST.get("unlocked_items", "[]"))
         editing_item_id = request.session.get("editing_item_id", "")
-        name_conflict = has_item_name_conflict(saved_level, item, item_name, editing_item_id)
+        name_conflict = has_item_name_conflict(
+            saved_level, item, item_name, editing_item_id
+        )
         if name_conflict:
             error_message = (
                 f'Der Gegenstands- oder Tabellenname "{item_name}" '
@@ -88,10 +79,7 @@ def create_level4_view(request):
                 request.session.pop("editing_item_section", None)
                 request.session.modified = True
                 if editing_item_id:
-                    return redirect(
-                        "edit_item",
-                        item_id=editing_item_id,
-                    )
+                    return redirect("edit_item", item_id=editing_item_id)
 
             return redirect("create_level5")
 

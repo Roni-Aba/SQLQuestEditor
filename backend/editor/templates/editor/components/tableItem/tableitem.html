@@ -11,7 +11,7 @@
         action="{{ delete_url }}"
         method="post"
         class="d-inline"
-        onsubmit="return confirm('Soll das Level „{{ title|escapejs }}“ wirklich gelöscht werden?');"
+        data-confirm="Soll das Level „{{ title|force_escape }}“ wirklich gelöscht werden?"
       >
         {% csrf_token %}
 

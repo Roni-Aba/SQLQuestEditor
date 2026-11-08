@@ -1,7 +1,6 @@
-import json
-
 from django.shortcuts import redirect, render
 
+# from ..utils import log_editor_state
 from ..services.level_save import save_new_level_to_game_json
 from ..services.item_service import clear_item_draft
 from .shared import get_steps
@@ -24,26 +23,20 @@ def create_level8_view(request):
         request.session.modified = True
 
         if next_action == "more_items":
-            print(
-                "Gegenstand wurde in die JSON eingefügt. "
-                "Neuer Gegenstand kann erstellt werden:"
-            )
-            print(json.dumps(game_json, ensure_ascii=False, indent=2))
+            # log_editor_state(
+            #     'Gegenstand wurde in die JSON eingefügt. Neuer Gegenstand kann erstellt werden:',
+            #     game_json,
+            # )
             return redirect("create_level3")
 
         if next_action == "item_management":
-            print(
-                "Gegenstand wurde in die JSON eingefügt. "
-                "Weiter zur Gegenstandsverwaltung:"
-            )
-            print(json.dumps(game_json, ensure_ascii=False, indent=2))
+            # log_editor_state(
+            #     'Gegenstand wurde in die JSON eingefügt. Weiter zur Gegenstandsverwaltung:',
+            #     game_json,
+            # )
             return redirect("gegenstandVerwaltung")
 
-        print(
-            "Gegenstand wurde in die JSON eingefügt. "
-            "Zurück zur Auswahl:"
-        )
-        print(json.dumps(game_json, ensure_ascii=False, indent=2))
+        # log_editor_state('Gegenstand wurde in die JSON eingefügt. Zurück zur Auswahl:', game_json)
         return redirect("auswahl_view")
 
     return render(

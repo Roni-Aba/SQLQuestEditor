@@ -1,8 +1,9 @@
-import json
+import logging
 from copy import deepcopy
 
 from django.shortcuts import redirect, render
 
+# from ..utils import log_editor_state
 from ..services.level_save import save_new_level_to_game_json
 from ..services.item_service import (
     build_item_for_json,
@@ -22,47 +23,29 @@ from ..services.item_summary import get_item_summary
 from .shared import get_steps, save_new_level_session, set_guided_level_creation
 
 
-def gegenstand_view(
-    request,
-):
-    set_guided_level_creation(request, False)
-    saved_level = request.session.get(
-        "new_level",
-        {},
-    )
+logger = logging.getLogger(__name__)
 
-    if not isinstance(
-        saved_level,
-        dict,
-    ):
+
+def gegenstand_view(request):
+    set_guided_level_creation(request, False)
+    saved_level = request.session.get("new_level", {})
+    if not isinstance(saved_level, dict):
         saved_level = {}
 
-    items = saved_level.get(
-        "items",
-        [],
-    )
-
-    if not isinstance(
-        items,
-        list,
-    ):
+    items = saved_level.get("items", [])
+    if not isinstance(items, list):
         items = []
 
     clean_saved_level = {
         **saved_level,
-        "items": deepcopy(
-            items
-        ),
+        "items": deepcopy(items),
     }
-
     return render(
         request,
         "editor/gegenstandVerwaltung.html",
         {
             "saved_level": clean_saved_level,
-            "steps": get_steps(
-                active_step=1
-            ),
+            "steps": get_steps(active_step=1),
         },
     )
 
@@ -75,7 +58,7 @@ def edit_item_view(request, item_id):
     if currently_edited_item != item_id:
         selected_item = load_item_draft(request, saved_level, item_id)
         if selected_item is None:
-            print(f"Gegenstand '{item_id}' wurde nicht gefunden.")
+            logger.warning("Gegenstand %r wurde nicht gefunden.", item_id)
             return redirect("gegenstandVerwaltung")
 
         request.session["new_level"] = saved_level
@@ -118,8 +101,7 @@ def edit_item_view(request, item_id):
         request.session.pop("item_creation_return_to", None)
         request.session.modified = True
 
-        print("Bearbeiteter Gegenstand gespeichert:")
-        print(json.dumps(current_item, ensure_ascii=False, indent=2))
+        # log_editor_state('Bearbeiteter Gegenstand gespeichert:', current_item)
         return redirect("gegenstandVerwaltung")
 
     return render(
@@ -229,6 +211,5 @@ def delete_item_view(request, item_id):
         request.session.pop("editing_item_section", None)
 
     request.session.modified = True
-    print("Systemnachrichten gespeichert:")
-    print(json.dumps(game_json, ensure_ascii=False, indent=2))
+    # log_editor_state('Systemnachrichten gespeichert:', game_json)
     return redirect("gegenstandVerwaltung")

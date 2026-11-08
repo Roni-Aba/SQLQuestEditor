@@ -1799,6 +1799,136 @@ class TableSchemaTests(SimpleTestCase):
             )
 
 
+    def test_imported_trigger_is_preserved_and_blocks_changed_rows(self):
+        from . import database
+
+        item = {"id": "Notebook", "type": "table",
+                "description": ["ID (int)", "Name (varchar)"]}
+        rows = [{"ID": 7, "Name": "Aldi"}]
+        with TemporaryDirectory() as root:
+            source = Path(root) / "source.db"
+            target = Path(root) / "level1.db"
+            with sqlite3.connect(source) as connection:
+                connection.executescript("""
+                    CREATE TABLE Notebook (ID INTEGER PRIMARY KEY, Name TEXT);
+                    INSERT INTO Notebook VALUES (7, 'Aldi');
+                    CREATE TABLE Audit (Message TEXT);
+                    CREATE TRIGGER notebook_insert AFTER INSERT ON Notebook
+                    BEGIN INSERT INTO Audit VALUES ('inserted'); END;
+                """)
+            original_dump = database.database_dump(source)
+            database.create_level_database(
+                target, {"items": [item]}, {"Notebook": rows},
+                source, {"Notebook": "Notebook"},
+            )
+            self.assertEqual(database.database_dump(target), original_dump)
+
+            with self.assertRaisesRegex(ValueError, "hat einen Trigger"):
+                database.create_level_database(
+                    target, {"items": [item]}, {"Notebook": []},
+                    source, {"Notebook": "Notebook"},
+                )
+            self.assertEqual(database.database_dump(target), original_dump)
+            self.assertEqual(database.database_dump(source), original_dump)
+
+    def test_imported_foreign_keys_are_preserved_and_block_changed_rows(self):
+        from . import database
+
+        items = [
+            {"id": "Parent", "type": "table",
+             "description": ["ID (int)", "Name (varchar)"]},
+            {"id": "Child", "type": "table",
+             "description": ["ID (int)", "ParentID (int)"]},
+        ]
+        rows = {"Parent": [{"ID": 1, "Name": "Original"}],
+                "Child": [{"ID": 7, "ParentID": 1}]}
+        sources = {"Parent": "Parent", "Child": "Child"}
+        with TemporaryDirectory() as root:
+            source = Path(root) / "source.db"
+            target = Path(root) / "level1.db"
+            with sqlite3.connect(source) as connection:
+                connection.executescript("""
+                    CREATE TABLE Parent (ID INTEGER PRIMARY KEY, Name TEXT);
+                    CREATE TABLE Child (
+                        ID INTEGER PRIMARY KEY, ParentID INTEGER REFERENCES Parent(ID)
+                    );
+                    INSERT INTO Parent VALUES (1, 'Original');
+                    INSERT INTO Child VALUES (7, 1);
+                """)
+            original_dump = database.database_dump(source)
+            database.create_level_database(target, {"items": items}, rows, source, sources)
+            self.assertEqual(database.database_dump(target), original_dump)
+
+            for table in ("Parent", "Child"):
+                with self.subTest(table=table):
+                    changed_rows = deepcopy(rows)
+                    changed_rows[table] = []
+                    with self.assertRaisesRegex(ValueError, "hat Fremdschlüssel"):
+                        database.create_level_database(
+                            target, {"items": items}, changed_rows, source, sources
+                        )
+                    self.assertEqual(database.database_dump(target), original_dump)
+                    self.assertEqual(database.database_dump(source), original_dump)
+
+    def test_imported_database_structure_errors_are_rejected(self):
+        from .database import create_level_database
+
+        item = {"id": "Notebook", "type": "table",
+                "description": ["ID (int)", "Name (varchar)"]}
+        with TemporaryDirectory() as root:
+            source = Path(root) / "source.db"
+            with sqlite3.connect(source) as connection:
+                connection.execute("CREATE TABLE Notebook (ID INTEGER PRIMARY KEY, Name TEXT)")
+            changed_item = {**item, "description": ["ID (int)", "Other (varchar)"]}
+            cases = (
+                (Path(root) / "missing.db", item, "Notebook", FileNotFoundError, "nicht gefunden"),
+                (source, item, "Missing", ValueError, 'importierte Tabelle "Missing" fehlt'),
+                (source, changed_item, "Notebook", ValueError, "weichen von der Levelbeschreibung ab"),
+            )
+            for database_path, current_item, original_name, error, message in cases:
+                with self.subTest(message=message):
+                    with self.assertRaisesRegex(error, message):
+                        create_level_database(
+                            Path(root) / "level1.db", {"items": [current_item]},
+                            {"Notebook": []}, database_path, {"Notebook": original_name},
+                        )
+
+    def test_imported_table_deletion_and_rename_preserve_other_data(self):
+        from . import database
+
+        item = {"id": "Renamed", "type": "table",
+                "description": ["ID (int)", "Name (varchar)"]}
+        rows = [{"ID": 7, "Name": "Aldi"}, {"ID": 42, "Name": None}]
+        with TemporaryDirectory() as root:
+            source = Path(root) / "source.db"
+            target = Path(root) / "level1.db"
+            with sqlite3.connect(source) as connection:
+                connection.executescript("""
+                    CREATE TABLE Notebook (ID INTEGER PRIMARY KEY, Name TEXT);
+                    INSERT INTO Notebook VALUES (7, 'Aldi'), (42, NULL);
+                    CREATE INDEX notebook_name ON Notebook(Name);
+                    CREATE TABLE Removed (ID INTEGER PRIMARY KEY);
+                    CREATE TABLE Extra (Value TEXT);
+                    INSERT INTO Extra VALUES ('keep');
+                """)
+            original_dump = database.database_dump(source)
+            database.create_level_database(
+                target, {"items": [item]}, {"Renamed": rows}, source,
+                {"Renamed": "Notebook", "Removed": "Removed"},
+            )
+            self.assertEqual(database.read_table_rows(target, item), rows)
+            with sqlite3.connect(target) as connection:
+                tables = {row[0] for row in connection.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table'"
+                )}
+                self.assertEqual(tables, {"Renamed", "Extra"})
+                self.assertEqual(connection.execute("SELECT * FROM Extra").fetchall(), [("keep",)])
+                self.assertEqual(connection.execute(
+                    "SELECT tbl_name FROM sqlite_master WHERE type = 'index' AND name = 'notebook_name'"
+                ).fetchone(), ("Renamed",))
+            self.assertEqual(database.database_dump(source), original_dump)
+
+
 class WorkspaceTests(SimpleTestCase):
     def test_recreating_workspace_preserves_imported_game_root(self):
         from types import SimpleNamespace

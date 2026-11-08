@@ -1,7 +1,6 @@
-import json
-
 from django.shortcuts import redirect, render
 
+# from ..utils import log_editor_state
 from ..services.level_basics import (
     level2_form_values,
     query_restriction_from_post,
@@ -18,8 +17,7 @@ def create_level2_view(request):
         request.session["new_level"] = saved_level
         request.session.modified = True
 
-        print("createLevel2 gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        # log_editor_state('createLevel2 gespeichert:', saved_level)
         return redirect("create_level3")
 
     return render(request, "editor/createLevel2.html", {

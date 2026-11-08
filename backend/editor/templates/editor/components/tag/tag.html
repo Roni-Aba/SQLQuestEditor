@@ -9,7 +9,7 @@
         action="{{ delete_url }}"
         method="post"
         class="d-inline"
-        onsubmit="return confirm('Soll der Gegenstand „{{ title|escapejs }}“ wirklich entfernt werden?');"
+        data-confirm="Soll der Gegenstand „{{ title|force_escape }}“ wirklich entfernt werden?"
       >
         {% csrf_token %}
 

@@ -1,8 +1,7 @@
-import json
-
 from django.conf import settings
 from django.shortcuts import redirect, render
 
+# from ..utils import log_editor_state
 from ..services.exit_editor import update_exit_fields
 from ..services.hint_editor import update_hint_field, update_hint_image
 from ..services.item_service import (
@@ -128,8 +127,7 @@ def create_level3exit_view(request):
         request.session["new_level"] = saved_level
         request.session.modified = True
 
-        print("createLevel3exit gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        # log_editor_state('createLevel3exit gespeichert:', saved_level)
 
         return redirect_after_item_section_edit(
             request,
@@ -181,8 +179,7 @@ def create_level3hint_view(request):
         request.session["new_level"] = saved_level
         request.session.modified = True
 
-        print("createLevel3hint gespeichert:")
-        print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+        # log_editor_state('createLevel3hint gespeichert:', saved_level)
 
         return redirect_after_item_section_edit(
             request,
@@ -207,9 +204,7 @@ def create_level3hint_view(request):
 
 def create_level3table_view(request):
     return_to_item_summary = remember_item_summary_return(request)
-    return_to_item_overview = (
-        request.session.get("item_creation_return_to") == "items"
-    )
+    return_to_item_overview = request.session.get("item_creation_return_to") == "items"
     steps = get_steps(active_step=3)
     saved_level = request.session.get("new_level", {})
     item = saved_level.get("item", {})
@@ -238,10 +233,7 @@ def create_level3table_view(request):
         raw_rows_json = request.POST.get("rows_json", "[]")
 
         if not error_message:
-            rows, error_message = parse_table_rows(
-                raw_rows_json,
-                columns,
-            )
+            rows, error_message = parse_table_rows(raw_rows_json, columns)
 
         form_values = {
             "table_name": item.get("id", ""),
@@ -267,13 +259,9 @@ def create_level3table_view(request):
             request.session["new_level"] = saved_level
             request.session.modified = True
 
-            print("createLevel3table gespeichert:")
-            print(json.dumps(saved_level, ensure_ascii=False, indent=2))
+            # log_editor_state('createLevel3table gespeichert:', saved_level)
 
-            return redirect_after_item_section_edit(
-                request,
-                "create_level4",
-            )
+            return redirect_after_item_section_edit(request, "create_level4")
 
     return render(
         request,

@@ -5,6 +5,8 @@ import uuid
 from copy import deepcopy
 from pathlib import Path
 
+from .utils import sanitize_export_name
+
 
 EDITOR_TABLE_ROWS_FILENAME = ".editor-table-rows.json"
 
@@ -84,15 +86,6 @@ def editor_columns_from_description(description):
 
 # Arbeitsverzeichnisse und Dateipfade
 
-def sanitize_path_component(value, fallback):
-    clean_value = Path(str(value or "")).name.strip() or fallback
-
-    for character in '<>:"/\\|?*':
-        clean_value = clean_value.replace(character, "_")
-
-    return clean_value
-
-
 def create_editor_workspace(session):
     workspace_path = Path(
         tempfile.mkdtemp(prefix="sql-quest-editor-")
@@ -123,8 +116,8 @@ def get_level_database_path(session, level):
     if game_root is None or not game_root.is_dir():
         return None
 
-    level_id = sanitize_path_component(level.get("id", ""), "level")
-    database_name = sanitize_path_component(
+    level_id = sanitize_export_name(level.get("id", ""), "level")
+    database_name = sanitize_export_name(
         level.get("databaseName", ""),
         f"{level_id}.db",
     )
@@ -264,10 +257,6 @@ def get_editor_level_key(request, level):
 
     if not isinstance(level, dict):
         return str(level or "")
-
-    draft_key = str(level.get(EDITOR_LEVEL_DRAFT_KEY, "")).strip()
-    if draft_key:
-        return draft_key
 
     level_id = str(level.get("id", "")).strip()
     if level_id:
@@ -631,26 +620,13 @@ def create_level_database(
 
     if source_database:
         source_database = Path(source_database)
-        if not source_database.is_file():
-            raise FileNotFoundError(
-                f'Die Level-Datenbank "{source_database.name}" wurde nicht gefunden.'
-            )
-        with _read_only_connection(source_database) as source:
-            with sqlite3.connect(database_path) as target:
-                source.backup(target)
+        _copy_source_database(source_database, database_path)
 
     with sqlite3.connect(database_path) as connection:
         items = level.get("items", [])
-        active_tables = {
-            table_name_for(item) for item in items if isinstance(item, dict)
-            and item.get("type") == "table"
-        } if isinstance(items, list) else set()
         source_tables = source_tables or {}
-        for current_name, original_name in source_tables.items():
-            if current_name not in active_tables:
-                connection.execute(
-                    f"DROP TABLE {quote_identifier(original_name)}"
-                )
+        _remove_deleted_tables(connection, items, source_tables)
+
         for item in items if isinstance(items, list) else []:
             if not isinstance(item, dict) or item.get("type") != "table":
                 continue
@@ -662,61 +638,95 @@ def create_level_database(
             )
             table_name = table_name_for(item)
             original_name = source_tables.get(table_name)
-            if not original_name:
+            if original_name:
+                _update_imported_table(
+                    connection, item, rows, source_database, original_name
+                )
+            else:
                 _create_table(connection, item, rows)
-                continue
-            present = connection.execute(
-                "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
-                (original_name,),
-            ).fetchone()
-            if present is None:
-                raise ValueError(f'Die importierte Tabelle "{original_name}" fehlt.')
-            source_item = {**item, "tableName": original_name}
-            original_rows = read_table_rows(source_database, source_item)
-            if original_name != table_name:
-                connection.execute(
-                    f"ALTER TABLE {quote_identifier(original_name)} "
-                    f"RENAME TO {quote_identifier(table_name)}"
-                )
-            columns = parse_description_columns(item.get("description", []))
-            requested = [column["id"] for column in columns]
-            if not any(name.lower() == "id" for name in requested):
-                requested.insert(0, "ID")
-            actual = [entry[1] for entry in connection.execute(
-                f"PRAGMA table_info({quote_identifier(table_name)})"
-            )]
-            if requested != actual:
+
+
+def _copy_source_database(source_database, database_path):
+    if not source_database.is_file():
+        raise FileNotFoundError(
+            f'Die Level-Datenbank "{source_database.name}" wurde nicht gefunden.'
+        )
+    with _read_only_connection(source_database) as source:
+        with sqlite3.connect(database_path) as target:
+            source.backup(target)
+
+
+def _remove_deleted_tables(connection, items, source_tables):
+    active_tables = {
+        table_name_for(item) for item in items if isinstance(item, dict)
+        and item.get("type") == "table"
+    } if isinstance(items, list) else set()
+    for current_name, original_name in source_tables.items():
+        if current_name not in active_tables:
+            connection.execute(f"DROP TABLE {quote_identifier(original_name)}")
+
+
+def _update_imported_table(connection, item, rows, source_database, original_name):
+    table_name = table_name_for(item)
+    present = connection.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+        (original_name,),
+    ).fetchone()
+    if present is None:
+        raise ValueError(f'Die importierte Tabelle "{original_name}" fehlt.')
+
+    source_item = {**item, "tableName": original_name}
+    original_rows = read_table_rows(source_database, source_item)
+    if original_name != table_name:
+        connection.execute(
+            f"ALTER TABLE {quote_identifier(original_name)} "
+            f"RENAME TO {quote_identifier(table_name)}"
+        )
+
+    columns = parse_description_columns(item.get("description", []))
+    requested = [column["id"] for column in columns]
+    if not any(name.lower() == "id" for name in requested):
+        requested.insert(0, "ID")
+    actual = [entry[1] for entry in connection.execute(
+        f"PRAGMA table_info({quote_identifier(table_name)})"
+    )]
+    if requested != actual:
+        raise ValueError(
+            f'Die Spalten der importierten Tabelle "{table_name}" '
+            "weichen von der Levelbeschreibung ab."
+        )
+
+    if original_rows != rows:
+        _ensure_table_rows_can_be_replaced(connection, table_name)
+        connection.execute(f"DELETE FROM {quote_identifier(table_name)}")
+        insert_table_rows(connection, table_name, columns, rows)
+
+
+def _ensure_table_rows_can_be_replaced(connection, table_name):
+    trigger = connection.execute(
+        "SELECT name FROM sqlite_master "
+        "WHERE type = 'trigger' AND tbl_name = ?",
+        (table_name,),
+    ).fetchone()
+    if trigger:
+        raise ValueError(
+            f'Die Tabelle "{table_name}" hat einen Trigger; '
+            "bearbeitete Zeilen können nicht verlustfrei exportiert werden."
+        )
+    for (other_table,) in connection.execute(
+        "SELECT name FROM sqlite_master WHERE type = 'table'"
+    ):
+        for foreign_key in connection.execute(
+            f"PRAGMA foreign_key_list({quote_identifier(other_table)})"
+        ):
+            if (
+                other_table.casefold() == table_name.casefold()
+                or str(foreign_key[2]).casefold() == table_name.casefold()
+            ):
                 raise ValueError(
-                    f'Die Spalten der importierten Tabelle "{table_name}" '
-                    "weichen von der Levelbeschreibung ab."
+                    f'Die Tabelle "{table_name}" hat Fremdschlüssel; '
+                    "bearbeitete Zeilen können nicht verlustfrei exportiert werden."
                 )
-            if original_rows != rows:
-                trigger = connection.execute(
-                    "SELECT name FROM sqlite_master "
-                    "WHERE type = 'trigger' AND tbl_name = ?",
-                    (table_name,),
-                ).fetchone()
-                if trigger:
-                    raise ValueError(
-                        f'Die Tabelle "{table_name}" hat einen Trigger; '
-                        "bearbeitete Zeilen können nicht verlustfrei exportiert werden."
-                    )
-                for (other_table,) in connection.execute(
-                    "SELECT name FROM sqlite_master WHERE type = 'table'"
-                ):
-                    for foreign_key in connection.execute(
-                        f"PRAGMA foreign_key_list({quote_identifier(other_table)})"
-                    ):
-                        if (
-                            other_table.casefold() == table_name.casefold()
-                            or str(foreign_key[2]).casefold() == table_name.casefold()
-                        ):
-                            raise ValueError(
-                                f'Die Tabelle "{table_name}" hat Fremdschlüssel; '
-                                "bearbeitete Zeilen können nicht verlustfrei exportiert werden."
-                            )
-                connection.execute(f"DELETE FROM {quote_identifier(table_name)}")
-                insert_table_rows(connection, table_name, columns, rows)
 
 
 def database_dump(database_path):
