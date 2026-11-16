@@ -1,18 +1,42 @@
-site_name: SQL Quest Editor Dokumentation
-site_description: Dokumentation für den SQL Spell Quest Level Editor
+site_name: SQL Spell Quest Editor
+site_description: Den Editor verstehen, Level erstellen und gezielt Code ändern
 site_author: Roni Aba
 
 theme:
   name: material
   language: de
+  features:
+    - navigation.footer
+    - content.code.copy
+
+plugins:
+  - search:
+      lang: de
 
 nav:
-  - Grundlagen:
-      - HTML zu Django: grundlagen/htmlZuDjango.md
-  - Mockups:
-      - Übersicht: mockups/README.md
+  - Start: README.md
+  - Editor verstehen:
+      - Zweck und Grundbegriffe: verstehen.md
+      - Gegenstandsarten: gegenstaende.md
+      - Geführter Editor oder Shortcuts?: bedienen.md
+  - Loslegen:
+      - Projekt starten: starten.md
+      - Mein erstes Level: erstes-level.md
+      - Geführter Editor mit Screenshots: gefuehrter-editor.md
+  - Code ändern:
+      - 'FAQ: Wo ändere ich was?': code-faq.md
+      - Testen und Fehler finden: testen.md
+      - Architektur erklärt: architektur.md
+      - Button und neue Seite ergänzen: seiten-erweitern.md
+      - Dokumentation pflegen: dokumentieren.md
+  - Nachschlagen:
+      - Datenverträge: editor-vertraege.md
+      - HTML und Django: grundlagen/htmlZuDjango.md
+
 
 markdown_extensions:
   - admonition
+  - tables
+  - fenced_code
   - toc:
       permalink: true

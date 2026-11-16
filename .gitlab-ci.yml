@@ -17,7 +17,7 @@ docs:
   stage: docs
   image: python:3.11
   script:
-    - pip install mkdocs mkdocs-material
+    - pip install -r requirements-docs.txt
     - mkdocs build --strict
   artifacts:
     paths:
